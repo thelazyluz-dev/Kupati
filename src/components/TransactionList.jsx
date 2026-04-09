@@ -4,7 +4,7 @@ import Button from './ui/Button.jsx'
 
 const PAGE_SIZE = 50
 
-export default function TransactionList({ transactions }) {
+export default function TransactionList({ transactions, childId }) {
   const [limit, setLimit] = useState(PAGE_SIZE)
   const visible = transactions.slice(0, limit)
 
@@ -21,7 +21,7 @@ export default function TransactionList({ transactions }) {
     <div>
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
         {visible.map((tx) => (
-          <TransactionItem key={tx.id} transaction={tx} />
+          <TransactionItem key={tx.id} transaction={tx} childId={childId} />
         ))}
       </div>
       {transactions.length > limit && (

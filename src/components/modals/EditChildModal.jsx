@@ -53,7 +53,7 @@ function BirthdayPicker({ value, onChange }) {
 }
 
 export default function EditChildModal() {
-  const { closeModal, modalData, updateChild, deleteChild, navigate } = useApp()
+  const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin } = useApp()
   const child = modalData
 
   const [name, setName] = useState(child?.name || '')
@@ -84,9 +84,11 @@ export default function EditChildModal() {
       setConfirmDelete(true)
       return
     }
-    deleteChild(child.id)
-    closeModal()
-    navigate('home')
+    requirePin(() => {
+      deleteChild(child.id)
+      closeModal()
+      navigate('home')
+    })
   }
 
   return (

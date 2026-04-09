@@ -1,143 +1,189 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
+import { getGoals, getTotalValue, formatNumber } from '../../lib/utils.js'
 import { GOAL_EMOJIS } from '../../lib/defaults.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import EmojiPicker from '../ui/EmojiPicker.jsx'
 
-export default function GoalModal() {
-  const { closeModal, modalData, children, updateChild } = useApp()
-  const childId = modalData?.childId
-  const child = children.find((c) => c.id === childId)
-
-  const existing = child?.goal
-  const [emoji, setEmoji] = useState(existing?.emoji || '🎯')
-  const [name, setName] = useState(existing?.name || '')
+function GoalForm({ initial, onSave, onCancel }) {
+  const [emoji, setEmoji] = useState(initial?.emoji || '🎯')
+  const [name, setName] = useState(initial?.name || '')
   const [targetAmount, setTargetAmount] = useState(
-    existing?.targetAmount ? String(existing.targetAmount) : ''
+    initial?.targetAmount ? String(initial.targetAmount) : ''
   )
-  const [confirmRemove, setConfirmRemove] = useState(false)
-
-  if (!child) return null
+  const target = parseFloat(targetAmount) || 0
 
   function handleSubmit(e) {
     e.preventDefault()
-    const target = parseFloat(targetAmount)
-    if (!name.trim() || !target || target <= 0) return
-    updateChild(childId, { goal: { name: name.trim(), targetAmount: target, emoji } })
-    closeModal()
+    if (!name.trim() || target <= 0) return
+    onSave({ emoji, name: name.trim(), targetAmount: target })
   }
-
-  function handleRemove() {
-    if (!confirmRemove) {
-      setConfirmRemove(true)
-      return
-    }
-    updateChild(childId, { goal: null })
-    closeModal()
-  }
-
-  const target = parseFloat(targetAmount) || 0
 
   return (
-    <Modal title={existing ? '✏️ ערוך מטרה' : '🎯 קבע מטרה'} onClose={closeModal}>
-      <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Emoji picker */}
-        <EmojiPicker
-          label="בחר אימוג׳י למטרה"
-          options={GOAL_EMOJIS}
-          value={emoji}
-          onChange={setEmoji}
+    <form onSubmit={handleSubmit} className="space-y-4 border border-indigo-100 rounded-2xl p-4 bg-indigo-50">
+      <EmojiPicker label="אימוג׳י" options={GOAL_EMOJIS} value={emoji} onChange={setEmoji} />
+      <div>
+        <label className="text-sm font-semibold text-gray-600 block mb-1">שם המטרה</label>
+        <input
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="אייפד, אופניים..."
+          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-lg focus:border-indigo-400 focus:outline-none"
+          required
+          autoFocus
         />
-
-        {/* Name */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            שם המטרה
-          </label>
-          <input
-            type="text"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="אייפד, אופניים..."
-            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-lg focus:border-indigo-400 focus:outline-none"
-            required
-            autoFocus
-          />
-        </div>
-
-        {/* Target amount */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            יעד (₪)
-          </label>
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={targetAmount}
-            onChange={(e) => setTargetAmount(e.target.value)}
-            placeholder="500"
-            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-xl font-bold focus:border-indigo-400 focus:outline-none text-center"
-            dir="ltr"
-            required
-          />
-        </div>
-
-        {/* Preview */}
-        {name && target > 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl px-4 py-3 text-center">
-            <span className="text-2xl">{emoji}</span>
-            <p className="font-bold text-indigo-700 text-lg">{name}</p>
-            <p className="text-sm text-gray-500">יעד: {target}₪</p>
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          fullWidth
-          size="lg"
-          disabled={!name.trim() || !target}
-        >
-          {existing ? '💾 עדכן מטרה' : '🎯 קבע מטרה'}
+      </div>
+      <div>
+        <label className="text-sm font-semibold text-gray-600 block mb-1">יעד (₪)</label>
+        <input
+          type="number"
+          min="1"
+          step="1"
+          value={targetAmount}
+          onChange={(e) => setTargetAmount(e.target.value)}
+          placeholder="500"
+          className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-xl font-bold focus:border-indigo-400 focus:outline-none text-center"
+          dir="ltr"
+          required
+        />
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" fullWidth disabled={!name.trim() || !target}>
+          {initial ? '💾 שמור' : '➕ הוסף'}
         </Button>
+        <Button variant="secondary" type="button" fullWidth onClick={onCancel}>ביטול</Button>
+      </div>
+    </form>
+  )
+}
 
-        {/* Remove goal */}
-        {existing && (
-          <div className="pt-2 border-t border-gray-100">
-            {confirmRemove ? (
-              <div className="space-y-2">
-                <p className="text-sm text-red-600 font-semibold text-center">
-                  למחוק את המטרה?
-                </p>
-                <div className="flex gap-2">
-                  <Button variant="danger" fullWidth onClick={handleRemove} type="button">
-                    מחק
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => setConfirmRemove(false)}
-                    type="button"
-                  >
-                    ביטול
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <Button
-                variant="ghost"
-                fullWidth
-                onClick={handleRemove}
-                type="button"
-                className="text-red-500 border-red-200 hover:bg-red-50"
-              >
-                🗑️ הסר מטרה
-              </Button>
-            )}
+export default function GoalModal() {
+  const { closeModal, modalData, children, settings, addGoal, updateGoal, deleteGoal } = useApp()
+  const childId = modalData?.childId
+  const child = children.find((c) => c.id === childId)
+
+  const [editing, setEditing] = useState(null) // goalId being edited, or 'new'
+  const [confirmDelete, setConfirmDelete] = useState(null) // goalId pending delete
+
+  if (!child) return null
+
+  const goals = getGoals(child)
+  const totalValue = getTotalValue(child, settings)
+
+  function handleAdd(data) {
+    addGoal(childId, data)
+    setEditing(null)
+  }
+
+  function handleUpdate(goalId, data) {
+    updateGoal(childId, goalId, data)
+    setEditing(null)
+  }
+
+  function handleDelete(goalId) {
+    if (confirmDelete !== goalId) { setConfirmDelete(goalId); return }
+    deleteGoal(childId, goalId)
+    setConfirmDelete(null)
+  }
+
+  return (
+    <Modal title="🎯 מטרות חיסכון" onClose={closeModal}>
+      <div className="space-y-3">
+        {/* Existing goals */}
+        {goals.length === 0 && editing !== 'new' && (
+          <div className="text-center py-6 text-gray-400">
+            <div className="text-4xl mb-2">🎯</div>
+            <p>אין מטרות עדיין — הוסף את הראשונה!</p>
           </div>
         )}
-      </form>
+
+        {goals.map((goal) => {
+          const pct = Math.min(1, totalValue / goal.targetAmount)
+          const reached = pct >= 1
+          const remaining = Math.max(0, goal.targetAmount - totalValue)
+
+          if (editing === goal.id) {
+            return (
+              <GoalForm
+                key={goal.id}
+                initial={goal}
+                onSave={(data) => handleUpdate(goal.id, data)}
+                onCancel={() => setEditing(null)}
+              />
+            )
+          }
+
+          return (
+            <div
+              key={goal.id}
+              className={`rounded-2xl p-3 border-2 ${reached ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-white'}`}
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-xl">{goal.emoji}</span>
+                <span className="font-bold text-gray-800 flex-1">{goal.name}</span>
+                <span className="text-sm text-gray-500" dir="ltr">{formatNumber(goal.targetAmount)}₪</span>
+              </div>
+
+              {/* Mini progress bar */}
+              <div className="w-full bg-gray-200 rounded-full h-2 mb-1">
+                <div
+                  className={`h-2 rounded-full transition-all duration-500 ${reached ? 'bg-amber-400' : 'bg-indigo-400'}`}
+                  style={{ width: `${pct * 100}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mb-2">
+                {reached
+                  ? '🎉 הגעת למטרה!'
+                  : `עוד ${formatNumber(remaining)}₪`}
+              </p>
+
+              {/* Actions */}
+              {confirmDelete === goal.id ? (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(goal.id)}
+                    className="flex-1 py-1.5 rounded-xl bg-red-500 text-white text-sm font-semibold"
+                  >מחק</button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(null)}
+                    className="flex-1 py-1.5 rounded-xl bg-gray-100 text-gray-600 text-sm font-semibold"
+                  >ביטול</button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setEditing(goal.id); setConfirmDelete(null) }}
+                    className="flex-1 py-1.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 text-sm font-semibold transition-colors"
+                  >✏️ ערוך</button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(goal.id)}
+                    className="py-1.5 px-3 rounded-xl bg-gray-100 hover:bg-red-50 text-red-400 text-sm transition-colors"
+                  >🗑️</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Add new goal form */}
+        {editing === 'new' ? (
+          <GoalForm onSave={handleAdd} onCancel={() => setEditing(null)} />
+        ) : (
+          <button
+            type="button"
+            onClick={() => { setEditing('new'); setConfirmDelete(null) }}
+            className="w-full py-3 rounded-2xl border-2 border-dashed border-indigo-200 text-indigo-500 font-semibold hover:bg-indigo-50 transition-colors"
+          >
+            ➕ הוסף מטרה
+          </button>
+        )}
+      </div>
     </Modal>
   )
 }

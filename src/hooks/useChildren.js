@@ -12,7 +12,7 @@ export function useChildren() {
       avatar: avatar || '🦁',
       starBalance: 0,
       shekelBalance: 0,
-      goal: null,
+      goals: [],
       exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
     }
     setChildren((prev) => [...prev, child])
@@ -29,6 +29,42 @@ export function useChildren() {
     setChildren((prev) => prev.filter((c) => c.id !== id))
   }
 
+  // ── Goals ──────────────────────────────────────────────
+  function addGoal(childId, { name, emoji, targetAmount }) {
+    const goal = { id: generateId(), name, emoji, targetAmount }
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        // Migrate legacy single-goal
+        const existing = Array.isArray(c.goals)
+          ? c.goals
+          : c.goal ? [{ id: generateId(), ...c.goal }] : []
+        return { ...c, goals: [...existing, goal], goal: undefined }
+      })
+    )
+  }
+
+  function updateGoal(childId, goalId, updates) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        const goals = Array.isArray(c.goals) ? c.goals : c.goal ? [{ id: generateId(), ...c.goal }] : []
+        return { ...c, goals: goals.map((g) => (g.id === goalId ? { ...g, ...updates } : g)), goal: undefined }
+      })
+    )
+  }
+
+  function deleteGoal(childId, goalId) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        const goals = Array.isArray(c.goals) ? c.goals : []
+        return { ...c, goals: goals.filter((g) => g.id !== goalId) }
+      })
+    )
+  }
+
+  // ── Balances ────────────────────────────────────────────
   function addStars(id, amount) {
     const stars = parseFloat(amount) || 0
     setChildren((prev) =>
@@ -47,17 +83,29 @@ export function useChildren() {
     )
   }
 
-  // Returns false if insufficient funds, otherwise deducts and returns true
+  function adjustStars(id, delta) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, starBalance: Math.max(0, c.starBalance + delta) } : c
+      )
+    )
+  }
+
+  function adjustShekels(id, delta) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, shekelBalance: Math.max(0, c.shekelBalance + delta) } : c
+      )
+    )
+  }
+
   function deductMoney(id, amount) {
     const shekels = parseFloat(amount) || 0
     let success = false
     setChildren((prev) =>
       prev.map((c) => {
         if (c.id !== id) return c
-        if (shekels > c.shekelBalance) {
-          success = false
-          return c
-        }
+        if (shekels > c.shekelBalance) { success = false; return c }
         success = true
         return { ...c, shekelBalance: c.shekelBalance - shekels }
       })
@@ -65,8 +113,6 @@ export function useChildren() {
     return success
   }
 
-  // Converts N stars to shekels at the effective rate
-  // Returns the shekel amount converted, or 0 if not enough stars
   function convertStars(id, starCount, settings) {
     const stars = parseFloat(starCount) || 0
     let converted = 0
@@ -76,11 +122,7 @@ export function useChildren() {
         if (stars > c.starBalance) return c
         const rate = c.exchangeRate ?? (settings?.globalExchangeRate ?? DEFAULT_SETTINGS.globalExchangeRate)
         converted = stars * rate
-        return {
-          ...c,
-          starBalance: c.starBalance - stars,
-          shekelBalance: c.shekelBalance + converted,
-        }
+        return { ...c, starBalance: c.starBalance - stars, shekelBalance: c.shekelBalance + converted }
       })
     )
     return converted
@@ -91,8 +133,13 @@ export function useChildren() {
     addChild,
     updateChild,
     deleteChild,
+    addGoal,
+    updateGoal,
+    deleteGoal,
     addStars,
     addMoney,
+    adjustStars,
+    adjustShekels,
     deductMoney,
     convertStars,
   }

@@ -1,10 +1,11 @@
 import { useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
 import TransactionList from './TransactionList.jsx'
+import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
 
@@ -33,7 +34,7 @@ export default function ChildDashboard({ childId }) {
   const childIndex = children.indexOf(child)
   const gradient = CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
   const totalValue = getTotalValue(child, settings)
-  const goalProgress = child.goal ? getGoalProgress(child, settings) : 0
+  const goals = getGoals(child)
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
@@ -54,7 +55,6 @@ export default function ChildDashboard({ childId }) {
           <div className="text-center">
             <div className="text-6xl mb-1">{child.avatar}</div>
             <h1 className="text-2xl font-bold">{child.name}</h1>
-            {/* Birthday chip */}
             {showBirthday && (
               <div className="inline-block mt-1 bg-white/25 rounded-full px-3 py-0.5 text-sm font-semibold animate-pop">
                 {birthdayDays === 0 ? '🎂 יום הולדת שמח! 🎉' : `🎂 עוד ${birthdayDays} ימים!`}
@@ -71,24 +71,16 @@ export default function ChildDashboard({ childId }) {
           </button>
         </div>
 
-        {/* Balance cards — wiggle on change via key */}
+        {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
-            <div
-              key={child.starBalance}
-              className="text-4xl font-bold animate-wiggle"
-              dir="ltr"
-            >
+            <div key={child.starBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
             </div>
             <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
-            <div
-              key={child.shekelBalance}
-              className="text-4xl font-bold animate-wiggle"
-              dir="ltr"
-            >
+            <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
             </div>
             <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
@@ -103,17 +95,23 @@ export default function ChildDashboard({ childId }) {
 
       {/* Content */}
       <main className="flex-1 px-4 py-5 space-y-4">
-        {child.goal && (
-          <GoalProgressBar
-            progress={goalProgress}
-            goalName={child.goal.name}
-            targetAmount={child.goal.targetAmount}
-            goalEmoji={child.goal.emoji}
-            totalValue={totalValue}
-          />
+        {/* Goals — one progress bar per goal */}
+        {goals.length > 0 && (
+          <div className="space-y-2">
+            {goals.map((goal) => (
+              <GoalProgressBar
+                key={goal.id}
+                progress={getGoalProgress(child, settings, goal)}
+                goalName={goal.name}
+                targetAmount={goal.targetAmount}
+                goalEmoji={goal.emoji}
+                totalValue={totalValue}
+              />
+            ))}
+          </div>
         )}
 
-        {/* Action buttons — big, emoji-first, color-coded */}
+        {/* Action buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             onClick={() => showModal('addStars', { childId })}
@@ -156,13 +154,16 @@ export default function ChildDashboard({ childId }) {
           onClick={() => showModal('goal', { childId })}
           className="active:scale-95"
         >
-          {child.goal ? '🎯 ערוך מטרה' : '🎯 קבע מטרה'}
+          {goals.length > 0 ? `🎯 מטרות (${goals.length})` : '🎯 קבע מטרה'}
         </Button>
+
+        {/* Weekly summary */}
+        <WeeklySummary transactions={transactions} />
 
         {/* Transaction history */}
         <div>
           <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>
-          <TransactionList transactions={transactions} />
+          <TransactionList transactions={transactions} childId={childId} />
         </div>
       </main>
     </div>

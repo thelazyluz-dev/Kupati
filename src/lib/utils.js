@@ -3,10 +3,18 @@ export function getTotalValue(child, settings) {
   return child.shekelBalance + child.starBalance * rate
 }
 
-export function getGoalProgress(child, settings) {
-  if (!child.goal || child.goal.targetAmount <= 0) return 0
+// Returns goals array, handling legacy single-goal format
+export function getGoals(child) {
+  if (Array.isArray(child.goals)) return child.goals
+  if (child.goal) return [child.goal]
+  return []
+}
+
+export function getGoalProgress(child, settings, goal) {
+  const g = goal ?? getGoals(child)[0]
+  if (!g || g.targetAmount <= 0) return 0
   const total = getTotalValue(child, settings)
-  return total / child.goal.targetAmount
+  return total / g.targetAmount
 }
 
 export function formatRelativeTime(timestamp) {

@@ -2,6 +2,7 @@ export const DEFAULT_SETTINGS = {
   globalExchangeRate: 2,
   confettiThreshold: 5,
   soundEnabled: true,
+  pin: '',
 }
 
 export const DEFAULT_CHORES = [

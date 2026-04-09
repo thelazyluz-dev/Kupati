@@ -25,15 +25,55 @@ function SoundToggle() {
   )
 }
 
+function PinSettings() {
+  const { settings, updateSettings, showModal, requirePin } = useApp()
+  const hasPin = !!settings.pin
+
+  function handleSetup() {
+    showModal('pin', { mode: hasPin ? 'change' : 'setup' })
+  }
+
+  function handleRemove() {
+    requirePin(() => updateSettings({ pin: '' }))
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-sm text-gray-600">
+          {hasPin ? '🔒 קוד הורים פעיל' : '🔓 אין קוד הורים'}
+        </span>
+        <button
+          type="button"
+          onClick={handleSetup}
+          className="text-sm font-semibold text-indigo-600 hover:text-indigo-800"
+        >
+          {hasPin ? 'שנה קוד' : 'הגדר קוד'}
+        </button>
+      </div>
+      {hasPin && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="w-full text-sm text-red-500 hover:text-red-700 text-right"
+        >
+          הסר קוד
+        </button>
+      )}
+      <p className="text-xs text-gray-400">
+        הקוד יידרש לפני מחיקת ילד או איפוס נתונים
+      </p>
+    </div>
+  )
+}
+
 export default function SettingsPanel() {
-  const { navigate, resetAllData } = useApp()
+  const { navigate, resetAllData, requirePin } = useApp()
   const [confirmReset, setConfirmReset] = useState(false)
 
   function handleExport() {
     const data = exportAll()
-    const blob = new Blob([JSON.stringify(data, null, 2)], {
-      type: 'application/json',
-    })
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
@@ -44,7 +84,6 @@ export default function SettingsPanel() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
-      {/* Header */}
       <header className="bg-gradient-to-br from-gray-700 to-gray-900 px-5 pt-8 pb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="w-9" />
@@ -62,22 +101,24 @@ export default function SettingsPanel() {
         </div>
       </header>
 
-      {/* Content */}
       <main className="flex-1 px-4 py-5 space-y-6">
-        {/* Exchange rates */}
         <ExchangeRateSettings />
-
-        {/* Chore manager */}
         <ChoreManager />
-
-        {/* Children manager */}
         <ChildrenManager />
 
-        {/* Sound toggle */}
+        {/* Sound */}
         <div>
           <h3 className="font-bold text-gray-700 mb-3">🔊 צלילים</h3>
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <SoundToggle />
+          </div>
+        </div>
+
+        {/* PIN */}
+        <div>
+          <h3 className="font-bold text-gray-700 mb-3">🔒 קוד הורים</h3>
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <PinSettings />
           </div>
         </div>
 
@@ -104,7 +145,11 @@ export default function SettingsPanel() {
                   בטוח? כל הנתונים יימחקו לצמיתות!
                 </p>
                 <div className="flex gap-2">
-                  <Button variant="danger" fullWidth onClick={resetAllData}>
+                  <Button
+                    variant="danger"
+                    fullWidth
+                    onClick={() => requirePin(resetAllData)}
+                  >
                     כן, מחק הכל
                   </Button>
                   <Button variant="secondary" fullWidth onClick={() => setConfirmReset(false)}>
@@ -125,7 +170,6 @@ export default function SettingsPanel() {
           </div>
         </div>
 
-        {/* App info */}
         <div className="text-center text-xs text-gray-400 pb-8">
           <p>הארנק שלי 🐷</p>
           <p>כל הנתונים נשמרים מקומית במכשיר</p>

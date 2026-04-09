@@ -1,3 +1,4 @@
+import { useApp } from '../context/AppContext.jsx'
 import { formatRelativeTime, formatNumber } from '../lib/utils.js'
 
 const TYPE_ICON = {
@@ -18,7 +19,8 @@ const TYPE_LABEL = {
   convert_in: 'המרה',
 }
 
-export default function TransactionItem({ transaction }) {
+export default function TransactionItem({ transaction, childId }) {
+  const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const isExpense = type === 'expense' || type === 'convert_out'
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
@@ -46,14 +48,23 @@ export default function TransactionItem({ transaction }) {
 
       {/* Amount */}
       <div
-        className={[
-          'font-bold text-base flex-shrink-0',
-          isExpense ? 'text-red-500' : 'text-emerald-600',
-        ].join(' ')}
+        className={`font-bold text-base flex-shrink-0 ${isExpense ? 'text-red-500' : 'text-emerald-600'}`}
         dir="ltr"
       >
         {sign}{formatNumber(amount)}{currencySymbol}
       </div>
+
+      {/* Edit button */}
+      {childId && (
+        <button
+          type="button"
+          onClick={() => showModal('editTransaction', { childId, transaction })}
+          className="w-8 h-8 flex items-center justify-center rounded-xl bg-gray-50 hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors flex-shrink-0 text-sm active:scale-90"
+          aria-label="ערוך עסקה"
+        >
+          ✏️
+        </button>
+      )}
     </div>
   )
 }

@@ -26,6 +26,22 @@ export function useTransactions() {
     return tx
   }
 
+  function updateTransaction(childId, txId, updates) {
+    setAllTx((prev) => ({
+      ...prev,
+      [childId]: (prev[childId] || []).map((tx) =>
+        tx.id === txId ? { ...tx, ...updates } : tx
+      ),
+    }))
+  }
+
+  function deleteTransaction(childId, txId) {
+    setAllTx((prev) => ({
+      ...prev,
+      [childId]: (prev[childId] || []).filter((tx) => tx.id !== txId),
+    }))
+  }
+
   function clearTransactions(childId) {
     setAllTx((prev) => {
       const next = { ...prev }
@@ -34,5 +50,5 @@ export function useTransactions() {
     })
   }
 
-  return { getTransactions, addTransaction, clearTransactions }
+  return { getTransactions, addTransaction, updateTransaction, deleteTransaction, clearTransactions }
 }

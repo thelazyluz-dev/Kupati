@@ -4,22 +4,17 @@ import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { useTransactions } from '../hooks/useTransactions.js'
 import { clearAll } from '../lib/storage.js'
-import { DEFAULT_CHORES, DEFAULT_SETTINGS } from '../lib/defaults.js'
 
 const AppContext = createContext(null)
 
 export function AppProvider({ children: reactChildren }) {
-  // Domain state
   const childrenApi = useChildren()
   const choresApi = useChores()
   const settingsApi = useSettings()
   const transactionsApi = useTransactions()
 
-  // Navigation: 'home' | 'dashboard' | 'settings'
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
-
-  // Modal state
   const [openModal, setOpenModal] = useState(null)
   const [modalData, setModalData] = useState(null)
 
@@ -38,30 +33,32 @@ export function AppProvider({ children: reactChildren }) {
     setModalData(null)
   }
 
+  function requirePin(onSuccess) {
+    if (!settingsApi.settings.pin) {
+      onSuccess()
+    } else {
+      showModal('pin', { onSuccess })
+    }
+  }
+
   function resetAllData() {
     clearAll()
     window.location.reload()
   }
 
   const value = {
-    // Children
     ...childrenApi,
-    // Chores
     ...choresApi,
-    // Settings
     ...settingsApi,
-    // Transactions
     ...transactionsApi,
-    // Navigation
+    requirePin,
     screen,
     activeChildId,
     navigate,
-    // Modals
     openModal,
     modalData,
     showModal,
     closeModal,
-    // Danger
     resetAllData,
   }
 

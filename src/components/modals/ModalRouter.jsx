@@ -6,6 +6,8 @@ import ExpenseModal from './ExpenseModal.jsx'
 import AddChildModal from './AddChildModal.jsx'
 import EditChildModal from './EditChildModal.jsx'
 import GoalModal from './GoalModal.jsx'
+import PinModal from './PinModal.jsx'
+import EditTransactionModal from './EditTransactionModal.jsx'
 
 export default function ModalRouter() {
   const { openModal } = useApp()
@@ -20,6 +22,8 @@ export default function ModalRouter() {
     addChild: AddChildModal,
     editChild: EditChildModal,
     goal: GoalModal,
+    pin: PinModal,
+    editTransaction: EditTransactionModal,
   }
 
   const ModalComponent = map[openModal]
