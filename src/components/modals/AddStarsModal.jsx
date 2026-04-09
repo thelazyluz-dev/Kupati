@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { useTransactions } from '../../hooks/useTransactions.js'
 import { celebrateStars } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function AddStarsModal() {
-  const { closeModal, modalData, addStars, children, chores, settings } = useApp()
+  const { closeModal, modalData, addStars, children, chores, settings, addTransaction } = useApp()
   const childId = modalData?.childId
   const child = children.find((c) => c.id === childId)
-  const { addTransaction } = useTransactions(childId)
 
   const [tab, setTab] = useState('chore') // 'chore' | 'custom'
   const [selectedChore, setSelectedChore] = useState(null)
@@ -39,7 +37,7 @@ export default function AddStarsModal() {
     if (!amount || amount <= 0) return
 
     addStars(childId, amount)
-    addTransaction({ type, amount, currency: 'stars', description, note })
+    addTransaction(childId, { type, amount, currency: 'stars', description, note })
 
     sounds.star()
     if (amount >= settings.confettiThreshold) celebrateStars()

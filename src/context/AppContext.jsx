@@ -2,6 +2,7 @@ import { createContext, useContext, useState } from 'react'
 import { useChildren } from '../hooks/useChildren.js'
 import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
+import { useTransactions } from '../hooks/useTransactions.js'
 import { clearAll } from '../lib/storage.js'
 import { DEFAULT_CHORES, DEFAULT_SETTINGS } from '../lib/defaults.js'
 
@@ -12,6 +13,7 @@ export function AppProvider({ children: reactChildren }) {
   const childrenApi = useChildren()
   const choresApi = useChores()
   const settingsApi = useSettings()
+  const transactionsApi = useTransactions()
 
   // Navigation: 'home' | 'dashboard' | 'settings'
   const [screen, setScreen] = useState('home')
@@ -48,6 +50,8 @@ export function AppProvider({ children: reactChildren }) {
     ...choresApi,
     // Settings
     ...settingsApi,
+    // Transactions
+    ...transactionsApi,
     // Navigation
     screen,
     activeChildId,

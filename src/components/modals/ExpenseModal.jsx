@@ -1,16 +1,14 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { useTransactions } from '../../hooks/useTransactions.js'
 import { sounds } from '../../lib/sounds.js'
 import { formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function ExpenseModal() {
-  const { closeModal, modalData, children, deductMoney } = useApp()
+  const { closeModal, modalData, children, deductMoney, addTransaction } = useApp()
   const childId = modalData?.childId
   const child = children.find((c) => c.id === childId)
-  const { addTransaction } = useTransactions(childId)
 
   const [amount, setAmount] = useState('')
   const [description, setDescription] = useState('')
@@ -29,7 +27,7 @@ export default function ExpenseModal() {
     const success = deductMoney(childId, shekels)
     if (!success) return
 
-    addTransaction({ type: 'expense', amount: shekels, currency: 'shekels', description: desc, note })
+    addTransaction(childId, { type: 'expense', amount: shekels, currency: 'shekels', description: desc, note })
     sounds.spend()
     closeModal()
   }

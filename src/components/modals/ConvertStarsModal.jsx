@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { useTransactions } from '../../hooks/useTransactions.js'
 import { celebrateGoal, celebrateSmall } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import { getGoalProgress, formatNumber } from '../../lib/utils.js'
@@ -8,10 +7,9 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function ConvertStarsModal() {
-  const { closeModal, modalData, children, settings, convertStars } = useApp()
+  const { closeModal, modalData, children, settings, convertStars, addTransaction } = useApp()
   const childId = modalData?.childId
   const child = children.find((c) => c.id === childId)
-  const { addTransaction } = useTransactions(childId)
   const [starsInput, setStarsInput] = useState('')
 
   if (!child) return null
@@ -29,13 +27,13 @@ export default function ConvertStarsModal() {
 
     const converted = convertStars(childId, stars, settings)
 
-    addTransaction({
+    addTransaction(childId, {
       type: 'convert_out',
       amount: stars,
       currency: 'stars',
       description: `המרת ${formatNumber(stars)}⭐ ל-₪`,
     })
-    addTransaction({
+    addTransaction(childId, {
       type: 'convert_in',
       amount: converted,
       currency: 'shekels',

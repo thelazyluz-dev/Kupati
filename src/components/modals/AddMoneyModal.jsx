@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { useTransactions } from '../../hooks/useTransactions.js'
 import { celebrateGoal, celebrateSmall } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import { getGoalProgress, formatNumber } from '../../lib/utils.js'
@@ -8,10 +7,9 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function AddMoneyModal() {
-  const { closeModal, modalData, children, settings, addMoney } = useApp()
+  const { closeModal, modalData, children, settings, addMoney, addTransaction } = useApp()
   const childId = modalData?.childId
   const child = children.find((c) => c.id === childId)
-  const { addTransaction } = useTransactions(childId)
 
   const [type, setType] = useState('gift')
   const [amount, setAmount] = useState('')
@@ -31,7 +29,7 @@ export default function AddMoneyModal() {
     const prevProgress = child.goal ? getGoalProgress(child, settings) : 0
 
     addMoney(childId, shekels)
-    addTransaction({ type, amount: shekels, currency: 'shekels', description: desc, note })
+    addTransaction(childId, { type, amount: shekels, currency: 'shekels', description: desc, note })
 
     if (child.goal) {
       const updatedChild = { ...child, shekelBalance: child.shekelBalance + shekels }

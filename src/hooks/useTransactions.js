@@ -1,13 +1,15 @@
 import { useLocalStorage } from './useLocalStorage.js'
 import { generateId } from '../lib/utils.js'
 
-export function useTransactions(childId) {
-  const [transactions, setTransactions] = useLocalStorage(
-    `transactions_${childId}`,
-    []
-  )
+// Centralized hook — call once in AppContext, expose via useApp()
+export function useTransactions() {
+  const [allTx, setAllTx] = useLocalStorage('all_transactions', {})
 
-  function addTransaction({ type, amount, currency, description, note = '' }) {
+  function getTransactions(childId) {
+    return allTx[childId] || []
+  }
+
+  function addTransaction(childId, { type, amount, currency, description, note = '' }) {
     const tx = {
       id: generateId(),
       type,        // 'chore' | 'gift' | 'other' | 'expense' | 'convert_out' | 'convert_in'
@@ -17,13 +19,20 @@ export function useTransactions(childId) {
       note,
       timestamp: Date.now(),
     }
-    setTransactions((prev) => [tx, ...prev])
+    setAllTx((prev) => ({
+      ...prev,
+      [childId]: [tx, ...(prev[childId] || [])],
+    }))
     return tx
   }
 
-  function clearTransactions() {
-    setTransactions([])
+  function clearTransactions(childId) {
+    setAllTx((prev) => {
+      const next = { ...prev }
+      delete next[childId]
+      return next
+    })
   }
 
-  return { transactions, addTransaction, clearTransactions }
+  return { getTransactions, addTransaction, clearTransactions }
 }

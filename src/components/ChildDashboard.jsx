@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
-import { useTransactions } from '../hooks/useTransactions.js'
 import { getTotalValue, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
@@ -10,8 +9,8 @@ import Button from './ui/Button.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
 
 export default function ChildDashboard({ childId }) {
-  const { children, navigate, showModal, settings } = useApp()
-  const { transactions } = useTransactions(childId)
+  const { children, navigate, showModal, settings, getTransactions } = useApp()
+  const transactions = getTransactions(childId)
 
   const child = children.find((c) => c.id === childId)
 
