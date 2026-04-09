@@ -12,33 +12,7 @@
     <title>הארנק שלי 🐷</title>
   </head>
   <body>
-    <div id="root">
-      <div id="load-msg" style="font-family:sans-serif;text-align:center;padding:40px;color:#555;direction:ltr">
-        <div style="font-size:48px">🐷</div>
-        <p>Loading...</p>
-      </div>
-    </div>
-    <script>
-      function showErr(msg) {
-        var el = document.getElementById('load-msg');
-        if (el) el.innerHTML = '<div style="color:red;font-size:13px;word-break:break-all;text-align:left;background:#fee;padding:12px;border-radius:8px;direction:ltr">' + msg + '</div>';
-      }
-      // Catch classic errors
-      window.onerror = function(msg, src, line) { showErr('<b>JS Error:</b><br>' + msg + '<br><small>' + src + ':' + line + '</small>'); };
-      // Catch promise errors
-      window.addEventListener('unhandledrejection', function(e) { showErr('<b>Promise Error:</b><br>' + (e.reason && e.reason.message ? e.reason.message : String(e.reason))); });
-      // Catch module load failures (script element error event, capture phase)
-      window.addEventListener('error', function(e) {
-        if (e.target && e.target.tagName === 'SCRIPT') showErr('<b>Module load failed:</b><br>' + e.target.src);
-      }, true);
-      // Fetch-test the main JS bundle to check if it's reachable
-      var jsUrl = '/Kupati/assets/index-C3nAVKAq.js';
-      fetch(jsUrl, { method: 'HEAD' }).then(function(r) {
-        if (!r.ok) showErr('<b>Asset 404:</b><br>' + jsUrl + '<br>Status: ' + r.status);
-      }).catch(function(err) {
-        showErr('<b>Fetch failed:</b><br>' + err.message);
-      });
-    </script>
+    <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
