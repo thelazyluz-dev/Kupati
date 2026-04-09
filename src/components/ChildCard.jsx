@@ -8,7 +8,7 @@ export default function ChildCard({ child, index }) {
   const progress = child.goal ? Math.min(1, getGoalProgress(child, settings)) : 0
 
   const birthdayDays = daysUntilBirthday(child.birthday)
-  const showBirthday = birthdayDays !== null && birthdayDays <= 30
+  const showBirthday = birthdayDays !== null
 
   return (
     <button

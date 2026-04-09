@@ -37,7 +37,7 @@ export default function ChildDashboard({ childId }) {
   const goalProgress = child.goal ? getGoalProgress(child, settings) : 0
 
   const birthdayDays = daysUntilBirthday(child.birthday)
-  const showBirthday = birthdayDays !== null && birthdayDays <= 30
+  const showBirthday = birthdayDays !== null
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
@@ -138,7 +138,7 @@ export default function ChildDashboard({ childId }) {
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-400 hover:bg-emerald-500 active:scale-90 transition-all text-white shadow-sm font-bold"
           >
             <span className="text-2xl">💝</span>
-            <span className="text-sm">הוסף כסף</span>
+            <span className="text-sm">הפקדה</span>
           </button>
 
           <button

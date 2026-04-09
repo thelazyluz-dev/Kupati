@@ -5,6 +5,53 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import EmojiPicker from '../ui/EmojiPicker.jsx'
 
+const MONTHS = [
+  'ינואר','פברואר','מרץ','אפריל','מאי','יוני',
+  'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר',
+]
+
+function BirthdayPicker({ value, onChange }) {
+  // value is "MM-DD" or ''
+  const [month, day] = value ? value.split('-').map(Number) : [0, 0]
+
+  function handleMonth(m) {
+    const d = day || 1
+    onChange(m ? `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}` : '')
+  }
+  function handleDay(d) {
+    const m = month || 1
+    onChange(d ? `${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}` : '')
+  }
+
+  const daysInMonth = month ? new Date(2000, month, 0).getDate() : 31
+
+  return (
+    <div className="flex gap-2" dir="rtl">
+      <select
+        value={month || ''}
+        onChange={(e) => handleMonth(Number(e.target.value))}
+        className="flex-1 rounded-2xl border-2 border-gray-200 px-3 py-3 focus:border-indigo-400 focus:outline-none text-sm"
+      >
+        <option value="">-- חודש --</option>
+        {MONTHS.map((m, i) => (
+          <option key={i + 1} value={i + 1}>{m}</option>
+        ))}
+      </select>
+      <select
+        value={day || ''}
+        onChange={(e) => handleDay(Number(e.target.value))}
+        className="w-24 rounded-2xl border-2 border-gray-200 px-3 py-3 focus:border-indigo-400 focus:outline-none text-sm"
+        disabled={!month}
+      >
+        <option value="">-- יום --</option>
+        {Array.from({ length: daysInMonth }, (_, i) => i + 1).map((d) => (
+          <option key={d} value={d}>{d}</option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 export default function EditChildModal() {
   const { closeModal, modalData, updateChild, deleteChild, navigate } = useApp()
   const child = modalData
@@ -65,25 +112,14 @@ export default function EditChildModal() {
           />
         </div>
 
-        {/* Birthday */}
+        {/* Birthday — two selects: month + day */}
         <div>
           <label className="text-sm font-semibold text-gray-600 block mb-1">
             🎂 יום הולדת (אופציונלי)
           </label>
-          <input
-            type="date"
-            value={birthday ? `2000-${birthday}` : ''}
-            onChange={(e) => {
-              if (!e.target.value) { setBirthday(''); return }
-              // Store only MM-DD, ignore the year
-              const parts = e.target.value.split('-')
-              setBirthday(`${parts[1]}-${parts[2]}`)
-            }}
-            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 focus:border-indigo-400 focus:outline-none"
-            dir="ltr"
-          />
+          <BirthdayPicker value={birthday} onChange={setBirthday} />
           <p className="text-xs text-gray-400 mt-1 text-center">
-            מציג ספירה לאחור על הכרטיס ב-30 הימים האחרונים
+            מציג ספירה לאחור על הכרטיס וה-Dashboard
           </p>
         </div>
 
