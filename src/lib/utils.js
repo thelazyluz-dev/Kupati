@@ -39,3 +39,18 @@ export function formatNumber(n) {
 export function generateId() {
   return crypto.randomUUID()
 }
+
+// Returns days until next birthday, 0 if today, null if no birthday set
+export function daysUntilBirthday(birthdayMMDD) {
+  if (!birthdayMMDD) return null
+  const [month, day] = birthdayMMDD.split('-').map(Number)
+  if (!month || !day) return null
+  const now = new Date()
+  const next = new Date(now.getFullYear(), month - 1, day)
+  // If date already passed this year, use next year
+  if (next < new Date(now.getFullYear(), now.getMonth(), now.getDate())) {
+    next.setFullYear(now.getFullYear() + 1)
+  }
+  const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  return Math.round((next - todayMidnight) / 86400000)
+}

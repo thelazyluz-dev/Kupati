@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { useTransactions } from '../../hooks/useTransactions.js'
+import { sounds } from '../../lib/sounds.js'
 import { formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
@@ -29,6 +30,7 @@ export default function ExpenseModal() {
     if (!success) return
 
     addTransaction({ type: 'expense', amount: shekels, currency: 'shekels', description: desc, note })
+    sounds.spend()
     closeModal()
   }
 

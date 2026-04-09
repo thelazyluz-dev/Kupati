@@ -1,7 +1,9 @@
 import { useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { useTransactions } from '../hooks/useTransactions.js'
-import { getTotalValue, getGoalProgress, formatNumber } from '../lib/utils.js'
+import { getTotalValue, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { celebrateGoal } from '../lib/confetti.js'
+import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
 import TransactionList from './TransactionList.jsx'
 import Button from './ui/Button.jsx'
@@ -13,10 +15,19 @@ export default function ChildDashboard({ childId }) {
 
   const child = children.find((c) => c.id === childId)
 
-  // Guard: if child was deleted, go home
   useEffect(() => {
     if (!child) navigate('home')
   }, [child, navigate])
+
+  // Birthday celebration on open
+  useEffect(() => {
+    if (!child?.birthday) return
+    const days = daysUntilBirthday(child.birthday)
+    if (days === 0) {
+      celebrateGoal()
+      sounds.birthday()
+    }
+  }, [child?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!child) return null
 
@@ -25,49 +36,66 @@ export default function ChildDashboard({ childId }) {
   const totalValue = getTotalValue(child, settings)
   const goalProgress = child.goal ? getGoalProgress(child, settings) : 0
 
+  const birthdayDays = daysUntilBirthday(child.birthday)
+  const showBirthday = birthdayDays !== null && birthdayDays <= 30
+
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
       {/* Header */}
       <header className={`bg-gradient-to-br ${gradient} px-5 pt-8 pb-6 text-white`}>
         <div className="flex items-center justify-between mb-4">
-          {/* Edit button */}
           <button
             onClick={() => showModal('editChild', child)}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
             aria-label="ערוך"
           >
             ✏️
           </button>
 
-          {/* Child info */}
           <div className="text-center">
-            <div className="text-5xl mb-1">{child.avatar}</div>
-            <h1 className="text-xl font-bold">{child.name}</h1>
+            <div className="text-6xl mb-1">{child.avatar}</div>
+            <h1 className="text-2xl font-bold">{child.name}</h1>
+            {/* Birthday chip */}
+            {showBirthday && (
+              <div className="inline-block mt-1 bg-white/25 rounded-full px-3 py-0.5 text-sm font-semibold animate-pop">
+                {birthdayDays === 0 ? '🎂 יום הולדת שמח! 🎉' : `🎂 עוד ${birthdayDays} ימים!`}
+              </div>
+            )}
           </div>
 
-          {/* Back button */}
           <button
             onClick={() => navigate('home')}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
             aria-label="חזור"
           >
             →
           </button>
         </div>
 
-        {/* Balance cards */}
+        {/* Balance cards — wiggle on change via key */}
         <div className="grid grid-cols-2 gap-3">
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
-            <div className="text-3xl font-bold" dir="ltr">{formatNumber(child.starBalance)}</div>
+            <div
+              key={child.starBalance}
+              className="text-4xl font-bold animate-wiggle"
+              dir="ltr"
+            >
+              {formatNumber(child.starBalance)}
+            </div>
             <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
           </div>
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
-            <div className="text-3xl font-bold" dir="ltr">{formatNumber(child.shekelBalance)}₪</div>
+            <div
+              key={child.shekelBalance}
+              className="text-4xl font-bold animate-wiggle"
+              dir="ltr"
+            >
+              {formatNumber(child.shekelBalance)}₪
+            </div>
             <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
           </div>
         </div>
 
-        {/* Total value */}
         <div className="text-center mt-3 text-sm opacity-80">
           סה״כ שווי: <span className="font-bold" dir="ltr">{formatNumber(totalValue)}₪</span>
           {' '}(כולל כוכבים)
@@ -76,7 +104,6 @@ export default function ChildDashboard({ childId }) {
 
       {/* Content */}
       <main className="flex-1 px-4 py-5 space-y-4">
-        {/* Goal progress */}
         {child.goal && (
           <GoalProgressBar
             progress={goalProgress}
@@ -87,45 +114,48 @@ export default function ChildDashboard({ childId }) {
           />
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons — big, emoji-first, color-coded */}
         <div className="grid grid-cols-2 gap-3">
-          <Button
-            variant="warning"
-            fullWidth
+          <button
             onClick={() => showModal('addStars', { childId })}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-amber-400 hover:bg-amber-500 active:scale-90 transition-all text-white shadow-sm font-bold"
           >
-            ⭐ הוסף כוכבים
-          </Button>
-          <Button
-            variant="secondary"
-            fullWidth
-            disabled={child.starBalance === 0}
+            <span className="text-2xl">⭐</span>
+            <span className="text-sm">הוסף כוכבים</span>
+          </button>
+
+          <button
             onClick={() => showModal('convertStars', { childId })}
+            disabled={child.starBalance === 0}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-sky-400 hover:bg-sky-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            🔄 המר כוכבים
-          </Button>
-          <Button
-            variant="success"
-            fullWidth
+            <span className="text-2xl">🔄</span>
+            <span className="text-sm">המר כוכבים</span>
+          </button>
+
+          <button
             onClick={() => showModal('addMoney', { childId })}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-400 hover:bg-emerald-500 active:scale-90 transition-all text-white shadow-sm font-bold"
           >
-            💝 הוסף כסף
-          </Button>
-          <Button
-            variant="danger"
-            fullWidth
-            disabled={child.shekelBalance === 0}
+            <span className="text-2xl">💝</span>
+            <span className="text-sm">הוסף כסף</span>
+          </button>
+
+          <button
             onClick={() => showModal('expense', { childId })}
+            disabled={child.shekelBalance === 0}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-rose-400 hover:bg-rose-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            🛍️ הוצאה
-          </Button>
+            <span className="text-2xl">🛍️</span>
+            <span className="text-sm">הוצאה</span>
+          </button>
         </div>
 
-        {/* Goal button */}
         <Button
           variant="ghost"
           fullWidth
           onClick={() => showModal('goal', { childId })}
+          className="active:scale-95"
         >
           {child.goal ? '🎯 ערוך מטרה' : '🎯 קבע מטרה'}
         </Button>

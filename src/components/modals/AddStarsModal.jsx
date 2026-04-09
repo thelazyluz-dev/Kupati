@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { useTransactions } from '../../hooks/useTransactions.js'
 import { celebrateStars } from '../../lib/confetti.js'
+import { sounds } from '../../lib/sounds.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
@@ -40,6 +41,7 @@ export default function AddStarsModal() {
     addStars(childId, amount)
     addTransaction({ type, amount, currency: 'stars', description, note })
 
+    sounds.star()
     if (amount >= settings.confettiThreshold) celebrateStars()
 
     closeModal()
@@ -79,7 +81,7 @@ export default function AddStarsModal() {
                   key={chore.id}
                   type="button"
                   onClick={() => setSelectedChore(chore)}
-                  className={`flex items-center justify-between p-3 rounded-2xl border-2 text-right transition-all ${
+                  className={`flex items-center justify-between p-4 rounded-2xl border-2 text-right transition-all active:scale-95 ${
                     selectedChore?.id === chore.id
                       ? 'border-indigo-500 bg-indigo-50'
                       : 'border-gray-200 bg-gray-50 hover:border-gray-300'

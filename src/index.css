@@ -12,11 +12,13 @@
     margin: 0;
     padding: 0;
     font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
-    background-color: #f1f5f9;
     color: #1e293b;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     direction: rtl;
+    /* Colorful gradient visible on desktop around the app frame */
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #ec4899 100%);
+    min-height: 100svh;
   }
 
   body {
@@ -28,6 +30,9 @@
     min-height: 100svh;
     max-width: 480px;
     margin: 0 auto;
+    background-color: #f1f5f9;
+    /* Phone-frame shadow visible on desktop */
+    box-shadow: 0 0 80px rgba(0, 0, 0, 0.45);
   }
 }
 

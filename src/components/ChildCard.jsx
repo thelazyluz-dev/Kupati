@@ -1,16 +1,19 @@
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
-import { getGoalProgress, formatNumber } from '../lib/utils.js'
+import { getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
 export default function ChildCard({ child, index }) {
   const { navigate, settings } = useApp()
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
   const progress = child.goal ? Math.min(1, getGoalProgress(child, settings)) : 0
 
+  const birthdayDays = daysUntilBirthday(child.birthday)
+  const showBirthday = birthdayDays !== null && birthdayDays <= 30
+
   return (
     <button
       onClick={() => navigate('dashboard', child.id)}
-      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-lg active:scale-95 transition-transform w-full`}
+      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-lg active:scale-95 hover:scale-105 transition-transform w-full`}
     >
       {/* Avatar */}
       <div className="text-5xl mb-2 text-right">{child.avatar}</div>
@@ -43,6 +46,13 @@ export default function ChildCard({ child, index }) {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
+        </div>
+      )}
+
+      {/* Birthday chip */}
+      {showBirthday && (
+        <div className="mt-2 bg-white/25 rounded-full px-2 py-0.5 text-xs font-semibold text-center animate-pop">
+          {birthdayDays === 0 ? '🎂 יום הולדת!' : `🎂 עוד ${birthdayDays} ימים`}
         </div>
       )}
     </button>

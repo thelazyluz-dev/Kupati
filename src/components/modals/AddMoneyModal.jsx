@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { useTransactions } from '../../hooks/useTransactions.js'
 import { celebrateGoal, celebrateSmall } from '../../lib/confetti.js'
+import { sounds } from '../../lib/sounds.js'
 import { getGoalProgress, formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
@@ -35,8 +36,10 @@ export default function AddMoneyModal() {
     if (child.goal) {
       const updatedChild = { ...child, shekelBalance: child.shekelBalance + shekels }
       const newProgress = getGoalProgress(updatedChild, settings)
-      if (prevProgress < 1 && newProgress >= 1) celebrateGoal()
-      else celebrateSmall()
+      if (prevProgress < 1 && newProgress >= 1) { celebrateGoal(); sounds.goal() }
+      else { celebrateSmall(); sounds.coin() }
+    } else {
+      sounds.coin()
     }
 
     closeModal()

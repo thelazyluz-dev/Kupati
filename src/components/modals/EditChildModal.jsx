@@ -14,6 +14,8 @@ export default function EditChildModal() {
   const [exchangeRate, setExchangeRate] = useState(
     child?.exchangeRate != null ? String(child.exchangeRate) : ''
   )
+  // birthday stored as "MM-DD", e.g. "03-15"
+  const [birthday, setBirthday] = useState(child?.birthday || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
 
   if (!child) return null
@@ -25,6 +27,7 @@ export default function EditChildModal() {
       name: name.trim(),
       avatar,
       exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
+      birthday: birthday || null,
     })
     closeModal()
   }
@@ -62,6 +65,28 @@ export default function EditChildModal() {
           />
         </div>
 
+        {/* Birthday */}
+        <div>
+          <label className="text-sm font-semibold text-gray-600 block mb-1">
+            🎂 יום הולדת (אופציונלי)
+          </label>
+          <input
+            type="date"
+            value={birthday ? `2000-${birthday}` : ''}
+            onChange={(e) => {
+              if (!e.target.value) { setBirthday(''); return }
+              // Store only MM-DD, ignore the year
+              const parts = e.target.value.split('-')
+              setBirthday(`${parts[1]}-${parts[2]}`)
+            }}
+            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 focus:border-indigo-400 focus:outline-none"
+            dir="ltr"
+          />
+          <p className="text-xs text-gray-400 mt-1 text-center">
+            מציג ספירה לאחור על הכרטיס ב-30 הימים האחרונים
+          </p>
+        </div>
+
         {/* Exchange rate */}
         <div>
           <label className="text-sm font-semibold text-gray-600 block mb-1">
@@ -91,20 +116,10 @@ export default function EditChildModal() {
                 בטוח? פעולה זו אינה הפיכה!
               </p>
               <div className="flex gap-2">
-                <Button
-                  variant="danger"
-                  fullWidth
-                  onClick={handleDelete}
-                  type="button"
-                >
+                <Button variant="danger" fullWidth onClick={handleDelete} type="button">
                   כן, מחק
                 </Button>
-                <Button
-                  variant="secondary"
-                  fullWidth
-                  onClick={() => setConfirmDelete(false)}
-                  type="button"
-                >
+                <Button variant="secondary" fullWidth onClick={() => setConfirmDelete(false)} type="button">
                   ביטול
                 </Button>
               </div>

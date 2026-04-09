@@ -6,6 +6,25 @@ import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import ExchangeRateSettings from './ExchangeRateSettings.jsx'
 
+function SoundToggle() {
+  const { settings, updateSettings } = useApp()
+  const enabled = settings.soundEnabled !== false
+  return (
+    <button
+      type="button"
+      onClick={() => updateSettings({ soundEnabled: !enabled })}
+      className="w-full flex items-center justify-between py-1"
+    >
+      <span className="font-semibold text-gray-700">
+        {enabled ? '🔊 צלילים פעילים' : '🔇 צלילים כבויים'}
+      </span>
+      <div className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${enabled ? 'bg-indigo-500' : 'bg-gray-300'}`}>
+        <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${enabled ? 'right-1' : 'right-7'}`} />
+      </div>
+    </button>
+  )
+}
+
 export default function SettingsPanel() {
   const { navigate, resetAllData } = useApp()
   const [confirmReset, setConfirmReset] = useState(false)
@@ -54,6 +73,14 @@ export default function SettingsPanel() {
         {/* Children manager */}
         <ChildrenManager />
 
+        {/* Sound toggle */}
+        <div>
+          <h3 className="font-bold text-gray-700 mb-3">🔊 צלילים</h3>
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <SoundToggle />
+          </div>
+        </div>
+
         {/* Export */}
         <div>
           <h3 className="font-bold text-gray-700 mb-3">💾 גיבוי נתונים</h3>
@@ -80,11 +107,7 @@ export default function SettingsPanel() {
                   <Button variant="danger" fullWidth onClick={resetAllData}>
                     כן, מחק הכל
                   </Button>
-                  <Button
-                    variant="secondary"
-                    fullWidth
-                    onClick={() => setConfirmReset(false)}
-                  >
+                  <Button variant="secondary" fullWidth onClick={() => setConfirmReset(false)}>
                     ביטול
                   </Button>
                 </div>
