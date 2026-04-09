@@ -1,8 +1,35 @@
+import { Component } from 'react'
 import { AppProvider, useApp } from './context/AppContext.jsx'
 import HomeScreen from './components/HomeScreen.jsx'
 import ChildDashboard from './components/ChildDashboard.jsx'
 import SettingsPanel from './components/settings/SettingsPanel.jsx'
 import ModalRouter from './components/modals/ModalRouter.jsx'
+
+class ErrorBoundary extends Component {
+  constructor(props) {
+    super(props)
+    this.state = { error: null }
+  }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: 24, fontFamily: 'sans-serif', direction: 'ltr' }}>
+          <h2 style={{ color: 'red' }}>שגיאה / Error</h2>
+          <pre style={{ whiteSpace: 'pre-wrap', fontSize: 12, background: '#f5f5f5', padding: 12 }}>
+            {String(this.state.error)}
+          </pre>
+          <button onClick={() => window.location.reload()} style={{ marginTop: 12, padding: '8px 16px' }}>
+            רענן / Reload
+          </button>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 function AppInner() {
   const { screen, activeChildId } = useApp()
@@ -21,8 +48,10 @@ function AppInner() {
 
 export default function App() {
   return (
-    <AppProvider>
-      <AppInner />
-    </AppProvider>
+    <ErrorBoundary>
+      <AppProvider>
+        <AppInner />
+      </AppProvider>
+    </ErrorBoundary>
   )
 }
