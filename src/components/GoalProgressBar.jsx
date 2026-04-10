@@ -1,7 +1,7 @@
 import { formatNumber } from '../lib/utils.js'
 
-export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, totalValue }) {
-  const pct = Math.min(1, progress) * 100
+export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, totalValue, choresNeeded }) {
+  const pct     = Math.min(1, progress) * 100
   const reached = progress >= 1
 
   return (
@@ -9,7 +9,7 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
       className={[
         'rounded-2xl p-4',
         reached
-          ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300 animate-pulse-gold'
+          ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300'
           : 'bg-white border border-gray-100',
       ].join(' ')}
     >
@@ -39,9 +39,14 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
         />
       </div>
 
-      {reached && (
+      {/* "X more chores" hint OR reached message */}
+      {reached ? (
         <p className="text-center mt-2 text-amber-700 font-bold text-sm animate-bounce">
-          🎉 הגעת למטרה! 🎉
+          🎉 הגעת למטרה! בקש מהורה לממש 🎉
+        </p>
+      ) : choresNeeded != null && (
+        <p className="text-center mt-2 text-indigo-600 text-sm font-semibold">
+          💪 עוד ~{choresNeeded} מטלות ואתה שם!
         </p>
       )}
     </div>

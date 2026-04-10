@@ -4,10 +4,12 @@ import { celebrateStars } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
+import SuccessOverlay from '../SuccessOverlay.jsx'
 
 export default function AddStarsModal() {
   const { closeModal, modalData, addStars, children, chores, settings, addTransaction } = useApp()
   const childId = modalData?.childId
+  const allowFreeEntry = modalData?.allowFreeEntry ?? false
   const child = children.find((c) => c.id === childId)
 
   const [tab, setTab] = useState('chore') // 'chore' | 'custom'
@@ -15,6 +17,7 @@ export default function AddStarsModal() {
   const [customStars, setCustomStars] = useState('')
   const [customDesc, setCustomDesc] = useState('')
   const [note, setNote] = useState('')
+  const [success, setSuccess] = useState(null) // { amount, description } | null
 
   if (!child) return null
 
@@ -42,33 +45,48 @@ export default function AddStarsModal() {
     sounds.star()
     if (amount >= settings.confettiThreshold) celebrateStars()
 
-    closeModal()
+    setSuccess({ amount, description })
+  }
+
+  const title = allowFreeEntry ? '⭐ הוסף כוכבים — מצב הורה ✏️' : '⭐ עשיתי מטלה!'
+
+  if (success) {
+    return (
+      <SuccessOverlay
+        name={child.name}
+        amount={success.amount}
+        description={success.description}
+        onDone={closeModal}
+      />
+    )
   }
 
   return (
-    <Modal title="⭐ הוסף כוכבים" onClose={closeModal}>
+    <Modal title={title} onClose={closeModal}>
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Tabs */}
-        <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
-          <button
-            type="button"
-            onClick={() => setTab('chore')}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
-              tab === 'chore' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'
-            }`}
-          >
-            📋 בחר מטלה
-          </button>
-          <button
-            type="button"
-            onClick={() => setTab('custom')}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
-              tab === 'custom' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'
-            }`}
-          >
-            ✏️ כניסה חופשית
-          </button>
-        </div>
+        {/* Tabs — free-entry only visible in parent mode */}
+        {allowFreeEntry && (
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
+            <button
+              type="button"
+              onClick={() => setTab('chore')}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
+                tab === 'chore' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'
+              }`}
+            >
+              📋 בחר מטלה
+            </button>
+            <button
+              type="button"
+              onClick={() => setTab('custom')}
+              className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all ${
+                tab === 'custom' ? 'bg-white shadow text-indigo-600' : 'text-gray-500'
+              }`}
+            >
+              ✏️ כניסה חופשית
+            </button>
+          </div>
+        )}
 
         {tab === 'chore' ? (
           <div className="space-y-2">

@@ -48,6 +48,21 @@ export function generateId() {
   return crypto.randomUUID()
 }
 
+// How many chores (on average) until the child reaches a goal
+// Returns null if already reached or no goal
+export function starsNeededForGoal(child, settings, goal, chores) {
+  if (!goal) return null
+  const rate = child.exchangeRate ?? settings.globalExchangeRate
+  const total = getTotalValue(child, settings)
+  const shekelGap = goal.targetAmount - total
+  if (shekelGap <= 0) return null          // already reached
+  const starsGap = shekelGap / rate        // stars still needed
+  const avgStars = chores?.length
+    ? chores.reduce((s, c) => s + (c.defaultStars || 0), 0) / chores.length
+    : 2                                    // fallback avg
+  return Math.ceil(starsGap / avgStars)   // number of average chores
+}
+
 // Returns days until next birthday, 0 if today, null if no birthday set
 export function daysUntilBirthday(birthdayMMDD) {
   if (!birthdayMMDD) return null

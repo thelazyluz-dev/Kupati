@@ -1,6 +1,6 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useCallback } from 'react'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, starsNeededForGoal } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -9,8 +9,33 @@ import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
 
+// Long-press hook: fires onLong after holdMs, onTap on quick release
+function useLongPress(onTap, onLong, holdMs = 1500) {
+  const timer = useRef(null)
+  const fired = useRef(false)
+
+  const start = useCallback(() => {
+    fired.current = false
+    timer.current = setTimeout(() => {
+      fired.current = true
+      onLong()
+    }, holdMs)
+  }, [onLong, holdMs])
+
+  const cancel = useCallback(() => {
+    clearTimeout(timer.current)
+  }, [])
+
+  const end = useCallback(() => {
+    clearTimeout(timer.current)
+    if (!fired.current) onTap()
+  }, [onTap])
+
+  return { onMouseDown: start, onMouseUp: end, onMouseLeave: cancel, onTouchStart: start, onTouchEnd: end }
+}
+
 export default function ChildDashboard({ childId }) {
-  const { children, navigate, showModal, settings, getTransactions } = useApp()
+  const { children, navigate, showModal, settings, getTransactions, chores } = useApp()
   const transactions = getTransactions(childId)
 
   const child = children.find((c) => c.id === childId)
@@ -19,25 +44,33 @@ export default function ChildDashboard({ childId }) {
     if (!child) navigate('home')
   }, [child, navigate])
 
-  // Birthday celebration on open
   useEffect(() => {
     if (!child?.birthday) return
     const days = daysUntilBirthday(child.birthday)
-    if (days === 0) {
-      celebrateGoal()
-      sounds.birthday()
-    }
+    if (days === 0) { celebrateGoal(); sounds.birthday() }
   }, [child?.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Long-press on ⭐ button: regular tap = chores only, long = parent mode (free entry)
+  const starsLongPress = useLongPress(
+    useCallback(() => showModal('addStars', { childId, allowFreeEntry: false }), [childId, showModal]),
+    useCallback(() => showModal('addStars', { childId, allowFreeEntry: true }),  [childId, showModal]),
+  )
 
   if (!child) return null
 
   const childIndex = children.indexOf(child)
-  const gradient = CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
+  const gradient   = CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
   const totalValue = getTotalValue(child, settings)
-  const goals = getGoals(child)
+  const goals      = getGoals(child)
+  const rate       = child.exchangeRate ?? settings.globalExchangeRate
+  const starsValue = child.starBalance * rate
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
+
+  // For stars chip: how far from first goal
+  const firstGoal = goals[0] ?? null
+  const remaining = firstGoal ? Math.max(0, firstGoal.targetAmount - totalValue) : 0
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
@@ -73,52 +106,66 @@ export default function ChildDashboard({ childId }) {
 
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
+          {/* Stars card */}
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
             <div key={child.starBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
             </div>
             <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
+            {/* Stars → money translation */}
+            {child.starBalance > 0 && (
+              <div className="text-xs opacity-75 mt-1">
+                {firstGoal && remaining > 0
+                  ? `= ${formatNumber(starsValue)}₪ · עוד ${formatNumber(remaining)}₪`
+                  : `= 💵 ${formatNumber(starsValue)}₪`}
+              </div>
+            )}
           </div>
+          {/* Shekels card */}
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
             <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
             </div>
             <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
+            {firstGoal && remaining > 0 && child.shekelBalance > 0 && (
+              <div className="text-xs opacity-75 mt-1">
+                עוד {formatNumber(Math.max(0, firstGoal.targetAmount - totalValue))}₪ למטרה
+              </div>
+            )}
           </div>
-        </div>
-
-        <div className="text-center mt-3 text-sm opacity-80">
-          סה״כ שווי: <span className="font-bold" dir="ltr">{formatNumber(totalValue)}₪</span>
-          {' '}(כולל כוכבים)
         </div>
       </header>
 
       {/* Content */}
       <main className="flex-1 px-4 py-5 space-y-4">
-        {/* Goals — one progress bar per goal */}
+        {/* Goals */}
         {goals.length > 0 && (
           <div className="space-y-2">
-            {goals.map((goal) => (
-              <GoalProgressBar
-                key={goal.id}
-                progress={getGoalProgress(child, settings, goal)}
-                goalName={goal.name}
-                targetAmount={goal.targetAmount}
-                goalEmoji={goal.emoji}
-                totalValue={totalValue}
-              />
-            ))}
+            {goals.map((goal) => {
+              const needed = starsNeededForGoal(child, settings, goal, chores)
+              return (
+                <GoalProgressBar
+                  key={goal.id}
+                  progress={getGoalProgress(child, settings, goal)}
+                  goalName={goal.name}
+                  targetAmount={goal.targetAmount}
+                  goalEmoji={goal.emoji}
+                  totalValue={totalValue}
+                  choresNeeded={needed}
+                />
+              )
+            })}
           </div>
         )}
 
-        {/* Action buttons */}
+        {/* Action buttons — first-person labels, long-press on ⭐ for parent mode */}
         <div className="grid grid-cols-2 gap-3">
           <button
-            onClick={() => showModal('addStars', { childId })}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-amber-400 hover:bg-amber-500 active:scale-90 transition-all text-white shadow-sm font-bold"
+            {...starsLongPress}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-amber-400 hover:bg-amber-500 active:scale-90 transition-all text-white shadow-sm font-bold select-none"
           >
             <span className="text-2xl">⭐</span>
-            <span className="text-sm">הוסף כוכבים</span>
+            <span className="text-sm">עשיתי מטלה!</span>
           </button>
 
           <button
@@ -127,7 +174,7 @@ export default function ChildDashboard({ childId }) {
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-sky-400 hover:bg-sky-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span className="text-2xl">🔄</span>
-            <span className="text-sm">המר כוכבים</span>
+            <span className="text-sm">המר לכסף</span>
           </button>
 
           <button
@@ -135,7 +182,7 @@ export default function ChildDashboard({ childId }) {
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-400 hover:bg-emerald-500 active:scale-90 transition-all text-white shadow-sm font-bold"
           >
             <span className="text-2xl">💝</span>
-            <span className="text-sm">הפקדה</span>
+            <span className="text-sm">קיבלתי כסף</span>
           </button>
 
           <button
@@ -144,7 +191,7 @@ export default function ChildDashboard({ childId }) {
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-rose-400 hover:bg-rose-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
           >
             <span className="text-2xl">🛍️</span>
-            <span className="text-sm">הוצאה</span>
+            <span className="text-sm">קניתי משהו</span>
           </button>
         </div>
 
@@ -157,10 +204,8 @@ export default function ChildDashboard({ childId }) {
           {goals.length > 0 ? `🎯 מטרות (${goals.length})` : '🎯 קבע מטרה'}
         </Button>
 
-        {/* Weekly summary */}
         <WeeklySummary transactions={transactions} />
 
-        {/* Transaction history */}
         <div>
           <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>
           <TransactionList transactions={transactions} childId={childId} />
