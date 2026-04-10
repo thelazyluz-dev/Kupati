@@ -27,6 +27,7 @@ export default {
         'pop':            'pop 0.2s cubic-bezier(0.34,1.56,0.64,1)',
         'star-burst':     'star-burst 0.5s cubic-bezier(0.34,1.56,0.64,1)',
         'spin-slow':      'spin 8s linear infinite',
+        'shimmer':        'shimmer 2.2s linear infinite',
       },
       keyframes: {
         'progress-fill': {
@@ -80,6 +81,10 @@ export default {
           '0%':   { opacity: '0', transform: 'scale(0) rotate(-20deg)' },
           '60%':  { opacity: '1', transform: 'scale(1.25) rotate(8deg)' },
           '100%': { opacity: '1', transform: 'scale(1) rotate(0deg)' },
+        },
+        'shimmer': {
+          '0%':   { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
         },
       },
     },

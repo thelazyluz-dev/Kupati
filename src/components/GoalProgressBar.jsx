@@ -34,16 +34,36 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
       </div>
 
       {/* Progress track */}
-      <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+      <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden relative">
         <div
           className={[
-            'h-4 rounded-full transition-all duration-700',
+            'h-5 rounded-full transition-all duration-700 relative overflow-hidden',
             reached
               ? 'bg-gradient-to-r from-amber-400 to-yellow-500'
               : 'bg-gradient-to-r from-indigo-400 to-purple-500',
           ].join(' ')}
           style={{ width: `${pct}%` }}
-        />
+        >
+          {/* Shimmer sweep */}
+          {!reached && pct > 0 && (
+            <span
+              className="absolute inset-0 animate-shimmer"
+              style={{
+                background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.35) 50%, transparent 100%)',
+                backgroundSize: '200% 100%',
+              }}
+            />
+          )}
+        </div>
+        {/* Percentage label inside bar */}
+        {pct >= 18 && (
+          <span
+            className="absolute inset-0 flex items-center justify-center text-white font-bold pointer-events-none"
+            style={{ fontSize: '11px', paddingRight: `${100 - pct}%` }}
+          >
+            {Math.round(pct)}%
+          </span>
+        )}
       </div>
 
       {reached ? (

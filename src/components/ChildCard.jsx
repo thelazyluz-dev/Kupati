@@ -18,23 +18,23 @@ export default function ChildCard({ child, index }) {
   return (
     <button
       onClick={() => navigate('dashboard', child.id)}
-      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-lg active:scale-95 hover:scale-105 transition-transform w-full`}
+      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-xl active:scale-95 hover:scale-105 transition-transform w-full`}
     >
-      {/* Avatar */}
-      <div className="text-5xl mb-2 text-right">{child.avatar}</div>
+      {/* Avatar with subtle glow ring */}
+      <div className="text-5xl mb-2 text-right drop-shadow-md">{child.avatar}</div>
 
       {/* Name */}
       <div className="font-bold text-lg leading-tight mb-3">{child.name}</div>
 
-      {/* Balances */}
-      <div className="flex flex-col gap-1 text-sm">
-        <div className="flex items-center gap-1 justify-end">
-          <span className="font-semibold">{formatNumber(child.starBalance)}</span>
-          <span>⭐</span>
+      {/* Balances as pill chips */}
+      <div className="flex flex-col gap-1.5">
+        <div className="flex items-center justify-end gap-1.5 bg-white/20 rounded-xl px-2.5 py-1">
+          <span className="font-bold text-sm">{formatNumber(child.starBalance)}</span>
+          <span className="text-sm">⭐</span>
         </div>
-        <div className="flex items-center gap-1 justify-end">
-          <span className="font-semibold">{formatNumber(child.shekelBalance)}</span>
-          <span>₪</span>
+        <div className="flex items-center justify-end gap-1.5 bg-white/20 rounded-xl px-2.5 py-1">
+          <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
+          <span className="text-sm">₪</span>
         </div>
       </div>
 

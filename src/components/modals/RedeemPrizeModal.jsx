@@ -69,43 +69,42 @@ export default function RedeemPrizeModal() {
             </div>
           </div>
         ) : (
-          /* Prize list */
-          <div className="space-y-2">
+          /* Prize store grid */
+          <div>
             {prizes.length === 0 ? (
               <p className="text-center text-gray-400 py-8">
                 אין פרסים במחירון — ביקש מההורים להוסיף!
               </p>
             ) : (
-              prizes.map((prize) => {
-                const canAfford = child.starBalance >= prize.starCost
-                return (
-                  <button
-                    key={prize.id}
-                    type="button"
-                    onClick={() => handleSelect(prize)}
-                    disabled={!canAfford}
-                    className={[
-                      'w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-right transition-all',
-                      canAfford
-                        ? 'bg-purple-50 hover:bg-purple-100 active:scale-98 border border-purple-200'
-                        : 'bg-gray-50 border border-gray-200 opacity-50',
-                    ].join(' ')}
-                  >
-                    <span className="text-3xl flex-shrink-0">{prize.emoji}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-gray-800 text-sm">{prize.name}</p>
+              <div className="grid grid-cols-2 gap-3">
+                {prizes.map((prize) => {
+                  const canAfford = child.starBalance >= prize.starCost
+                  return (
+                    <button
+                      key={prize.id}
+                      type="button"
+                      onClick={() => handleSelect(prize)}
+                      className={[
+                        'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all',
+                        canAfford
+                          ? 'bg-gradient-to-b from-purple-50 to-white border-purple-200 hover:border-purple-400 hover:shadow-md active:scale-95'
+                          : 'bg-gray-50 border-gray-200 grayscale opacity-50',
+                      ].join(' ')}
+                    >
+                      <span className="text-4xl">{prize.emoji}</span>
+                      <p className="font-bold text-gray-800 text-xs leading-tight">{prize.name}</p>
+                      <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${canAfford ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
+                        {prize.starCost}⭐
+                      </div>
                       {!canAfford && (
-                        <p className="text-xs text-gray-400">
+                        <p className="text-xs text-gray-400 leading-tight">
                           חסרים {formatNumber(prize.starCost - child.starBalance)}⭐
                         </p>
                       )}
-                    </div>
-                    <div className={`font-bold text-sm flex-shrink-0 ${canAfford ? 'text-purple-600' : 'text-gray-400'}`}>
-                      {prize.starCost}⭐
-                    </div>
-                  </button>
-                )
-              })
+                    </button>
+                  )
+                })}
+              </div>
             )}
           </div>
         )}

@@ -17,6 +17,17 @@ function SectionHeader({ icon, label, color }) {
   )
 }
 
+function SettingsSection({ icon, label, iconColor, accent, children }) {
+  return (
+    <section>
+      <SectionHeader icon={icon} label={label} color={iconColor} />
+      <div className={`bg-white rounded-2xl shadow-sm p-4 border-r-4 ${accent}`}>
+        {children}
+      </div>
+    </section>
+  )
+}
+
 function SoundToggle() {
   const { settings, updateSettings } = useApp()
   const enabled = settings.soundEnabled !== false
@@ -118,36 +129,22 @@ export default function SettingsPanel() {
       <main className="flex-1 px-4 py-5 space-y-5">
         <ChoreManager />
 
-        {/* Prize catalog */}
-        <section>
-          <SectionHeader icon="🎁" label="מחירון פרסים בכוכבים" color="bg-purple-100 text-purple-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <PrizeManager />
-          </div>
-        </section>
+        <SettingsSection icon="🎁" label="מחירון פרסים בכוכבים" iconColor="bg-purple-100 text-purple-600" accent="border-purple-400">
+          <PrizeManager />
+        </SettingsSection>
 
         <ChildrenManager />
 
-        {/* Sound */}
-        <section>
-          <SectionHeader icon="🔊" label="צלילים" color="bg-violet-100 text-violet-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <SoundToggle />
-          </div>
-        </section>
+        <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">
+          <SoundToggle />
+        </SettingsSection>
 
-        {/* PIN */}
-        <section>
-          <SectionHeader icon="🔒" label="קוד הורים" color="bg-slate-100 text-slate-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4">
-            <PinSettings />
-          </div>
-        </section>
+        <SettingsSection icon="🔒" label="קוד הורים" iconColor="bg-slate-100 text-slate-600" accent="border-slate-400">
+          <PinSettings />
+        </SettingsSection>
 
-        {/* Export */}
-        <section>
-          <SectionHeader icon="💾" label="גיבוי נתונים" color="bg-sky-100 text-sky-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
+        <SettingsSection icon="💾" label="גיבוי נתונים" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
+          <div className="space-y-3">
             <Button variant="secondary" fullWidth onClick={handleExport}>
               📥 ייצא JSON
             </Button>
@@ -155,12 +152,12 @@ export default function SettingsPanel() {
               כל הנתונים יורדו כקובץ JSON לגיבוי
             </p>
           </div>
-        </section>
+        </SettingsSection>
 
         {/* Danger zone */}
         <section>
           <SectionHeader icon="⚠️" label="אזור מסוכן" color="bg-red-100 text-red-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4">
+          <div className="bg-white rounded-2xl shadow-sm p-4 border-r-4 border-red-400">
             {confirmReset ? (
               <div className="space-y-3">
                 <p className="text-sm text-red-600 font-semibold text-center">

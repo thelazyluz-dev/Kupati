@@ -158,19 +158,19 @@ export default function ChildDashboard({ childId }) {
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Shekels card */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+          <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
             <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
             </div>
             <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
             {firstGoal && totalValue < firstGoal.targetAmount && (
-              <div className="text-xs opacity-75 mt-1">
-                עוד {formatNumber(firstGoal.targetAmount - totalValue)}₪ למטרה
+              <div className="text-xs opacity-70 mt-1 bg-white/20 rounded-full px-2 py-0.5 inline-block">
+                עוד {formatNumber(firstGoal.targetAmount - totalValue)}₪
               </div>
             )}
           </div>
           {/* Stars card */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+          <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
             <div key={child.starBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
             </div>
@@ -202,7 +202,7 @@ export default function ChildDashboard({ childId }) {
         <div className="grid grid-cols-2 gap-3">
           <button
             {...starsLongPress}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-amber-400 hover:bg-amber-500 active:scale-90 transition-all text-white shadow-sm font-bold select-none"
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-90 transition-all text-white shadow-md font-bold select-none"
           >
             <span className="text-2xl">⭐</span>
             <span className="text-sm">עשיתי מטלה!</span>
@@ -213,7 +213,7 @@ export default function ChildDashboard({ childId }) {
               if (child.starBalance === 0) setHint('⭐ אין לך כוכבים עדיין — עשה מטלה!')
               else showModal('redeemPrize', { childId, child })
             }}
-            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.starBalance === 0 ? 'bg-purple-300 opacity-60' : 'bg-purple-500 hover:bg-purple-600'}`}
+            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-md font-bold ${child.starBalance === 0 ? 'opacity-50 bg-gradient-to-br from-purple-300 to-violet-400' : 'bg-gradient-to-br from-purple-500 to-violet-600'}`}
           >
             <span className="text-2xl">🎁</span>
             <span className="text-sm">מימוש פרס</span>
@@ -221,7 +221,7 @@ export default function ChildDashboard({ childId }) {
 
           <button
             onClick={() => showModal('addMoney', { childId })}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-400 hover:bg-emerald-500 active:scale-90 transition-all text-white shadow-sm font-bold"
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 active:scale-90 transition-all text-white shadow-md font-bold"
           >
             <span className="text-2xl">💝</span>
             <span className="text-sm">קיבלתי כסף</span>
@@ -232,7 +232,7 @@ export default function ChildDashboard({ childId }) {
               if (child.shekelBalance === 0) setHint('💵 אין לך שקלים עדיין — בקש מהורה להפקיד!')
               else showModal('expense', { childId })
             }}
-            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.shekelBalance === 0 ? 'bg-rose-300 opacity-60' : 'bg-rose-400 hover:bg-rose-500'}`}
+            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-md font-bold ${child.shekelBalance === 0 ? 'opacity-50 bg-gradient-to-br from-rose-300 to-pink-400' : 'bg-gradient-to-br from-rose-400 to-pink-500'}`}
           >
             <span className="text-2xl">🛍️</span>
             <span className="text-sm">קניתי משהו</span>
