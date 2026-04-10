@@ -1,8 +1,15 @@
+import { useState } from 'react'
 import { formatNumber } from '../lib/utils.js'
 
-export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, totalValue, choresNeeded }) {
+export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, totalValue, choresNeeded, onRedeem }) {
   const pct     = Math.min(1, progress) * 100
   const reached = progress >= 1
+  const [confirm, setConfirm] = useState(false)
+
+  function handleRedeem() {
+    if (!confirm) { setConfirm(true); return }
+    onRedeem()
+  }
 
   return (
     <div
@@ -39,11 +46,40 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
         />
       </div>
 
-      {/* "X more chores" hint OR reached message */}
       {reached ? (
-        <p className="text-center mt-2 text-amber-700 font-bold text-sm animate-bounce">
-          🎉 הגעת למטרה! בקש מהורה לממש 🎉
-        </p>
+        <div className="mt-3 space-y-2">
+          <p className="text-center text-amber-700 font-bold text-sm animate-bounce">
+            🎉 הגעת למטרה! 🎉
+          </p>
+          {onRedeem && (
+            confirm ? (
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleRedeem}
+                  className="flex-1 py-2 rounded-xl bg-emerald-500 text-white font-bold text-sm active:scale-95 transition-transform"
+                >
+                  ✅ כן, ממש!
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirm(false)}
+                  className="flex-1 py-2 rounded-xl bg-gray-200 text-gray-600 font-bold text-sm active:scale-95 transition-transform"
+                >
+                  ביטול
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleRedeem}
+                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm active:scale-95 transition-all shadow-sm"
+              >
+                🛒 ממש מטרה — קנינו!
+              </button>
+            )
+          )}
+        </div>
       ) : choresNeeded != null && (
         <p className="text-center mt-2 text-indigo-600 text-sm font-semibold">
           💪 עוד ~{choresNeeded} מטלות ואתה שם!

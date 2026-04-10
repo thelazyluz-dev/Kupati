@@ -52,7 +52,8 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
 }
 
 export default function ChildDashboard({ childId }) {
-  const { children, navigate, showModal, settings, getTransactions, chores } = useApp()
+  const { children, navigate, showModal, settings, getTransactions, chores,
+          adjustShekels, adjustStars, deleteGoal, addTransaction } = useApp()
   const transactions = getTransactions(childId)
 
   const child = children.find((c) => c.id === childId)
@@ -74,6 +75,28 @@ export default function ChildDashboard({ childId }) {
   )
 
   if (!child) return null
+
+  function handleRedeem(goal) {
+    const rate = child.exchangeRate ?? settings.globalExchangeRate
+    // Deduct shekels first, then stars for the remainder
+    const shekelDeduct = Math.min(child.shekelBalance, goal.targetAmount)
+    const remainder    = goal.targetAmount - shekelDeduct
+    const starDeduct   = remainder > 0 ? remainder / rate : 0
+
+    if (shekelDeduct > 0) adjustShekels(childId, -shekelDeduct)
+    if (starDeduct   > 0) adjustStars(childId, -starDeduct)
+
+    addTransaction(childId, {
+      type: 'expense',
+      amount: goal.targetAmount,
+      currency: 'shekels',
+      description: `✅ מומש: ${goal.emoji ?? ''} ${goal.name}`,
+    })
+
+    deleteGoal(childId, goal.id)
+    celebrateGoal()
+    sounds.goal()
+  }
 
   const childIndex = children.indexOf(child)
   const gradient   = CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
@@ -169,6 +192,7 @@ export default function ChildDashboard({ childId }) {
                   goalEmoji={goal.emoji}
                   totalValue={totalValue}
                   choresNeeded={needed}
+                  onRedeem={() => handleRedeem(goal)}
                 />
               )
             })}
