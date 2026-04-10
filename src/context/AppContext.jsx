@@ -67,12 +67,51 @@ export function AppProvider({ children: reactChildren }) {
     return tx
   }
 
+  // ── Savings wrappers (log transaction + update child) ──────────────
+  function startSavings(childId, { amount, termMonths }) {
+    const saving = childrenApi.openSavings(childId, { amount, termMonths })
+    addTransaction(childId, {
+      type: 'savings_open',
+      amount,
+      currency: 'shekels',
+      description: `🏦 חסכון נפתח — ${termMonths} חודש${termMonths > 1 ? 'ים' : ''}`,
+    })
+    return saving
+  }
+
+  function finishSavings(childId, savingId, mode) {
+    const child = childrenApi.children.find((c) => c.id === childId)
+    const saving = (child?.savings || []).find((s) => s.id === savingId)
+    if (!saving) return
+    const interest = saving.amount * 0.10 * saving.termMonths
+    if (mode === 'matured') {
+      const total = saving.amount + interest
+      childrenApi.closeSavings(childId, savingId, 'matured', total)
+      addTransaction(childId, {
+        type: 'savings_close',
+        amount: total,
+        currency: 'shekels',
+        description: `💰 חסכון הבשיל! (${saving.termMonths} חודש${saving.termMonths > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`,
+      })
+    } else {
+      childrenApi.closeSavings(childId, savingId, 'early', saving.amount)
+      addTransaction(childId, {
+        type: 'savings_early',
+        amount: saving.amount,
+        currency: 'shekels',
+        description: `⚠️ פדיון מוקדם — ריבית של ${Math.round(interest)}₪ אבדה`,
+      })
+    }
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
     ...settingsApi,
     ...transactionsApi,
     addTransaction,   // override with badge-aware version
+    startSavings,
+    finishSavings,
     requirePin,
     resetChildData,
     pendingBadge,

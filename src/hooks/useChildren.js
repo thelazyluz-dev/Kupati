@@ -136,6 +136,40 @@ export function useChildren() {
     )
   }
 
+  // ── Savings ─────────────────────────────────────────────
+  function openSavings(id, { amount, termMonths }) {
+    const startDate = Date.now()
+    const md = new Date(startDate)
+    md.setMonth(md.getMonth() + termMonths)
+    const saving = { id: generateId(), amount, termMonths, startDate, maturityDate: md.getTime(), status: 'active' }
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== id ? c : {
+          ...c,
+          shekelBalance: Math.max(0, c.shekelBalance - amount),
+          savings: [...(c.savings || []), saving],
+        }
+      )
+    )
+    return saving
+  }
+
+  // mode: 'matured' | 'early'
+  function closeSavings(id, savingId, mode, creditAmount) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== id) return c
+        return {
+          ...c,
+          shekelBalance: c.shekelBalance + creditAmount,
+          savings: (c.savings || []).map((s) =>
+            s.id !== savingId ? s : { ...s, status: mode === 'matured' ? 'matured' : 'withdrawn_early' }
+          ),
+        }
+      })
+    )
+  }
+
   function awardBadge(id, badge) {
     setChildren((prev) =>
       prev.map((c) =>
@@ -163,5 +197,7 @@ export function useChildren() {
     convertStars,
     resetChild,
     awardBadge,
+    openSavings,
+    closeSavings,
   }
 }

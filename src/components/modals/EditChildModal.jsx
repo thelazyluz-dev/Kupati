@@ -99,9 +99,6 @@ export default function EditChildModal() {
   const [name, setName] = useState(child?.name || '')
   const [avatar, setAvatar] = useState(child?.avatar || '🦁')
   const [colorKey, setColorKey] = useState(child?.colorKey || '')
-  const [exchangeRate, setExchangeRate] = useState(
-    child?.exchangeRate != null ? String(child.exchangeRate) : ''
-  )
   const [birthday, setBirthday] = useState(child?.birthday || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -115,7 +112,6 @@ export default function EditChildModal() {
       name: name.trim(),
       avatar,
       colorKey: colorKey || null,
-      exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
       birthday: birthday || null,
     })
     closeModal()
@@ -167,24 +163,7 @@ export default function EditChildModal() {
           </p>
         </div>
 
-        {/* Exchange rate */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            שער המרה אישי (₪ לכוכב)
-          </label>
-          <input
-            type="number"
-            min="0.1"
-            step="0.1"
-            value={exchangeRate}
-            onChange={(e) => setExchangeRate(e.target.value)}
-            placeholder="כברירת מחדל גלובלית"
-            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 focus:border-indigo-400 focus:outline-none"
-            dir="ltr"
-          />
-        </div>
-
-        <Button type="submit" fullWidth size="lg" disabled={!name.trim()}>
+<Button type="submit" fullWidth size="lg" disabled={!name.trim()}>
           💾 שמור שינויים
         </Button>
 

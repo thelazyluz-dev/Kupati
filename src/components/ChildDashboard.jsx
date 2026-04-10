@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, starsNeededForGoal } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -53,8 +53,8 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
 }
 
 export default function ChildDashboard({ childId }) {
-  const { children, navigate, showModal, settings, getTransactions, chores,
-          adjustShekels, adjustStars, deleteGoal, addTransaction,
+  const { children, navigate, showModal, settings, getTransactions,
+          adjustShekels, deleteGoal, addTransaction, finishSavings,
           pendingBadge, clearPendingBadge } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
@@ -71,6 +71,15 @@ export default function ChildDashboard({ childId }) {
     if (days === 0) { celebrateGoal(); sounds.birthday() }
   }, [child?.id]) // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Auto-mature savings when their maturity date has passed
+  useEffect(() => {
+    if (!child) return
+    const now = Date.now()
+    const matured = (child.savings || []).filter((s) => s.status === 'active' && s.maturityDate <= now)
+    matured.forEach((s) => finishSavings(childId, s.id, 'matured'))
+    if (matured.length > 0) setHint(`🎉 ${matured.length > 1 ? 'חסכונות הבשילו' : 'חסכון הבשיל'}!`)
+  }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Long-press on ⭐ button: regular tap = chores only, long = parent mode (free entry)
   const starsLongPress = useLongPress(
     useCallback(() => showModal('addStars', { childId, allowFreeEntry: false }), [childId, showModal]),
@@ -80,22 +89,13 @@ export default function ChildDashboard({ childId }) {
   if (!child) return null
 
   function handleRedeem(goal) {
-    const rate = child.exchangeRate ?? settings.globalExchangeRate
-    // Deduct shekels first, then stars for the remainder
-    const shekelDeduct = Math.min(child.shekelBalance, goal.targetAmount)
-    const remainder    = goal.targetAmount - shekelDeduct
-    const starDeduct   = remainder > 0 ? remainder / rate : 0
-
-    if (shekelDeduct > 0) adjustShekels(childId, -shekelDeduct)
-    if (starDeduct   > 0) adjustStars(childId, -starDeduct)
-
+    adjustShekels(childId, -goal.targetAmount)
     addTransaction(childId, {
       type: 'expense',
       amount: goal.targetAmount,
       currency: 'shekels',
       description: `✅ מומש: ${goal.emoji ?? ''} ${goal.name}`,
     })
-
     deleteGoal(childId, goal.id)
     celebrateGoal()
     sounds.goal()
@@ -104,17 +104,13 @@ export default function ChildDashboard({ childId }) {
   const childIndex = children.indexOf(child)
   const gradient   = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
-  const totalValue = getTotalValue(child, settings)
+  const totalValue = getTotalValue(child)
   const goals      = getGoals(child)
-  const rate       = child.exchangeRate ?? settings.globalExchangeRate
-  const starsValue = child.starBalance * rate
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
 
-  // For stars chip: how far from first goal
   const firstGoal = goals[0] ?? null
-  const remaining = firstGoal ? Math.max(0, firstGoal.targetAmount - totalValue) : 0
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-100">
@@ -167,9 +163,9 @@ export default function ChildDashboard({ childId }) {
               {formatNumber(child.shekelBalance)}₪
             </div>
             <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
-            {firstGoal && remaining > 0 && child.shekelBalance > 0 && (
+            {firstGoal && totalValue < firstGoal.targetAmount && (
               <div className="text-xs opacity-75 mt-1">
-                עוד {formatNumber(Math.max(0, firstGoal.targetAmount - totalValue))}₪ למטרה
+                עוד {formatNumber(firstGoal.targetAmount - totalValue)}₪ למטרה
               </div>
             )}
           </div>
@@ -179,14 +175,6 @@ export default function ChildDashboard({ childId }) {
               {formatNumber(child.starBalance)}
             </div>
             <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
-            {/* Stars → money translation */}
-            {child.starBalance > 0 && (
-              <div className="text-xs opacity-75 mt-1">
-                {firstGoal && remaining > 0
-                  ? `= ${formatNumber(starsValue)}₪ · עוד ${formatNumber(remaining)}₪`
-                  : `= 💵 ${formatNumber(starsValue)}₪`}
-              </div>
-            )}
           </div>
         </div>
       </header>
@@ -196,21 +184,17 @@ export default function ChildDashboard({ childId }) {
         {/* Goals */}
         {goals.length > 0 && (
           <div className="space-y-2">
-            {goals.map((goal) => {
-              const needed = starsNeededForGoal(child, settings, goal, chores)
-              return (
-                <GoalProgressBar
-                  key={goal.id}
-                  progress={getGoalProgress(child, settings, goal)}
-                  goalName={goal.name}
-                  targetAmount={goal.targetAmount}
-                  goalEmoji={goal.emoji}
-                  totalValue={totalValue}
-                  choresNeeded={needed}
-                  onRedeem={() => handleRedeem(goal)}
-                />
-              )
-            })}
+            {goals.map((goal) => (
+              <GoalProgressBar
+                key={goal.id}
+                progress={getGoalProgress(child, settings, goal)}
+                goalName={goal.name}
+                targetAmount={goal.targetAmount}
+                goalEmoji={goal.emoji}
+                totalValue={totalValue}
+                onRedeem={() => handleRedeem(goal)}
+              />
+            ))}
           </div>
         )}
 
@@ -227,12 +211,12 @@ export default function ChildDashboard({ childId }) {
           <button
             onClick={() => {
               if (child.starBalance === 0) setHint('⭐ אין לך כוכבים עדיין — עשה מטלה!')
-              else showModal('convertStars', { childId })
+              else showModal('redeemPrize', { childId, child })
             }}
-            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.starBalance === 0 ? 'bg-sky-300 opacity-60' : 'bg-sky-400 hover:bg-sky-500'}`}
+            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.starBalance === 0 ? 'bg-purple-300 opacity-60' : 'bg-purple-500 hover:bg-purple-600'}`}
           >
-            <span className="text-2xl">🔄</span>
-            <span className="text-sm">המר לכסף</span>
+            <span className="text-2xl">🎁</span>
+            <span className="text-sm">מימוש פרס</span>
           </button>
 
           <button
@@ -245,7 +229,7 @@ export default function ChildDashboard({ childId }) {
 
           <button
             onClick={() => {
-              if (child.shekelBalance === 0) setHint('💵 אין לך שקלים עדיין — המר כוכבים!')
+              if (child.shekelBalance === 0) setHint('💵 אין לך שקלים עדיין — בקש מהורה להפקיד!')
               else showModal('expense', { childId })
             }}
             className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.shekelBalance === 0 ? 'bg-rose-300 opacity-60' : 'bg-rose-400 hover:bg-rose-500'}`}
@@ -262,6 +246,15 @@ export default function ChildDashboard({ childId }) {
           className="active:scale-95"
         >
           {goals.length > 0 ? `🎯 מטרות (${goals.length})` : '🎯 קבע מטרה'}
+        </Button>
+
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => showModal('savings', { childId, child })}
+          className="active:scale-95"
+        >
+          🏦 חסכון
         </Button>
 
         <WeeklySummary transactions={transactions} />

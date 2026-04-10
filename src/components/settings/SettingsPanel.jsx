@@ -4,7 +4,7 @@ import { exportAll } from '../../lib/storage.js'
 import Button from '../ui/Button.jsx'
 import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
-import ExchangeRateSettings from './ExchangeRateSettings.jsx'
+import PrizeManager from './PrizeManager.jsx'
 
 function SectionHeader({ icon, label, color }) {
   return (
@@ -116,8 +116,16 @@ export default function SettingsPanel() {
       </header>
 
       <main className="flex-1 px-4 py-5 space-y-5">
-        <ExchangeRateSettings />
         <ChoreManager />
+
+        {/* Prize catalog */}
+        <section>
+          <SectionHeader icon="🎁" label="מחירון פרסים בכוכבים" color="bg-purple-100 text-purple-600" />
+          <div className="bg-white rounded-2xl shadow-sm p-4">
+            <PrizeManager />
+          </div>
+        </section>
+
         <ChildrenManager />
 
         {/* Sound */}

@@ -1,14 +1,17 @@
 import { useApp } from '../context/AppContext.jsx'
 import { formatRelativeTime, formatNumber } from '../lib/utils.js'
 
-// Matches dashboard button colors
 const TYPE_STYLE = {
-  chore:       { icon: '📋', label: 'מטלה',   bg: 'bg-amber-50',   border: 'border-r-4 border-amber-400',  amount: 'text-amber-600'  },
-  gift:        { icon: '🎁', label: 'מתנה',   bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600' },
-  other:       { icon: '💝', label: 'קיבלתי', bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600' },
-  expense:     { icon: '🛍️', label: 'קנייה',  bg: 'bg-rose-50',    border: 'border-r-4 border-rose-400',    amount: 'text-rose-600'    },
-  convert_out: { icon: '🔄', label: 'המרה',   bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'    },
-  convert_in:  { icon: '✨', label: 'המרה',   bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'    },
+  chore:          { icon: '📋', label: 'מטלה',         bg: 'bg-amber-50',   border: 'border-r-4 border-amber-400',   amount: 'text-amber-600'   },
+  gift:           { icon: '🎁', label: 'מתנה',         bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600'  },
+  other:          { icon: '💝', label: 'קיבלתי',       bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600'  },
+  expense:        { icon: '🛍️', label: 'קנייה',        bg: 'bg-rose-50',    border: 'border-r-4 border-rose-400',    amount: 'text-rose-600'     },
+  convert_out:    { icon: '🔄', label: 'המרה',         bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'     },
+  convert_in:     { icon: '✨', label: 'המרה',         bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'     },
+  prize_redeem:   { icon: '🎁', label: 'פרס',          bg: 'bg-purple-50',  border: 'border-r-4 border-purple-400',  amount: 'text-purple-600'   },
+  savings_open:   { icon: '🏦', label: 'חסכון נפתח',   bg: 'bg-blue-50',    border: 'border-r-4 border-blue-400',    amount: 'text-blue-600'     },
+  savings_close:  { icon: '💰', label: 'חסכון הבשיל',  bg: 'bg-teal-50',    border: 'border-r-4 border-teal-400',    amount: 'text-teal-600'     },
+  savings_early:  { icon: '⚠️', label: 'פדיון מוקדם',  bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'   },
 }
 
 const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-gray-50', border: 'border-r-4 border-gray-300', amount: 'text-gray-600' }
@@ -17,7 +20,7 @@ export default function TransactionItem({ transaction, childId }) {
   const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const style = TYPE_STYLE[type] ?? FALLBACK
-  const isDeduct = type === 'expense' || type === 'convert_out'
+  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open'
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
   const sign = isDeduct ? '-' : '+'
 

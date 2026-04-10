@@ -5,6 +5,14 @@ export const DEFAULT_SETTINGS = {
   pin: '',
 }
 
+export const DEFAULT_PRIZES = [
+  { id: 'prize_1', emoji: '🍭', name: 'סוכריה על מקל',       starCost: 5  },
+  { id: 'prize_2', emoji: '🍦', name: 'גלידה',               starCost: 8  },
+  { id: 'prize_3', emoji: '🎮', name: 'שעה משחק מסך',        starCost: 15 },
+  { id: 'prize_4', emoji: '🚴', name: 'טיול אופניים עם אבא', starCost: 20 },
+  { id: 'prize_5', emoji: '🎬', name: 'בחירת סרט לערב',      starCost: 12 },
+]
+
 export const DEFAULT_CHORES = [
   { id: 'chore_1', name: 'נקיון חדר', defaultStars: 3 },
   { id: 'chore_2', name: 'שטיפת כלים', defaultStars: 2 },

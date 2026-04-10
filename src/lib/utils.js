@@ -13,9 +13,9 @@ export function formatDateLabel(timestamp) {
   return `${DATE_DAY_NAMES[date.getDay()]} ${date.getDate()} ${DATE_MONTH_NAMES[date.getMonth()]}`
 }
 
-export function getTotalValue(child, settings) {
-  const rate = child.exchangeRate ?? settings.globalExchangeRate
-  return child.shekelBalance + child.starBalance * rate
+// Stars are no longer convertible to money — goals are funded by shekels only
+export function getTotalValue(child) {
+  return child.shekelBalance
 }
 
 // Returns goals array, handling legacy single-goal format
