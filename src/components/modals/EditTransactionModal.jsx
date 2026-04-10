@@ -11,6 +11,10 @@ const TYPE_LABEL = {
   expense: 'הוצאה 🛍️',
   convert_out: 'המרה (כוכבים) 🔄',
   convert_in: 'המרה (שקלים) ✨',
+  prize_redeem: 'פרס 🎁',
+  savings_open: 'פתיחת חסכון 🏦',
+  savings_close: 'חסכון הבשיל 💰',
+  savings_early: 'פדיון מוקדם ⚠️',
 }
 
 // Compute balance delta when reversing or adjusting a transaction
