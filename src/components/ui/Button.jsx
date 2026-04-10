@@ -29,7 +29,7 @@ export default function Button({
       onClick={onClick}
       disabled={disabled}
       className={[
-        'rounded-2xl font-bold transition-all duration-150 inline-flex items-center justify-center gap-2',
+        'rounded-2xl font-bold transition-all duration-150 inline-flex items-center justify-center gap-2 active:scale-95',
         variants[variant] || variants.primary,
         sizes[size] || sizes.md,
         fullWidth ? 'w-full' : '',
