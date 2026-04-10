@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react'
+import { useEffect, useRef, useCallback, useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, starsNeededForGoal } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
@@ -7,6 +7,7 @@ import GoalProgressBar from './GoalProgressBar.jsx'
 import TransactionList from './TransactionList.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
+import HintBanner from './ui/HintBanner.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 
 // Long-press hook: fires onLong after holdMs, onTap on quick release.
@@ -53,8 +54,10 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
 
 export default function ChildDashboard({ childId }) {
   const { children, navigate, showModal, settings, getTransactions, chores,
-          adjustShekels, adjustStars, deleteGoal, addTransaction } = useApp()
+          adjustShekels, adjustStars, deleteGoal, addTransaction,
+          pendingBadge, clearPendingBadge } = useApp()
   const transactions = getTransactions(childId)
+  const [hint, setHint] = useState(null)
 
   const child = children.find((c) => c.id === childId)
 
@@ -132,6 +135,16 @@ export default function ChildDashboard({ childId }) {
             {showBirthday && (
               <div className="inline-block mt-1 bg-white/25 rounded-full px-3 py-0.5 text-sm font-semibold animate-pop">
                 {birthdayDays === 0 ? '🎂 יום הולדת שמח! 🎉' : `🎂 עוד ${birthdayDays} ימים!`}
+              </div>
+            )}
+            {/* Earned badges row */}
+            {(child.badges || []).length > 0 && (
+              <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
+                {child.badges.map((b) => (
+                  <span key={b.id} title={b.label} className="text-xl leading-none animate-pop">
+                    {b.emoji}
+                  </span>
+                ))}
               </div>
             )}
           </div>
@@ -212,9 +225,11 @@ export default function ChildDashboard({ childId }) {
           </button>
 
           <button
-            onClick={() => showModal('convertStars', { childId })}
-            disabled={child.starBalance === 0}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-sky-400 hover:bg-sky-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (child.starBalance === 0) setHint('⭐ אין לך כוכבים עדיין — עשה מטלה!')
+              else showModal('convertStars', { childId })
+            }}
+            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.starBalance === 0 ? 'bg-sky-300 opacity-60' : 'bg-sky-400 hover:bg-sky-500'}`}
           >
             <span className="text-2xl">🔄</span>
             <span className="text-sm">המר לכסף</span>
@@ -229,9 +244,11 @@ export default function ChildDashboard({ childId }) {
           </button>
 
           <button
-            onClick={() => showModal('expense', { childId })}
-            disabled={child.shekelBalance === 0}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-rose-400 hover:bg-rose-500 active:scale-90 transition-all text-white shadow-sm font-bold disabled:opacity-40 disabled:cursor-not-allowed"
+            onClick={() => {
+              if (child.shekelBalance === 0) setHint('💵 אין לך שקלים עדיין — המר כוכבים!')
+              else showModal('expense', { childId })
+            }}
+            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-sm font-bold ${child.shekelBalance === 0 ? 'bg-rose-300 opacity-60' : 'bg-rose-400 hover:bg-rose-500'}`}
           >
             <span className="text-2xl">🛍️</span>
             <span className="text-sm">קניתי משהו</span>
@@ -254,6 +271,17 @@ export default function ChildDashboard({ childId }) {
           <TransactionList transactions={transactions} childId={childId} />
         </div>
       </main>
+
+      {/* Hint toast for greyed-out buttons */}
+      <HintBanner message={hint} onDone={() => setHint(null)} />
+
+      {/* Badge earned toast */}
+      {pendingBadge && pendingBadge.childId === childId && (
+        <HintBanner
+          message={`${pendingBadge.emoji} קיבלת תג חדש: ${pendingBadge.label}`}
+          onDone={clearPendingBadge}
+        />
+      )}
     </div>
   )
 }

@@ -1,3 +1,18 @@
+const DATE_DAY_NAMES  = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const DATE_MONTH_NAMES = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
+
+// "היום" / "אתמול" / "ג׳ 7 אפריל"
+export function formatDateLabel(timestamp) {
+  const now   = new Date()
+  const today     = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const yesterday = new Date(today.getTime() - 86400000)
+  const date      = new Date(timestamp)
+  const d         = new Date(date.getFullYear(), date.getMonth(), date.getDate())
+  if (d.getTime() === today.getTime())     return 'היום'
+  if (d.getTime() === yesterday.getTime()) return 'אתמול'
+  return `${DATE_DAY_NAMES[date.getDay()]} ${date.getDate()} ${DATE_MONTH_NAMES[date.getMonth()]}`
+}
+
 export function getTotalValue(child, settings) {
   const rate = child.exchangeRate ?? settings.globalExchangeRate
   return child.shekelBalance + child.starBalance * rate

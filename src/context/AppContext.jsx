@@ -4,6 +4,7 @@ import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { useTransactions } from '../hooks/useTransactions.js'
 import { clearAll } from '../lib/storage.js'
+import { checkBadges } from '../lib/badges.js'
 
 const AppContext = createContext(null)
 
@@ -17,6 +18,7 @@ export function AppProvider({ children: reactChildren }) {
   const [activeChildId, setActiveChildId] = useState(null)
   const [openModal, setOpenModal] = useState(null)
   const [modalData, setModalData] = useState(null)
+  const [pendingBadge, setPendingBadge] = useState(null)
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -51,13 +53,30 @@ export function AppProvider({ children: reactChildren }) {
     transactionsApi.clearTransactions(childId)
   }
 
+  // Wraps addTransaction to check for newly earned badges afterwards
+  function addTransaction(childId, txData) {
+    const tx = transactionsApi.addTransaction(childId, txData)
+    const child = childrenApi.children.find((c) => c.id === childId)
+    if (child) {
+      // Project next state (new tx prepended; state hasn't flushed yet)
+      const projected = [tx, ...transactionsApi.getTransactions(childId)]
+      const newBadges = checkBadges(child, projected)
+      newBadges.forEach((badge) => childrenApi.awardBadge(childId, badge))
+      if (newBadges.length > 0) setPendingBadge({ ...newBadges[0], childId })
+    }
+    return tx
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
     ...settingsApi,
     ...transactionsApi,
+    addTransaction,   // override with badge-aware version
     requirePin,
     resetChildData,
+    pendingBadge,
+    clearPendingBadge: () => setPendingBadge(null),
     screen,
     activeChildId,
     navigate,

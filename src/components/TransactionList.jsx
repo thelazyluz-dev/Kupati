@@ -1,10 +1,36 @@
 import { useState } from 'react'
 import TransactionItem from './TransactionItem.jsx'
+import { formatDateLabel } from '../lib/utils.js'
 
 const PAGE_SIZE = 10
 
+const FILTERS = [
+  { key: 'all',      label: 'הכל',       match: () => true },
+  { key: 'chores',   label: '⭐ מטלות',  match: (tx) => tx.type === 'chore' },
+  { key: 'income',   label: '💵 הכנסות', match: (tx) => ['gift', 'other', 'convert_in'].includes(tx.type) },
+  { key: 'expenses', label: '🛍️ הוצאות', match: (tx) => ['expense', 'convert_out'].includes(tx.type) },
+]
+
+function DaySeparator({ label }) {
+  return (
+    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-100">
+      <span className="text-xs font-bold text-gray-500">{label}</span>
+      <div className="flex-1 h-px bg-gray-200" />
+    </div>
+  )
+}
+
 export default function TransactionList({ transactions, childId }) {
   const [page, setPage] = useState(0)
+  const [filter, setFilter] = useState('all')
+
+  const filterFn = FILTERS.find((f) => f.key === filter)?.match ?? (() => true)
+  const filtered  = transactions.filter(filterFn)
+
+  function handleFilter(key) {
+    setFilter(key)
+    setPage(0)
+  }
 
   if (transactions.length === 0) {
     return (
@@ -15,40 +41,85 @@ export default function TransactionList({ transactions, childId }) {
     )
   }
 
-  const totalPages = Math.ceil(transactions.length / PAGE_SIZE)
-  const visible    = transactions.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+  const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
+  const visible    = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
+
+  // Interleave day-separator rows
+  function buildRows(txList) {
+    const rows = []
+    let lastLabel = null
+    for (const tx of txList) {
+      const label = formatDateLabel(tx.timestamp)
+      if (label !== lastLabel) {
+        rows.push({ type: 'sep', label })
+        lastLabel = label
+      }
+      rows.push({ type: 'tx', tx })
+    }
+    return rows
+  }
+
+  const rows = buildRows(visible)
 
   return (
     <div>
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-        {visible.map((tx) => (
-          <TransactionItem key={tx.id} transaction={tx} childId={childId} />
+      {/* Filter chips */}
+      <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar pb-0.5">
+        {FILTERS.map((f) => (
+          <button
+            key={f.key}
+            type="button"
+            onClick={() => handleFilter(f.key)}
+            className={[
+              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95',
+              filter === f.key
+                ? 'bg-indigo-500 text-white shadow-sm'
+                : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50',
+            ].join(' ')}
+          >
+            {f.label}
+          </button>
         ))}
       </div>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-between mt-3 px-1">
-          <button
-            onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
-            disabled={page >= totalPages - 1}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
-          >
-            ← ישן יותר
-          </button>
-
-          <span className="text-sm text-gray-400 font-medium">
-            {page + 1} / {totalPages}
-          </span>
-
-          <button
-            onClick={() => setPage((p) => Math.max(p - 1, 0))}
-            disabled={page === 0}
-            className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
-          >
-            חדש יותר →
-          </button>
+      {filtered.length === 0 ? (
+        <div className="text-center py-8 bg-white rounded-2xl shadow-sm text-gray-400">
+          <p className="font-medium">אין עסקאות בקטגוריה זו</p>
         </div>
+      ) : (
+        <>
+          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            {rows.map((row, i) =>
+              row.type === 'sep' ? (
+                <DaySeparator key={`sep-${i}`} label={row.label} />
+              ) : (
+                <TransactionItem key={row.tx.id} transaction={row.tx} childId={childId} />
+              )
+            )}
+          </div>
+
+          {totalPages > 1 && (
+            <div className="flex items-center justify-between mt-3 px-1">
+              <button
+                onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
+                disabled={page >= totalPages - 1}
+                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
+              >
+                ← ישן יותר
+              </button>
+              <span className="text-sm text-gray-400 font-medium">
+                {page + 1} / {totalPages}
+              </span>
+              <button
+                onClick={() => setPage((p) => Math.max(p - 1, 0))}
+                disabled={page === 0}
+                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
+              >
+                חדש יותר →
+              </button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )

@@ -31,6 +31,17 @@ export default function WeeklySummary({ transactions }) {
 
   const totalStars   = starsByDay.reduce((a, b) => a + b, 0)
   const totalShekels = shekelsByDay.reduce((a, b) => a + b, 0)
+
+  // Last week totals (for trend chip)
+  const lastWeekStart = new Date(weekStart)
+  lastWeekStart.setDate(weekStart.getDate() - 7)
+  const lastWeekStars = transactions
+    .filter((tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
+                 && tx.currency === 'stars' && tx.type !== 'convert_out')
+    .reduce((s, tx) => s + tx.amount, 0)
+  const hadLastWeek = transactions.some(
+    (tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
+  )
   const maxStars     = Math.max(...starsByDay, 1)
   const maxShekels   = Math.max(...shekelsByDay, 0.01)
   const todayIndex   = sundayOffset // index 0-6 within the week
@@ -115,6 +126,27 @@ export default function WeeklySummary({ transactions }) {
             })}
           </div>
         </>
+      )}
+
+      {/* Trend chip */}
+      {(totalStars > 0 || hadLastWeek) && (
+        <p className={`text-center text-xs font-semibold mt-3 rounded-xl py-1.5 px-3 ${
+          !hadLastWeek
+            ? 'bg-indigo-50 text-indigo-600'
+            : totalStars > lastWeekStars
+              ? 'bg-emerald-50 text-emerald-700'
+              : totalStars === lastWeekStars
+                ? 'bg-gray-50 text-gray-500'
+                : 'bg-amber-50 text-amber-700'
+        }`}>
+          {!hadLastWeek
+            ? '🌟 שבוע ראשון — המשך כך!'
+            : totalStars > lastWeekStars
+              ? `⬆️ יותר מהשבוע שעבר (+${formatNumber(totalStars - lastWeekStars)}⭐)!`
+              : totalStars === lastWeekStars
+                ? `= אותו הדבר כמו השבוע שעבר`
+                : `⬇️ קצת פחות מהשבוע שעבר (${formatNumber(lastWeekStars)}⭐ אז)`}
+        </p>
       )}
 
       {/* Day labels */}

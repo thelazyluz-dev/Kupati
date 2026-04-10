@@ -136,6 +136,17 @@ export function useChildren() {
     )
   }
 
+  function awardBadge(id, badge) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== id ? c : {
+          ...c,
+          badges: [...(c.badges || []), { ...badge, awardedAt: Date.now() }],
+        }
+      )
+    )
+  }
+
   return {
     children,
     addChild,
@@ -151,5 +162,6 @@ export function useChildren() {
     deductMoney,
     convertStars,
     resetChild,
+    awardBadge,
   }
 }
