@@ -127,7 +127,7 @@ export default function EditChildModal() {
   }
 
   return (
-    <Modal title={`✏️ ערוך — ${child.name}`} onClose={closeModal}>
+    <Modal title={`✏️ ערוך — ${child.name}`} onClose={closeModal} headerColor="from-slate-500 to-gray-700">
       <form onSubmit={handleSubmit} className="space-y-5">
         {/* Avatar picker */}
         <EmojiPicker

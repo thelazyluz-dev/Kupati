@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 
-export default function Modal({ title, onClose, children, size = 'md' }) {
+export default function Modal({ title, onClose, children, size = 'md', headerColor = '' }) {
   const [closing, setClosing] = useState(false)
   const dragStart  = useRef(null)
   const panelRef   = useRef(null)
@@ -78,16 +78,29 @@ export default function Modal({ title, onClose, children, size = 'md' }) {
         </div>
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <h2 className="text-xl font-bold text-gray-800">{title}</h2>
-          <button
-            onClick={handleClose}
-            className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:scale-90 text-gray-500 transition-all text-lg"
-            aria-label="סגור"
-          >
-            ✕
-          </button>
-        </div>
+        {headerColor ? (
+          <div className={`flex items-center justify-between px-5 py-4 bg-gradient-to-r ${headerColor} rounded-t-3xl sm:rounded-t-3xl`}>
+            <h2 className="text-xl font-bold text-white drop-shadow-sm">{title}</h2>
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/35 active:scale-90 text-white transition-all text-lg"
+              aria-label="סגור"
+            >
+              ✕
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+            <button
+              onClick={handleClose}
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:scale-90 text-gray-500 transition-all text-lg"
+              aria-label="סגור"
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>

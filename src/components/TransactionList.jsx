@@ -48,13 +48,14 @@ export default function TransactionList({ transactions, childId }) {
   function buildRows(txList) {
     const rows = []
     let lastLabel = null
+    let txIdx = 0
     for (const tx of txList) {
       const label = formatDateLabel(tx.timestamp)
       if (label !== lastLabel) {
         rows.push({ type: 'sep', label })
         lastLabel = label
       }
-      rows.push({ type: 'tx', tx })
+      rows.push({ type: 'tx', tx, idx: txIdx++ })
     }
     return rows
   }
@@ -93,7 +94,13 @@ export default function TransactionList({ transactions, childId }) {
               row.type === 'sep' ? (
                 <DaySeparator key={`sep-${i}`} label={row.label} />
               ) : (
-                <TransactionItem key={row.tx.id} transaction={row.tx} childId={childId} />
+                <div
+                  key={row.tx.id}
+                  className="animate-slide-up"
+                  style={{ animationDelay: `${row.idx * 35}ms`, animationFillMode: 'both' }}
+                >
+                  <TransactionItem transaction={row.tx} childId={childId} />
+                </div>
               )
             )}
           </div>

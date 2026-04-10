@@ -18,7 +18,7 @@ export default function ChildCard({ child, index }) {
   return (
     <button
       onClick={() => navigate('dashboard', child.id)}
-      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-xl active:scale-95 hover:scale-105 transition-transform w-full`}
+      className={`bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right shadow-xl active:scale-95 hover:scale-105 hover:shadow-2xl hover:brightness-110 transition-all duration-200 w-full`}
     >
       {/* Avatar with subtle glow ring */}
       <div className="text-5xl mb-2 text-right drop-shadow-md">{child.avatar}</div>

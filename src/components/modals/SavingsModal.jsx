@@ -103,7 +103,7 @@ export default function SavingsModal() {
   }
 
   return (
-    <Modal title="🏦 חסכון" onClose={closeModal}>
+    <Modal title="🏦 חסכון" onClose={closeModal} headerColor="from-blue-400 to-teal-500">
       <div className="space-y-5">
 
         {/* Early withdrawal confirmation */}

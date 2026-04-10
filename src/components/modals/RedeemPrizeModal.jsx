@@ -36,7 +36,7 @@ export default function RedeemPrizeModal() {
   if (!child) return null
 
   return (
-    <Modal title="🎁 מימוש פרס" onClose={closeModal}>
+    <Modal title="🎁 מימוש פרס" onClose={closeModal} headerColor="from-purple-500 to-violet-600">
       <div className="space-y-4">
         {/* Stars balance */}
         <div className="text-center bg-amber-50 rounded-2xl py-3">

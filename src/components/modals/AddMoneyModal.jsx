@@ -44,7 +44,7 @@ export default function AddMoneyModal() {
   }
 
   return (
-    <Modal title="💝 הפקדה" onClose={closeModal}>
+    <Modal title="💝 הפקדה" onClose={closeModal} headerColor="from-emerald-400 to-teal-500">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Type selector */}
         <div className="flex gap-2">

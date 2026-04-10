@@ -83,13 +83,18 @@ export default function WeeklySummary({ transactions }) {
               </span>
               {/* Bar */}
               <div
-                style={{ height: barH || 3 }}
-                className={[
-                  'w-full rounded-t-lg transition-all duration-500',
-                  barH === 0   ? 'bg-gray-100'  :
-                  isFuture     ? 'bg-amber-100'  :
-                  isToday      ? 'bg-amber-400'  : 'bg-amber-300',
-                ].join(' ')}
+                style={{
+                  height: barH || 3,
+                  background: barH === 0
+                    ? '#f3f4f6'
+                    : isFuture
+                      ? '#fef3c7'
+                      : isToday
+                        ? 'linear-gradient(to top, #f97316, #fbbf24)'
+                        : 'linear-gradient(to top, #f59e0b, #fcd34d)',
+                  boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
+                }}
+                className="w-full rounded-t-lg transition-all duration-500"
               />
             </div>
           )
@@ -113,13 +118,18 @@ export default function WeeklySummary({ transactions }) {
                     <span className="text-xs font-bold mb-0.5 text-emerald-600">{formatNumber(val)}</span>
                   )}
                   <div
-                    style={{ height: barH || 3 }}
-                    className={[
-                      'w-full rounded-t-lg transition-all duration-500',
-                      barH === 0   ? 'bg-gray-100'    :
-                      isFuture     ? 'bg-emerald-100'  :
-                      isToday      ? 'bg-emerald-500'  : 'bg-emerald-300',
-                    ].join(' ')}
+                    style={{
+                      height: barH || 3,
+                      background: barH === 0
+                        ? '#f3f4f6'
+                        : isFuture
+                          ? '#d1fae5'
+                          : isToday
+                            ? 'linear-gradient(to top, #059669, #34d399)'
+                            : 'linear-gradient(to top, #10b981, #6ee7b7)',
+                      boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(16,185,129,0.35)' : 'none',
+                    }}
+                    className="w-full rounded-t-lg transition-all duration-500"
                   />
                 </div>
               )

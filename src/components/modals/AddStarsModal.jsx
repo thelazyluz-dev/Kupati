@@ -62,7 +62,7 @@ export default function AddStarsModal() {
   }
 
   return (
-    <Modal title={title} onClose={closeModal}>
+    <Modal title={title} onClose={closeModal} headerColor="from-amber-400 to-orange-500">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Tabs — free-entry only visible in parent mode */}
         {allowFreeEntry && (
@@ -89,7 +89,7 @@ export default function AddStarsModal() {
         )}
 
         {tab === 'chore' ? (
-          <div className="space-y-2">
+          <div key="chore" className="space-y-2 animate-tab-in">
             <p className="text-sm text-gray-500">בחר מטלה:</p>
             <div className="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto no-scrollbar">
               {chores.map((chore) => (
@@ -113,7 +113,7 @@ export default function AddStarsModal() {
             </div>
           </div>
         ) : (
-          <div className="space-y-3">
+          <div key="custom" className="space-y-3 animate-tab-in">
             <div>
               <label className="text-sm font-semibold text-gray-600 block mb-1">
                 כמות כוכבים

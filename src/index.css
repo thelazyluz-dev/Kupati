@@ -55,7 +55,7 @@
   input:not([type='checkbox']):not([type='radio']):not([type='range']):focus,
   textarea:focus,
   select:focus {
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.18);
+    box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15), inset 0 1px 3px rgba(99, 102, 241, 0.07);
   }
 
   /* Remove tap highlight on iOS */

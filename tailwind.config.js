@@ -28,6 +28,8 @@ export default {
         'star-burst':     'star-burst 0.5s cubic-bezier(0.34,1.56,0.64,1)',
         'spin-slow':      'spin 8s linear infinite',
         'shimmer':        'shimmer 2.2s linear infinite',
+        'glow-amber':     'glow-amber 2s ease-in-out infinite',
+        'tab-in':         'tab-in 0.18s ease-out',
       },
       keyframes: {
         'progress-fill': {
@@ -85,6 +87,14 @@ export default {
         'shimmer': {
           '0%':   { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
+        },
+        'glow-amber': {
+          '0%, 100%': { boxShadow: '0 4px 14px rgba(251,146,60,0.25), 0 0 0 0 rgba(251,146,60,0.2)' },
+          '50%':      { boxShadow: '0 4px 22px rgba(251,146,60,0.5), 0 0 0 8px rgba(251,146,60,0)' },
+        },
+        'tab-in': {
+          from: { opacity: '0', transform: 'translateX(-8px)' },
+          to:   { opacity: '1', transform: 'translateX(0)' },
         },
       },
     },

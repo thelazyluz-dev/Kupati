@@ -89,7 +89,7 @@ export default function GoalModal() {
   }
 
   return (
-    <Modal title="🎯 מטרות חיסכון" onClose={closeModal}>
+    <Modal title="🎯 מטרות חיסכון" onClose={closeModal} headerColor="from-indigo-400 to-purple-500">
       <div className="space-y-3">
         {/* Existing goals */}
         {goals.length === 0 && editing !== 'new' && (

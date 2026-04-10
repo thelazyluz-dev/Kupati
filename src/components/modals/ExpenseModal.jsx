@@ -33,7 +33,7 @@ export default function ExpenseModal() {
   }
 
   return (
-    <Modal title="🛍️ הוצאה" onClose={closeModal}>
+    <Modal title="🛍️ הוצאה" onClose={closeModal} headerColor="from-rose-400 to-pink-500">
       <form onSubmit={handleSubmit} className="space-y-4">
         {/* Current balance */}
         <div className="bg-gray-50 rounded-2xl px-4 py-3 text-center">

@@ -202,7 +202,7 @@ export default function ChildDashboard({ childId }) {
         <div className="grid grid-cols-2 gap-3">
           <button
             {...starsLongPress}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-90 transition-all text-white shadow-md font-bold select-none"
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-90 transition-all text-white shadow-md font-bold select-none animate-glow-amber"
           >
             <span className="text-2xl">⭐</span>
             <span className="text-sm">עשיתי מטלה!</span>
