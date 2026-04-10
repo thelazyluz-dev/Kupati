@@ -137,10 +137,11 @@ export default function ChildDashboard({ childId }) {
 
           <button
             onClick={() => navigate('home')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
-            aria-label="חזור"
+            className="flex items-center gap-1 pl-3 pr-2 py-2 rounded-2xl bg-white/25 hover:bg-white/40 active:scale-95 transition-all text-sm font-bold shadow-sm"
+            aria-label="חזרה לבית"
           >
-            →
+            <span>חזרה</span>
+            <span className="text-base leading-none">›</span>
           </button>
         </div>
 

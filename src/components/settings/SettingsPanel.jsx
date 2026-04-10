@@ -97,17 +97,20 @@ export default function SettingsPanel() {
     <div className="min-h-screen bg-slate-100 flex flex-col">
       <header className="bg-gradient-to-br from-gray-700 to-gray-900 px-5 pt-8 pb-6 text-white">
         <div className="flex items-center justify-between">
-          <div className="w-9" />
+          <div className="invisible flex items-center gap-1 pl-3 pr-2 py-2 text-sm font-bold">
+            חזרה ›
+          </div>
           <div className="text-center">
             <div className="text-3xl mb-1">⚙️</div>
             <h1 className="text-xl font-bold">הגדרות</h1>
           </div>
           <button
             onClick={() => navigate('home')}
-            className="w-9 h-9 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors"
-            aria-label="חזור"
+            className="flex items-center gap-1 pl-3 pr-2 py-2 rounded-2xl bg-white/25 hover:bg-white/40 active:scale-95 transition-all text-sm font-bold shadow-sm"
+            aria-label="חזרה לבית"
           >
-            →
+            <span>חזרה</span>
+            <span className="text-base leading-none">›</span>
           </button>
         </div>
       </header>
