@@ -106,6 +106,18 @@ export default function ChildDashboard({ childId }) {
 
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
+          {/* Shekels card */}
+          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
+            <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
+              {formatNumber(child.shekelBalance)}₪
+            </div>
+            <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
+            {firstGoal && remaining > 0 && child.shekelBalance > 0 && (
+              <div className="text-xs opacity-75 mt-1">
+                עוד {formatNumber(Math.max(0, firstGoal.targetAmount - totalValue))}₪ למטרה
+              </div>
+            )}
+          </div>
           {/* Stars card */}
           <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
             <div key={child.starBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
@@ -118,18 +130,6 @@ export default function ChildDashboard({ childId }) {
                 {firstGoal && remaining > 0
                   ? `= ${formatNumber(starsValue)}₪ · עוד ${formatNumber(remaining)}₪`
                   : `= 💵 ${formatNumber(starsValue)}₪`}
-              </div>
-            )}
-          </div>
-          {/* Shekels card */}
-          <div className="bg-white/20 backdrop-blur-sm rounded-2xl p-4 text-center">
-            <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
-              {formatNumber(child.shekelBalance)}₪
-            </div>
-            <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
-            {firstGoal && remaining > 0 && child.shekelBalance > 0 && (
-              <div className="text-xs opacity-75 mt-1">
-                עוד {formatNumber(Math.max(0, firstGoal.targetAmount - totalValue))}₪ למטרה
               </div>
             )}
           </div>
