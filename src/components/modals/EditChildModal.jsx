@@ -53,7 +53,7 @@ function BirthdayPicker({ value, onChange }) {
 }
 
 export default function EditChildModal() {
-  const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin } = useApp()
+  const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin, resetChildData } = useApp()
   const child = modalData
 
   const [name, setName] = useState(child?.name || '')
@@ -64,6 +64,7 @@ export default function EditChildModal() {
   // birthday stored as "MM-DD", e.g. "03-15"
   const [birthday, setBirthday] = useState(child?.birthday || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
 
   if (!child) return null
 
@@ -145,6 +146,40 @@ export default function EditChildModal() {
         <Button type="submit" fullWidth size="lg" disabled={!name.trim()}>
           💾 שמור שינויים
         </Button>
+
+        {/* Reset balance */}
+        <div className="pt-2 border-t border-gray-100">
+          {confirmReset ? (
+            <div className="space-y-2">
+              <p className="text-sm text-amber-700 font-semibold text-center bg-amber-50 rounded-xl py-2 px-3">
+                איפוס יאפס כוכבים, שקלים והיסטוריה.<br />מטרות לא יימחקו.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="warning"
+                  fullWidth
+                  type="button"
+                  onClick={() => requirePin(() => { resetChildData(child.id); setConfirmReset(false); closeModal() })}
+                >
+                  כן, אפס
+                </Button>
+                <Button variant="secondary" fullWidth type="button" onClick={() => setConfirmReset(false)}>
+                  ביטול
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              fullWidth
+              type="button"
+              onClick={() => setConfirmReset(true)}
+              className="text-amber-600 border-amber-200 hover:bg-amber-50"
+            >
+              🔄 איפוס יתרה והיסטוריה
+            </Button>
+          )}
+        </div>
 
         {/* Delete */}
         <div className="pt-2 border-t border-gray-100">

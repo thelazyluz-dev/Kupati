@@ -6,6 +6,17 @@ import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import ExchangeRateSettings from './ExchangeRateSettings.jsx'
 
+function SectionHeader({ icon, label, color }) {
+  return (
+    <div className="flex items-center gap-2 mb-2">
+      <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-base ${color}`}>
+        {icon}
+      </span>
+      <h3 className="font-bold text-gray-700 text-sm">{label}</h3>
+    </div>
+  )
+}
+
 function SoundToggle() {
   const { settings, updateSettings } = useApp()
   const enabled = settings.soundEnabled !== false
@@ -101,30 +112,30 @@ export default function SettingsPanel() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-5 space-y-6">
+      <main className="flex-1 px-4 py-5 space-y-5">
         <ExchangeRateSettings />
         <ChoreManager />
         <ChildrenManager />
 
         {/* Sound */}
-        <div>
-          <h3 className="font-bold text-gray-700 mb-3">🔊 צלילים</h3>
+        <section>
+          <SectionHeader icon="🔊" label="צלילים" color="bg-violet-100 text-violet-600" />
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <SoundToggle />
           </div>
-        </div>
+        </section>
 
         {/* PIN */}
-        <div>
-          <h3 className="font-bold text-gray-700 mb-3">🔒 קוד הורים</h3>
+        <section>
+          <SectionHeader icon="🔒" label="קוד הורים" color="bg-slate-100 text-slate-600" />
           <div className="bg-white rounded-2xl shadow-sm p-4">
             <PinSettings />
           </div>
-        </div>
+        </section>
 
         {/* Export */}
-        <div>
-          <h3 className="font-bold text-gray-700 mb-3">💾 גיבוי נתונים</h3>
+        <section>
+          <SectionHeader icon="💾" label="גיבוי נתונים" color="bg-sky-100 text-sky-600" />
           <div className="bg-white rounded-2xl shadow-sm p-4 space-y-3">
             <Button variant="secondary" fullWidth onClick={handleExport}>
               📥 ייצא JSON
@@ -133,11 +144,11 @@ export default function SettingsPanel() {
               כל הנתונים יורדו כקובץ JSON לגיבוי
             </p>
           </div>
-        </div>
+        </section>
 
         {/* Danger zone */}
-        <div>
-          <h3 className="font-bold text-red-600 mb-3">⚠️ אזור מסוכן</h3>
+        <section>
+          <SectionHeader icon="⚠️" label="אזור מסוכן" color="bg-red-100 text-red-600" />
           <div className="bg-white rounded-2xl shadow-sm p-4">
             {confirmReset ? (
               <div className="space-y-3">
@@ -168,7 +179,7 @@ export default function SettingsPanel() {
               </Button>
             )}
           </div>
-        </div>
+        </section>
 
         <div className="text-center text-xs text-gray-400 pb-8">
           <p>הארנק שלי 🐷</p>

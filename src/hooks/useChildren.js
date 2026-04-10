@@ -128,6 +128,14 @@ export function useChildren() {
     return converted
   }
 
+  function resetChild(id) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, starBalance: 0, shekelBalance: 0 } : c
+      )
+    )
+  }
+
   return {
     children,
     addChild,
@@ -142,5 +150,6 @@ export function useChildren() {
     adjustShekels,
     deductMoney,
     convertStars,
+    resetChild,
   }
 }

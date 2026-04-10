@@ -46,12 +46,18 @@ export function AppProvider({ children: reactChildren }) {
     window.location.reload()
   }
 
+  function resetChildData(childId) {
+    childrenApi.resetChild(childId)
+    transactionsApi.clearTransactions(childId)
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
     ...settingsApi,
     ...transactionsApi,
     requirePin,
+    resetChildData,
     screen,
     activeChildId,
     navigate,
