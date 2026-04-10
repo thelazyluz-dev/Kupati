@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { AVATAR_EMOJIS } from '../../lib/defaults.js'
+import { AVATAR_EMOJIS, COLOR_OPTIONS } from '../../lib/defaults.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import EmojiPicker from '../ui/EmojiPicker.jsx'
@@ -11,7 +11,6 @@ const MONTHS = [
 ]
 
 function BirthdayPicker({ value, onChange }) {
-  // value is "MM-DD" or ''
   const [month, day] = value ? value.split('-').map(Number) : [0, 0]
 
   function handleMonth(m) {
@@ -52,16 +51,57 @@ function BirthdayPicker({ value, onChange }) {
   )
 }
 
+function ColorPicker({ value, onChange }) {
+  return (
+    <div>
+      <label className="text-sm font-semibold text-gray-600 block mb-2">🎨 צבע</label>
+      <div className="grid grid-cols-5 gap-2">
+        {COLOR_OPTIONS.map((opt) => {
+          const selected = value === opt.key
+          return (
+            <button
+              key={opt.key}
+              type="button"
+              onClick={() => onChange(opt.key)}
+              title={opt.label}
+              className={[
+                'relative h-11 rounded-2xl transition-all active:scale-90',
+                selected
+                  ? 'ring-3 ring-offset-2 ring-gray-700 scale-105'
+                  : 'opacity-80 hover:opacity-100 hover:scale-105',
+              ].join(' ')}
+              style={{
+                background: `linear-gradient(135deg, ${opt.from}, ${opt.to})`,
+              }}
+            >
+              {selected && (
+                <span className="absolute inset-0 flex items-center justify-center text-white text-base font-black drop-shadow">
+                  ✓
+                </span>
+              )}
+            </button>
+          )
+        })}
+      </div>
+      {value && (
+        <p className="text-xs text-gray-400 mt-1 text-center">
+          {COLOR_OPTIONS.find((o) => o.key === value)?.label}
+        </p>
+      )}
+    </div>
+  )
+}
+
 export default function EditChildModal() {
   const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin, resetChildData } = useApp()
   const child = modalData
 
   const [name, setName] = useState(child?.name || '')
   const [avatar, setAvatar] = useState(child?.avatar || '🦁')
+  const [colorKey, setColorKey] = useState(child?.colorKey || '')
   const [exchangeRate, setExchangeRate] = useState(
     child?.exchangeRate != null ? String(child.exchangeRate) : ''
   )
-  // birthday stored as "MM-DD", e.g. "03-15"
   const [birthday, setBirthday] = useState(child?.birthday || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
@@ -74,6 +114,7 @@ export default function EditChildModal() {
     updateChild(child.id, {
       name: name.trim(),
       avatar,
+      colorKey: colorKey || null,
       exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
       birthday: birthday || null,
     })
@@ -81,10 +122,7 @@ export default function EditChildModal() {
   }
 
   function handleDelete() {
-    if (!confirmDelete) {
-      setConfirmDelete(true)
-      return
-    }
+    if (!confirmDelete) { setConfirmDelete(true); return }
     requirePin(() => {
       deleteChild(child.id)
       closeModal()
@@ -115,7 +153,10 @@ export default function EditChildModal() {
           />
         </div>
 
-        {/* Birthday — two selects: month + day */}
+        {/* Color picker */}
+        <ColorPicker value={colorKey} onChange={setColorKey} />
+
+        {/* Birthday */}
         <div>
           <label className="text-sm font-semibold text-gray-600 block mb-1">
             🎂 יום הולדת (אופציונלי)

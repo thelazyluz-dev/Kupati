@@ -24,6 +24,23 @@ export const CARD_GRADIENTS = [
   'from-sky-400 to-blue-500',
 ]
 
+// Named color choices a child can pick.
+// `gradient` — Tailwind bg-gradient classes used on the card/dashboard.
+// `from` / `to` — actual hex values for inline-style preview swatches
+//  (so Tailwind purge doesn't need to see them dynamically).
+export const COLOR_OPTIONS = [
+  { key: 'purple',  label: 'סגול',    gradient: 'from-purple-400 to-indigo-500',  from: '#c084fc', to: '#6366f1' },
+  { key: 'pink',    label: 'ורוד',    gradient: 'from-pink-400 to-rose-500',      from: '#f472b6', to: '#f43f5e' },
+  { key: 'amber',   label: 'כתום',   gradient: 'from-amber-400 to-orange-500',   from: '#fbbf24', to: '#f97316' },
+  { key: 'emerald', label: 'ירוק',    gradient: 'from-emerald-400 to-teal-500',   from: '#34d399', to: '#14b8a6' },
+  { key: 'sky',     label: 'כחול',    gradient: 'from-sky-400 to-blue-500',       from: '#38bdf8', to: '#3b82f6' },
+  { key: 'red',     label: 'אדום',    gradient: 'from-red-400 to-rose-600',       from: '#f87171', to: '#e11d48' },
+  { key: 'lime',    label: 'ליים',    gradient: 'from-lime-400 to-green-500',     from: '#a3e635', to: '#22c55e' },
+  { key: 'cyan',    label: 'טורקיז',  gradient: 'from-cyan-400 to-sky-500',       from: '#22d3ee', to: '#0ea5e9' },
+  { key: 'fuchsia', label: 'פוקסיה',  gradient: 'from-fuchsia-400 to-purple-600', from: '#e879f9', to: '#9333ea' },
+  { key: 'yellow',  label: 'צהוב',    gradient: 'from-yellow-300 to-amber-500',   from: '#fde047', to: '#f59e0b' },
+]
+
 export const AVATAR_EMOJIS = [
   '🦁', '🐯', '🐻', '🦊', '🐼', '🐨', '🐸', '🦄',
   '🐧', '🦋', '🐬', '🦕', '🦖', '🐙', '🦉', '🦚',

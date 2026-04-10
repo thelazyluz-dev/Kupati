@@ -1,10 +1,11 @@
 import { useApp } from '../context/AppContext.jsx'
-import { CARD_GRADIENTS } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
 export default function ChildCard({ child, index }) {
   const { navigate, settings } = useApp()
-  const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
+  const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
+    ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
 
   const goals    = getGoals(child)
   const firstGoal = goals[0] ?? null

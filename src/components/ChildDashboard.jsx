@@ -7,7 +7,7 @@ import GoalProgressBar from './GoalProgressBar.jsx'
 import TransactionList from './TransactionList.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
-import { CARD_GRADIENTS } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 
 // Long-press hook: fires onLong after holdMs, onTap on quick release.
 // Cancels entirely if finger moves >8px (i.e. the user is scrolling).
@@ -99,7 +99,8 @@ export default function ChildDashboard({ childId }) {
   }
 
   const childIndex = children.indexOf(child)
-  const gradient   = CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
+  const gradient   = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
+    ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
   const totalValue = getTotalValue(child, settings)
   const goals      = getGoals(child)
   const rate       = child.exchangeRate ?? settings.globalExchangeRate
