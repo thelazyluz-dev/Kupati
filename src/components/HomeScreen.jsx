@@ -27,7 +27,7 @@ export default function HomeScreen() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 px-4 py-5">
+      <main className="flex-1 px-4 py-5 dot-grid">
         {children.length === 0 ? (
           /* Empty state */
           <div className="flex flex-col items-center justify-center min-h-64 gap-5 text-center animate-fade-in">
@@ -47,17 +47,51 @@ export default function HomeScreen() {
             <p className="text-sm text-gray-500 mb-4 font-medium animate-fade-in">
               {children.length} {children.length === 1 ? 'ילד' : 'ילדים'}
             </p>
-            <div className="grid grid-cols-2 gap-4">
-              {children.map((child, i) => (
-                <div
-                  key={child.id}
-                  className="animate-slide-up"
-                  style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
-                >
-                  <ChildCard child={child} index={i} />
+
+            {/* 1 child — full-width featured */}
+            {children.length === 1 && (
+              <div className="animate-slide-up" style={{ animationFillMode: 'both' }}>
+                <ChildCard child={children[0]} index={0} featured />
+              </div>
+            )}
+
+            {/* 2 children — standard 2-col */}
+            {children.length === 2 && (
+              <div className="grid grid-cols-2 gap-4">
+                {children.map((child, i) => (
+                  <div key={child.id} className="animate-slide-up" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
+                    <ChildCard child={child} index={i} />
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* 3 children — first featured, then 2-col */}
+            {children.length === 3 && (
+              <>
+                <div className="animate-slide-up mb-4" style={{ animationFillMode: 'both' }}>
+                  <ChildCard child={children[0]} index={0} featured />
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {children.slice(1).map((child, i) => (
+                    <div key={child.id} className="animate-slide-up" style={{ animationDelay: `${(i + 1) * 60}ms`, animationFillMode: 'both' }}>
+                      <ChildCard child={child} index={i + 1} />
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+
+            {/* 4+ children — 2-col grid */}
+            {children.length >= 4 && (
+              <div className="grid grid-cols-2 gap-4">
+                {children.map((child, i) => (
+                  <div key={child.id} className="animate-slide-up" style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
+                    <ChildCard child={child} index={i} />
+                  </div>
+                ))}
+              </div>
+            )}
           </>
         )}
       </main>
