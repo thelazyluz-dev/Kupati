@@ -1,11 +1,15 @@
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
-import { getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
 export default function ChildCard({ child, index }) {
   const { navigate, settings } = useApp()
   const gradient = CARD_GRADIENTS[index % CARD_GRADIENTS.length]
-  const progress = child.goal ? Math.min(1, getGoalProgress(child, settings)) : 0
+
+  const goals    = getGoals(child)
+  const firstGoal = goals[0] ?? null
+  const progress  = firstGoal ? Math.min(1, getGoalProgress(child, settings, firstGoal)) : 0
+  const totalValue = getTotalValue(child, settings)
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
@@ -33,12 +37,12 @@ export default function ChildCard({ child, index }) {
         </div>
       </div>
 
-      {/* Goal progress bar */}
-      {child.goal && (
+      {/* First goal progress bar */}
+      {firstGoal && (
         <div className="mt-3">
           <div className="flex items-center justify-between text-xs opacity-90 mb-1">
-            <span>{child.goal.emoji || '🎯'} {child.goal.name}</span>
             <span>{Math.round(progress * 100)}%</span>
+            <span>{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
           </div>
           <div className="w-full bg-white/30 rounded-full h-2">
             <div
@@ -46,12 +50,15 @@ export default function ChildCard({ child, index }) {
               style={{ width: `${progress * 100}%` }}
             />
           </div>
+          <p className="text-xs opacity-75 mt-1 text-left" dir="ltr">
+            {formatNumber(totalValue)} / {formatNumber(firstGoal.targetAmount)}₪
+          </p>
         </div>
       )}
 
       {/* Birthday chip */}
       {showBirthday && (
-        <div className="mt-2 bg-white/25 rounded-full px-2 py-0.5 text-xs font-semibold text-center animate-pop">
+        <div className="mt-2 bg-white/25 rounded-full px-2 py-0.5 text-xs font-semibold text-center">
           {birthdayDays === 0 ? '🎂 יום הולדת!' : `🎂 עוד ${birthdayDays} ימים`}
         </div>
       )}

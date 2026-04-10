@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { celebrateGoal, celebrateSmall } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
-import { getGoalProgress, formatNumber } from '../../lib/utils.js'
+import { getGoalProgress, getGoals, formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
@@ -23,7 +23,7 @@ export default function ConvertStarsModal() {
     e.preventDefault()
     if (!canConvert) return
 
-    const prevProgress = child.goal ? getGoalProgress(child, settings) : 0
+    const prevProgress = getGoals(child).length > 0 ? getGoalProgress(child, settings) : 0
 
     const converted = convertStars(childId, stars, settings)
 
@@ -46,7 +46,7 @@ export default function ConvertStarsModal() {
       starBalance: child.starBalance - stars,
       shekelBalance: child.shekelBalance + converted,
     }
-    if (child.goal) {
+    if (getGoals(child).length > 0) {
       const newProgress = getGoalProgress(updatedChild, settings)
       if (prevProgress < 1 && newProgress >= 1) {
         celebrateGoal(); sounds.goal()

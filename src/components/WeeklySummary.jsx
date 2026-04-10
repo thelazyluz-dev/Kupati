@@ -1,109 +1,140 @@
 import { formatNumber } from '../lib/utils.js'
 
+// Israeli week: Sunday (0) → Saturday (6)
 const DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
+const DAY_FULL  = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
 
 export default function WeeklySummary({ transactions }) {
-  // Build last-7-days array (oldest → newest, index 6 = today)
+  // Current week: Sunday through Saturday
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const sundayOffset = today.getDay() // 0=Sun … 6=Sat
+  const weekStart = new Date(today)
+  weekStart.setDate(today.getDate() - sundayOffset)
+
   const days = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date()
-    d.setHours(0, 0, 0, 0)
-    d.setDate(d.getDate() - (6 - i))
+    const d = new Date(weekStart)
+    d.setDate(weekStart.getDate() + i)
     return d
   })
 
-  const starsByDay = days.map((dayStart) => {
+  function sumTx(dayStart, filter) {
     const start = dayStart.getTime()
-    const end = start + 86400000
+    const end   = start + 86400000
     return transactions
-      .filter(
-        (tx) =>
-          tx.timestamp >= start &&
-          tx.timestamp < end &&
-          tx.currency === 'stars' &&
-          tx.type !== 'convert_out'
-      )
-      .reduce((sum, tx) => sum + tx.amount, 0)
-  })
+      .filter((tx) => tx.timestamp >= start && tx.timestamp < end && filter(tx))
+      .reduce((s, tx) => s + tx.amount, 0)
+  }
 
-  const shekelsByDay = days.map((dayStart) => {
-    const start = dayStart.getTime()
-    const end = start + 86400000
-    return transactions
-      .filter(
-        (tx) =>
-          tx.timestamp >= start &&
-          tx.timestamp < end &&
-          tx.currency === 'shekels' &&
-          (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')
-      )
-      .reduce((sum, tx) => sum + tx.amount, 0)
-  })
+  const starsByDay   = days.map((d) => sumTx(d, (tx) => tx.currency === 'stars'   && tx.type !== 'convert_out'))
+  const shekelsByDay = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
 
-  const totalStars = starsByDay.reduce((a, b) => a + b, 0)
+  const totalStars   = starsByDay.reduce((a, b) => a + b, 0)
   const totalShekels = shekelsByDay.reduce((a, b) => a + b, 0)
-  const maxVal = Math.max(...starsByDay, ...shekelsByDay, 1)
+  const maxStars     = Math.max(...starsByDay, 1)
+  const maxShekels   = Math.max(...shekelsByDay, 0.01)
+  const todayIndex   = sundayOffset // index 0-6 within the week
 
-  const hasData = totalStars > 0 || totalShekels > 0
+  const BAR_H = 64 // px — chart area height
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4">
-      <div className="flex items-center justify-between mb-3">
+      {/* Header */}
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="font-bold text-gray-700 text-sm">📊 השבוע הנוכחי</h3>
         <div className="flex gap-3 text-sm">
           {totalStars > 0 && (
-            <span className="text-amber-600 font-semibold">⭐ {formatNumber(totalStars)}</span>
+            <span className="font-bold text-amber-500">⭐ {formatNumber(totalStars)}</span>
           )}
           {totalShekels > 0 && (
-            <span className="text-emerald-600 font-semibold">₪ {formatNumber(totalShekels)}</span>
+            <span className="font-bold text-emerald-600">₪ {formatNumber(totalShekels)}</span>
           )}
-          {!hasData && <span className="text-gray-400">אין נתונים השבוע</span>}
+          {totalStars === 0 && totalShekels === 0 && (
+            <span className="text-gray-400 text-xs">עדיין לא הרווחת השבוע</span>
+          )}
         </div>
-        <h3 className="font-bold text-gray-600 text-sm">📊 שבוע אחרון</h3>
       </div>
 
-      {/* Bar chart */}
-      <div className="flex items-end gap-1" style={{ height: 56 }}>
+      {/* Stars chart */}
+      <p className="text-xs text-gray-400 mb-1 text-right">⭐ כוכבים</p>
+      <div className="flex items-end gap-1 mb-1" style={{ height: BAR_H }}>
         {days.map((day, i) => {
-          const stars = starsByDay[i]
-          const shekels = shekelsByDay[i]
-          const isToday = i === 6
-          const starH = stars > 0 ? Math.max(6, (stars / maxVal) * 48) : 0
-          const shekelH = shekels > 0 ? Math.max(6, (shekels / maxVal) * 48) : 0
+          const val    = starsByDay[i]
+          const isToday   = i === todayIndex
+          const isFuture  = i > todayIndex
+          const barH   = val > 0 ? Math.max(8, (val / maxStars) * (BAR_H - 16)) : 0
 
           return (
-            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
-              <div className="w-full flex flex-col items-center justify-end" style={{ height: 48 }}>
-                {shekelH > 0 && (
-                  <div
-                    className={`w-full rounded-t transition-all duration-500 ${isToday ? 'bg-emerald-500' : 'bg-emerald-200'}`}
-                    style={{ height: shekelH }}
-                  />
-                )}
-                {starH > 0 && (
-                  <div
-                    className={`w-full ${shekelH > 0 ? '' : 'rounded-t'} transition-all duration-500 ${isToday ? 'bg-amber-400' : 'bg-amber-200'}`}
-                    style={{ height: starH }}
-                  />
-                )}
-                {starH === 0 && shekelH === 0 && (
-                  <div className="w-full rounded-t bg-gray-100" style={{ height: 3 }} />
-                )}
-              </div>
-              <span className={`text-xs ${isToday ? 'text-indigo-600 font-bold' : 'text-gray-400'}`}>
-                {DAY_NAMES[day.getDay()]}
+            <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: BAR_H }}>
+              {/* Value label */}
+              <span className={`text-xs font-bold mb-0.5 ${val > 0 ? 'text-amber-600' : 'text-transparent'}`}>
+                {val > 0 ? formatNumber(val) : '0'}
               </span>
+              {/* Bar */}
+              <div
+                style={{ height: barH || 3 }}
+                className={[
+                  'w-full rounded-t-lg transition-all duration-500',
+                  barH === 0   ? 'bg-gray-100'  :
+                  isFuture     ? 'bg-amber-100'  :
+                  isToday      ? 'bg-amber-400'  : 'bg-amber-300',
+                ].join(' ')}
+              />
             </div>
           )
         })}
       </div>
 
-      {/* Legend */}
-      <div className="flex gap-4 justify-center mt-2">
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <span className="w-3 h-3 rounded bg-amber-300 inline-block" />⭐ כוכבים
-        </span>
-        <span className="flex items-center gap-1 text-xs text-gray-400">
-          <span className="w-3 h-3 rounded bg-emerald-300 inline-block" />₪ כסף
-        </span>
+      {/* Shekels chart */}
+      {totalShekels > 0 && (
+        <>
+          <p className="text-xs text-gray-400 mb-1 text-right mt-3">₪ כסף שנכנס</p>
+          <div className="flex items-end gap-1 mb-1" style={{ height: 40 }}>
+            {days.map((day, i) => {
+              const val    = shekelsByDay[i]
+              const isToday   = i === todayIndex
+              const isFuture  = i > todayIndex
+              const barH   = val > 0 ? Math.max(6, (val / maxShekels) * 32) : 0
+
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 40 }}>
+                  {val > 0 && (
+                    <span className="text-xs font-bold mb-0.5 text-emerald-600">{formatNumber(val)}</span>
+                  )}
+                  <div
+                    style={{ height: barH || 3 }}
+                    className={[
+                      'w-full rounded-t-lg transition-all duration-500',
+                      barH === 0   ? 'bg-gray-100'    :
+                      isFuture     ? 'bg-emerald-100'  :
+                      isToday      ? 'bg-emerald-500'  : 'bg-emerald-300',
+                    ].join(' ')}
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Day labels */}
+      <div className="flex gap-1 mt-1">
+        {days.map((day, i) => {
+          const isToday  = i === todayIndex
+          const isFuture = i > todayIndex
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
+              <span className={[
+                'text-xs font-semibold',
+                isToday  ? 'text-indigo-600' :
+                isFuture ? 'text-gray-300'   : 'text-gray-500',
+              ].join(' ')}>
+                {DAY_NAMES[day.getDay()]}
+              </span>
+              {isToday && <div className="w-1 h-1 rounded-full bg-indigo-500" />}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
