@@ -9,29 +9,46 @@ import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import { CARD_GRADIENTS } from '../lib/defaults.js'
 
-// Long-press hook: fires onLong after holdMs, onTap on quick release
+// Long-press hook: fires onLong after holdMs, onTap on quick release.
+// Cancels entirely if finger moves >8px (i.e. the user is scrolling).
 function useLongPress(onTap, onLong, holdMs = 1500) {
-  const timer = useRef(null)
-  const fired = useRef(false)
+  const timer    = useRef(null)
+  const fired    = useRef(false)
+  const moved    = useRef(false)
+  const startPos = useRef({ x: 0, y: 0 })
 
-  const start = useCallback(() => {
+  const start = useCallback((e) => {
     fired.current = false
+    moved.current = false
+    const t = e.touches?.[0]
+    if (t) startPos.current = { x: t.clientX, y: t.clientY }
     timer.current = setTimeout(() => {
-      fired.current = true
-      onLong()
+      if (!moved.current) { fired.current = true; onLong() }
     }, holdMs)
   }, [onLong, holdMs])
 
+  const move = useCallback((e) => {
+    const t = e.touches?.[0]
+    if (!t) return
+    const dx = Math.abs(t.clientX - startPos.current.x)
+    const dy = Math.abs(t.clientY - startPos.current.y)
+    if (dx > 8 || dy > 8) { moved.current = true; clearTimeout(timer.current) }
+  }, [])
+
   const cancel = useCallback(() => {
+    moved.current = true
     clearTimeout(timer.current)
   }, [])
 
   const end = useCallback(() => {
     clearTimeout(timer.current)
-    if (!fired.current) onTap()
+    if (!fired.current && !moved.current) onTap()
   }, [onTap])
 
-  return { onMouseDown: start, onMouseUp: end, onMouseLeave: cancel, onTouchStart: start, onTouchEnd: end }
+  return {
+    onMouseDown: start, onMouseUp: end, onMouseLeave: cancel,
+    onTouchStart: start, onTouchMove: move, onTouchEnd: end,
+  }
 }
 
 export default function ChildDashboard({ childId }) {
