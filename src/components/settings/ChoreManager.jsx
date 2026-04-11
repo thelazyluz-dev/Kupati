@@ -46,13 +46,13 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
 
   return (
     <div className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0">
-      {dragHandle}
       <span className="text-amber-500 font-bold text-sm w-10 text-center" dir="ltr">
         {chore.defaultStars}⭐
       </span>
       <span className="flex-1 font-medium text-gray-800 text-sm">{chore.name}</span>
       <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-indigo-500 transition-colors px-1">✏️</button>
       <button onClick={() => onDelete(chore.id)} className="text-gray-400 hover:text-red-500 transition-colors px-1">🗑️</button>
+      {dragHandle}
     </div>
   )
 }

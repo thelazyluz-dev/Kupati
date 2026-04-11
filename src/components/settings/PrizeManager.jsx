@@ -5,7 +5,24 @@ import { generateId } from '../../lib/utils.js'
 import Button from '../ui/Button.jsx'
 import SortableList from '../ui/SortableList.jsx'
 
-const PRIZE_EMOJIS = ['🍭','🍦','🍫','🎮','📱','🚴','🎬','⚽','🛹','🎸','✈️','🏖️','🎨','📚','🎁','🌈','🎠','🚗','🎯','🎤']
+const PRIZE_EMOJIS = [
+  // אוכל ומשקאות
+  '🍭','🍦','🍫','🍕','🍔','🌮','🍩','🧁','🍰','🎂','🍿','🧃','🍓','🍉','🥤',
+  // בידור וצעצועים
+  '🎮','🕹️','🎲','🧩','🪀','🎯','🎪','🎠','🎡','🎢','🃏','🪁','🤿','🛷',
+  // ספורט
+  '⚽','🏀','🎾','🏓','⛸️','🚴','🛹','🛼','🏊','🤸','⛷️','🎿','🥊','🏄',
+  // בגדים ואביזרים
+  '👟','👗','🕶️','🎒','👑','💍','⌚','🎩','🛍️',
+  // טכנולוגיה
+  '📱','💻','🎧','📷','🎙️','🖥️',
+  // חוויות ויציאות
+  '✈️','🏖️','🎬','🎭','🎤','🎸','🎺','🎻','🎹','🏕️','🌍','🗺️',
+  // טבע וחיות
+  '🐶','🐱','🐠','🐇','🦜','🌸','🌈','⭐','🌙','🦋',
+  // שונות
+  '📚','🎨','🖌️','✏️','🔭','🔬','🏆','🥇','🎁','💎','🪄','🎀',
+]
 
 export default function PrizeManager() {
   const { settings, updateSettings } = useApp()
@@ -66,7 +83,6 @@ export default function PrizeManager() {
             <PrizeForm form={form} onChange={setForm} onSave={submitForm} onCancel={cancelEdit} emojis={PRIZE_EMOJIS} />
           ) : (
             <div className="flex items-center gap-2 bg-purple-50 rounded-2xl px-3 py-3">
-              {dragHandle}
               <span className="text-2xl">{prize.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 text-sm truncate">{prize.name}</p>
@@ -76,6 +92,7 @@ export default function PrizeManager() {
                 className="text-gray-400 hover:text-gray-600 text-sm px-2 py-1 active:scale-90">✏️</button>
               <button type="button" onClick={() => deletePrize(prize.id)}
                 className="text-gray-400 hover:text-red-500 text-sm px-2 py-1 active:scale-90">🗑️</button>
+              {dragHandle}
             </div>
           )
         )}
