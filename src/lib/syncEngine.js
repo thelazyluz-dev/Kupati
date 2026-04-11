@@ -115,6 +115,8 @@ export async function attach(code, statusCb) {
     // If childrenSnap exists and updatedBy === deviceId → same device, no need to pull
   } catch (err) {
     console.warn('[sync] Initial sync failed:', err)
+    onStatus?.('error')
+    return   // don't set up listeners if initial connection failed
   }
 
   // Real-time listeners for all keys
