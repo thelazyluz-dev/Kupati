@@ -21,5 +21,14 @@ export function useChores() {
     setChores((prev) => prev.filter((c) => c.id !== id))
   }
 
-  return { chores, addChore, updateChore, deleteChore }
+  function reorderChores(fromIdx, toIdx) {
+    setChores((prev) => {
+      const next = [...prev]
+      const [item] = next.splice(fromIdx, 1)
+      next.splice(toIdx, 0, item)
+      return next
+    })
+  }
+
+  return { chores, addChore, updateChore, deleteChore, reorderChores }
 }
