@@ -84,6 +84,13 @@
     background-size: 22px 22px;
   }
 
+  /* Floating particles (HomeScreen header) */
+  @keyframes particle-float {
+    0%, 100% { transform: translateY(0px)   rotate(0deg)   scale(1);    }
+    35%       { transform: translateY(-14px) rotate(12deg)  scale(1.08); }
+    70%       { transform: translateY(-6px)  rotate(-8deg)  scale(0.95); }
+  }
+
   /* Shimmer sweep on card hover */
   .card-shimmer {
     position: relative;
