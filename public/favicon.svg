@@ -9,33 +9,66 @@
       <stop offset="100%" stop-color="#f59e0b"/>
     </linearGradient>
   </defs>
+
+  <!-- Background -->
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
   <circle cx="256" cy="276" r="185" fill="white" opacity="0.07"/>
+
+  <!-- Stars scattered around the pig -->
+  <!-- Top-left area -->
+  <polygon points="62,95 68,112 86,112 72,122 77,140 62,129 47,140 52,122 38,112 56,112" fill="#fde68a" opacity="0.9"/>
+  <!-- Bottom-left -->
+  <polygon points="58,355 62,367 75,367 65,374 69,387 58,380 47,387 51,374 41,367 54,367" fill="#fde68a" opacity="0.75"/>
+  <!-- Top-right large -->
+  <polygon points="448,130 455,152 478,152 460,165 467,187 448,174 429,187 436,165 418,152 441,152" fill="#fde68a" opacity="0.85"/>
+  <!-- Right middle small -->
+  <polygon points="462,310 466,322 478,322 469,329 472,341 462,334 452,341 455,329 446,322 458,322" fill="#fde68a" opacity="0.7"/>
+  <!-- Bottom-right -->
+  <polygon points="415,435 419,447 431,447 422,454 425,466 415,459 405,466 408,454 399,447 411,447" fill="#fde68a" opacity="0.8"/>
+  <!-- Bottom-center-left small -->
+  <polygon points="118,420 121,430 131,430 123,436 126,446 118,440 110,446 113,436 105,430 115,430" fill="#fde68a" opacity="0.65"/>
+  <!-- Top-center small -->
+  <polygon points="165,52 168,62 178,62 170,68 173,78 165,72 157,78 160,68 152,62 162,62" fill="#fde68a" opacity="0.7"/>
+  <!-- Right-top small -->
+  <polygon points="370,48 373,58 383,58 375,64 378,74 370,68 362,74 365,64 357,58 367,58" fill="#fde68a" opacity="0.6"/>
+
+  <!-- Pig ears -->
   <ellipse cx="178" cy="162" rx="38" ry="46" fill="#fce7f3"/>
   <ellipse cx="334" cy="162" rx="38" ry="46" fill="#fce7f3"/>
   <ellipse cx="178" cy="165" rx="22" ry="28" fill="#f9a8d4"/>
   <ellipse cx="334" cy="165" rx="22" ry="28" fill="#f9a8d4"/>
+
+  <!-- Head -->
   <circle cx="256" cy="218" r="108" fill="#fce7f3"/>
+
+  <!-- Body -->
   <ellipse cx="256" cy="358" rx="140" ry="112" fill="#fce7f3"/>
+
+  <!-- Legs -->
   <rect x="162" y="432" width="44" height="52" rx="22" fill="#fbcfe8"/>
   <rect x="218" y="438" width="44" height="46" rx="22" fill="#fbcfe8"/>
   <rect x="274" y="438" width="44" height="46" rx="22" fill="#fbcfe8"/>
   <rect x="330" y="432" width="44" height="52" rx="22" fill="#fbcfe8"/>
+
+  <!-- Tail -->
   <path d="M396 320 C428 298 432 340 410 350 C395 358 390 338 402 328" stroke="#fbcfe8" stroke-width="11" fill="none" stroke-linecap="round"/>
+
+  <!-- Snout -->
   <ellipse cx="256" cy="244" rx="56" ry="40" fill="#f9a8d4"/>
   <circle cx="241" cy="247" r="10" fill="#e879f9" opacity="0.5"/>
   <circle cx="271" cy="247" r="10" fill="#e879f9" opacity="0.5"/>
+
+  <!-- Eyes -->
   <circle cx="220" cy="196" r="16" fill="#1e1b4b"/>
   <circle cx="292" cy="196" r="16" fill="#1e1b4b"/>
   <circle cx="225" cy="191" r="6" fill="white"/>
   <circle cx="297" cy="191" r="6" fill="white"/>
+
+  <!-- Coin slot -->
   <rect x="238" y="120" width="36" height="10" rx="5" fill="#6366f1" opacity="0.8"/>
+
+  <!-- Gold coin -->
   <circle cx="256" cy="88" r="40" fill="#f59e0b"/>
   <circle cx="256" cy="88" r="33" fill="url(#coin)"/>
   <text x="256" y="102" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="34" font-weight="900" fill="#92400e">&#x20AA;</text>
-  <g opacity="0.75">
-    <circle cx="418" cy="76" r="6" fill="white"/>
-    <line x1="418" y1="62" x2="418" y2="90" stroke="white" stroke-width="3" stroke-linecap="round"/>
-    <line x1="404" y1="76" x2="432" y2="76" stroke="white" stroke-width="3" stroke-linecap="round"/>
-  </g>
 </svg>
