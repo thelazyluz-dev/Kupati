@@ -17,6 +17,7 @@ export default function AddStarsModal() {
   const [customStars, setCustomStars] = useState('')
   const [customDesc, setCustomDesc] = useState('')
   const [note, setNote] = useState('')
+  const [showNote, setShowNote] = useState(false)
   const [success, setSuccess] = useState(null) // { amount, description } | null
 
   if (!child) return null
@@ -97,17 +98,18 @@ export default function AddStarsModal() {
                   key={chore.id}
                   type="button"
                   onClick={() => setSelectedChore(chore)}
-                  className={`flex items-center justify-between p-4 rounded-2xl border-2 text-right transition-all active:scale-95 ${
+                  className={`flex items-center gap-3 p-3 rounded-2xl border-2 text-right transition-all active:scale-95 ${
                     selectedChore?.id === chore.id
                       ? 'border-indigo-500 bg-indigo-50'
                       : 'border-gray-200 bg-gray-50 hover:border-gray-300'
                   }`}
                 >
-                  <div className="flex items-center gap-1 text-amber-500 font-bold">
+                  <span className="text-2xl flex-shrink-0">{chore.emoji || '⭐'}</span>
+                  <span className="flex-1 font-medium text-gray-800">{chore.name}</span>
+                  <div className="flex items-center gap-1 text-amber-500 font-bold flex-shrink-0">
                     <span>{chore.defaultStars}</span>
                     <span>⭐</span>
                   </div>
-                  <span className="font-medium text-gray-800">{chore.name}</span>
                 </button>
               ))}
             </div>
@@ -145,19 +147,25 @@ export default function AddStarsModal() {
           </div>
         )}
 
-        {/* Note */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            הערה (אופציונלי)
-          </label>
+        {/* Note — collapsible to save space */}
+        {showNote ? (
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="..."
-            className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 focus:border-indigo-400 focus:outline-none"
+            placeholder="הערה..."
+            className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+            autoFocus
           />
-        </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setShowNote(true)}
+            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+          >
+            📝 הוסף הערה
+          </button>
+        )}
 
         {/* Preview */}
         {((tab === 'chore' && selectedChore) || (tab === 'custom' && customStars)) && (

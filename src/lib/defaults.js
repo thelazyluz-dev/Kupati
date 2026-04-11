@@ -15,14 +15,29 @@ export const DEFAULT_PRIZES = [
 ]
 
 export const DEFAULT_CHORES = [
-  { id: 'chore_1', name: 'נקיון חדר', defaultStars: 3 },
-  { id: 'chore_2', name: 'שטיפת כלים', defaultStars: 2 },
-  { id: 'chore_3', name: 'הכנת שולחן', defaultStars: 1 },
-  { id: 'chore_4', name: 'ניקוי אמבטיה', defaultStars: 3 },
-  { id: 'chore_5', name: 'קניות', defaultStars: 4 },
-  { id: 'chore_6', name: 'גינון', defaultStars: 3 },
-  { id: 'chore_7', name: 'ניקוי מכונית', defaultStars: 4 },
-  { id: 'chore_8', name: 'עזרה בבישול', defaultStars: 2 },
+  { id: 'chore_1', emoji: '🧹', name: 'נקיון חדר',    defaultStars: 3 },
+  { id: 'chore_2', emoji: '🍽️', name: 'שטיפת כלים',   defaultStars: 2 },
+  { id: 'chore_3', emoji: '🪑', name: 'הכנת שולחן',   defaultStars: 1 },
+  { id: 'chore_4', emoji: '🛁', name: 'ניקוי אמבטיה', defaultStars: 3 },
+  { id: 'chore_5', emoji: '🛒', name: 'קניות',         defaultStars: 4 },
+  { id: 'chore_6', emoji: '🌱', name: 'גינון',          defaultStars: 3 },
+  { id: 'chore_7', emoji: '🚗', name: 'ניקוי מכונית',  defaultStars: 4 },
+  { id: 'chore_8', emoji: '👨‍🍳', name: 'עזרה בבישול',  defaultStars: 2 },
+]
+
+export const CHORE_EMOJIS = [
+  // ניקיון
+  '🧹', '🧽', '🪣', '🫧', '🧴', '🪥', '🛁', '🚿', '🧺',
+  // מטבח
+  '🍽️', '🥄', '🍳', '👨‍🍳', '🛒', '🧂',
+  // בית
+  '🛏️', '🪑', '🪟', '🚪', '💡', '📦', '🗑️',
+  // חצר וטבע
+  '🌱', '🌸', '🪴', '🚗', '🐕', '🐾',
+  // לימודים
+  '📚', '✏️', '🎒', '📝',
+  // שונות
+  '⭐', '✨', '💪', '🏆', '❤️',
 ]
 
 export const CARD_GRADIENTS = [

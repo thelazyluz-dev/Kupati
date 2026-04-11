@@ -73,18 +73,18 @@ export default function ChildCard({ child, index }) {
 
           {/* Balance chips */}
           <div className="flex gap-2 flex-wrap">
-            <div className="flex items-center gap-1.5 bg-white/20 rounded-xl px-2.5 py-1">
+            <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
               <span className="text-sm">⭐</span>
               <span className="font-bold text-sm">{formatNumber(child.starBalance)}</span>
             </div>
-            <div className="flex items-center gap-1.5 bg-white/20 rounded-xl px-2.5 py-1">
+            <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
               <span className="text-sm">₪</span>
               <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
             </div>
             {/* This week's earnings chip */}
             {(weekStars > 0 || weekShekels > 0) && (
-              <div className="flex items-center gap-1 bg-white/30 rounded-xl px-2.5 py-1 text-xs font-semibold">
-                <span className="opacity-80">השבוע:</span>
+              <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
+                <span className="opacity-75">השבוע:</span>
                 {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
                 {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
               </div>

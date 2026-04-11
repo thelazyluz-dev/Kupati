@@ -2,15 +2,30 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import Button from '../ui/Button.jsx'
 import SortableList from '../ui/SortableList.jsx'
+import { CHORE_EMOJIS } from '../../lib/defaults.js'
 
 function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
   const [editing, setEditing] = useState(false)
-  const [name, setName]   = useState(chore.name)
-  const [stars, setStars] = useState(String(chore.defaultStars))
+  const [emoji, setEmoji]   = useState(chore.emoji || '⭐')
+  const [name, setName]     = useState(chore.name)
+  const [stars, setStars]   = useState(String(chore.defaultStars))
 
   if (editing) {
     return (
       <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 my-1 space-y-2">
+        {/* Emoji picker */}
+        <div className="flex flex-wrap gap-1">
+          {CHORE_EMOJIS.map((e) => (
+            <button
+              key={e}
+              type="button"
+              onClick={() => setEmoji(e)}
+              className={`text-lg w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 ${
+                emoji === e ? 'bg-indigo-400 shadow-sm scale-110' : 'bg-white hover:bg-indigo-100'
+              }`}
+            >{e}</button>
+          ))}
+        </div>
         <input
           type="text"
           value={name}
@@ -32,11 +47,16 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
           <Button
             size="sm"
             fullWidth
-            onClick={() => { onSave(chore.id, { name: name.trim() || chore.name, defaultStars: parseFloat(stars) || 1 }); setEditing(false) }}
+            onClick={() => {
+              onSave(chore.id, { emoji, name: name.trim() || chore.name, defaultStars: parseFloat(stars) || 1 })
+              setEditing(false)
+            }}
           >
             ✓ שמור
           </Button>
-          <Button size="sm" variant="secondary" onClick={() => { setName(chore.name); setStars(String(chore.defaultStars)); setEditing(false) }}>
+          <Button size="sm" variant="secondary" onClick={() => {
+            setEmoji(chore.emoji || '⭐'); setName(chore.name); setStars(String(chore.defaultStars)); setEditing(false)
+          }}>
             ✕
           </Button>
         </div>
@@ -46,7 +66,8 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
 
   return (
     <div className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0">
-      <span className="text-amber-500 font-bold text-sm w-10 text-center" dir="ltr">
+      <span className="text-xl w-7 text-center flex-shrink-0">{chore.emoji || '⭐'}</span>
+      <span className="text-amber-500 font-bold text-sm w-8 text-center flex-shrink-0" dir="ltr">
         {chore.defaultStars}⭐
       </span>
       <span className="flex-1 font-medium text-gray-800 text-sm">{chore.name}</span>
@@ -59,13 +80,15 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
 
 export default function ChoreManager() {
   const { chores, addChore, updateChore, deleteChore, reorderChores } = useApp()
-  const [showAdd, setShowAdd] = useState(false)
+  const [showAdd, setShowAdd]   = useState(false)
+  const [newEmoji, setNewEmoji] = useState('🧹')
   const [newName, setNewName]   = useState('')
   const [newStars, setNewStars] = useState('2')
 
   function handleAdd() {
     if (!newName.trim()) return
-    addChore({ name: newName.trim(), defaultStars: parseFloat(newStars) || 1 })
+    addChore({ emoji: newEmoji, name: newName.trim(), defaultStars: parseFloat(newStars) || 1 })
+    setNewEmoji('🧹')
     setNewName('')
     setNewStars('2')
     setShowAdd(false)
@@ -82,6 +105,19 @@ export default function ChoreManager() {
 
       {showAdd && (
         <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 mb-3 space-y-2">
+          {/* Emoji picker */}
+          <div className="flex flex-wrap gap-1">
+            {CHORE_EMOJIS.map((e) => (
+              <button
+                key={e}
+                type="button"
+                onClick={() => setNewEmoji(e)}
+                className={`text-lg w-8 h-8 rounded-lg flex items-center justify-center transition-all active:scale-90 ${
+                  newEmoji === e ? 'bg-indigo-400 shadow-sm scale-110' : 'bg-white hover:bg-indigo-100'
+                }`}
+              >{e}</button>
+            ))}
+          </div>
           <input
             type="text"
             value={newName}

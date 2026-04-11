@@ -128,14 +128,14 @@ export default function HomeScreen() {
                   <div className="flex gap-2 mt-1.5 px-1">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-2xl bg-amber-100 text-amber-700 active:scale-95 transition-all shadow-sm hover:bg-amber-200"
+                      className="flex-1 bg-white rounded-2xl shadow-sm border border-amber-200 border-b-[3px] border-b-amber-400 px-3 py-2 flex items-center justify-center gap-1.5 text-sm font-bold text-amber-600 active:scale-95 active:shadow-inner transition-all"
                     >
                       <span>⭐</span>
                       <span>מטלה מהירה</span>
                     </button>
                     <button
                       onClick={() => showModal('addMoney', { childId: child.id })}
-                      className="flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-2xl bg-emerald-100 text-emerald-700 active:scale-95 transition-all shadow-sm hover:bg-emerald-200"
+                      className="flex-1 bg-white rounded-2xl shadow-sm border border-emerald-200 border-b-[3px] border-b-emerald-400 px-3 py-2 flex items-center justify-center gap-1.5 text-sm font-bold text-emerald-600 active:scale-95 active:shadow-inner transition-all"
                     >
                       <span>💵</span>
                       <span>הפקדה מהירה</span>
