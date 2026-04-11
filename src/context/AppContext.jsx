@@ -3,6 +3,7 @@ import { useChildren } from '../hooks/useChildren.js'
 import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { useTransactions } from '../hooks/useTransactions.js'
+import { useSyncEngine } from '../hooks/useSyncEngine.js'
 import { clearAll } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 
@@ -13,6 +14,7 @@ export function AppProvider({ children: reactChildren }) {
   const choresApi = useChores()
   const settingsApi = useSettings()
   const transactionsApi = useTransactions()
+  const { status: syncStatus } = useSyncEngine(settingsApi.settings.familyCode || '')
 
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
@@ -116,6 +118,7 @@ export function AppProvider({ children: reactChildren }) {
     resetChildData,
     pendingBadge,
     clearPendingBadge: () => setPendingBadge(null),
+    syncStatus,
     screen,
     activeChildId,
     navigate,

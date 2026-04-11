@@ -3,6 +3,7 @@ export const DEFAULT_SETTINGS = {
   confettiThreshold: 5,
   soundEnabled: true,
   pin: '',
+  familyCode: '',
 }
 
 export const DEFAULT_PRIZES = [

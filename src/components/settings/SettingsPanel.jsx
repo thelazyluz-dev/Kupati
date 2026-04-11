@@ -5,6 +5,7 @@ import Button from '../ui/Button.jsx'
 import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import PrizeManager from './PrizeManager.jsx'
+import SyncSettings from './SyncSettings.jsx'
 
 function SectionHeader({ icon, label, color }) {
   return (
@@ -143,6 +144,10 @@ export default function SettingsPanel() {
           <PinSettings />
         </SettingsSection>
 
+        <SettingsSection icon="☁️" label="סנכרון בין מכשירים" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+          <SyncSettings />
+        </SettingsSection>
+
         <SettingsSection icon="💾" label="גיבוי נתונים" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
           <div className="space-y-3">
             <Button variant="secondary" fullWidth onClick={handleExport}>
@@ -191,7 +196,7 @@ export default function SettingsPanel() {
 
         <div className="text-center text-xs text-gray-400 pb-8">
           <p>הארנק שלי 🐷</p>
-          <p>כל הנתונים נשמרים מקומית במכשיר</p>
+          <p>נתונים מסונכרנים דרך Firebase</p>
         </div>
       </main>
     </div>
