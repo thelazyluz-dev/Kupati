@@ -68,34 +68,42 @@ export function useChildren() {
   function addStars(id, amount) {
     const stars = parseFloat(amount) || 0
     setChildren((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, starBalance: c.starBalance + stars } : c
-      )
+      prev.map((c) => {
+        if (c.id !== id) return c
+        const newBal = c.starBalance + stars
+        return { ...c, starBalance: newBal, starBalancePeak: Math.max(c.starBalancePeak || 0, newBal) }
+      })
     )
   }
 
   function addMoney(id, amount) {
     const shekels = parseFloat(amount) || 0
     setChildren((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, shekelBalance: c.shekelBalance + shekels } : c
-      )
+      prev.map((c) => {
+        if (c.id !== id) return c
+        const newBal = c.shekelBalance + shekels
+        return { ...c, shekelBalance: newBal, shekelBalancePeak: Math.max(c.shekelBalancePeak || 0, newBal) }
+      })
     )
   }
 
   function adjustStars(id, delta) {
     setChildren((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, starBalance: Math.max(0, c.starBalance + delta) } : c
-      )
+      prev.map((c) => {
+        if (c.id !== id) return c
+        const newBal = Math.max(0, c.starBalance + delta)
+        return { ...c, starBalance: newBal, starBalancePeak: Math.max(c.starBalancePeak || 0, newBal) }
+      })
     )
   }
 
   function adjustShekels(id, delta) {
     setChildren((prev) =>
-      prev.map((c) =>
-        c.id === id ? { ...c, shekelBalance: Math.max(0, c.shekelBalance + delta) } : c
-      )
+      prev.map((c) => {
+        if (c.id !== id) return c
+        const newBal = Math.max(0, c.shekelBalance + delta)
+        return { ...c, shekelBalance: newBal, shekelBalancePeak: Math.max(c.shekelBalancePeak || 0, newBal) }
+      })
     )
   }
 

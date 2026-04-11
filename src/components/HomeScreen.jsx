@@ -1,6 +1,7 @@
 import { useApp } from '../context/AppContext.jsx'
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
+import { formatNumber } from '../lib/utils.js'
 
 // Particles spread around the dead-space of the header (avoiding center pig & corner buttons)
 const PARTICLES = [
@@ -16,6 +17,13 @@ const PARTICLES = [
   { e: '🪙', l: '66%', t: '5%',  s: 11, d: 2.5,  dur: 4.6 },
   { e: '⭐', l: '3%',  t: '30%', s: 10, d: 3.8,  dur: 4.8 },
   { e: '🪙', l: '96%', t: '38%', s: 10, d: 0.9,  dur: 3.7 },
+]
+
+const ONBOARDING_FEATURES = [
+  { e: '⭐', t: 'מטלות וכוכבים' },
+  { e: '🎁', t: 'מימוש פרסים' },
+  { e: '🏦', t: 'חסכון עם ריבית' },
+  { e: '🔄', t: 'סנכרון משפחתי' },
 ]
 
 export default function HomeScreen() {
@@ -76,29 +84,63 @@ export default function HomeScreen() {
       {/* Content */}
       <main className="flex-1 px-4 py-5 dot-grid -mt-4">
         {children.length === 0 ? (
-          <div className="flex flex-col items-center justify-center min-h-64 gap-5 text-center animate-fade-in pt-8">
-            <div className="text-7xl animate-float">🐷</div>
+          /* ── Onboarding ─────────────────────────────────────────── */
+          <div className="flex flex-col items-center gap-5 text-center animate-fade-in pt-4">
+            <div className="text-8xl animate-float">🐷</div>
             <div>
-              <p className="text-xl font-bold text-gray-700 mb-1">הארנק ריק!</p>
-              <p className="text-gray-500">הוסף ילד ראשון כדי להתחיל</p>
+              <h2 className="text-2xl font-bold text-gray-800 mb-1">ברוכים הבאים!</h2>
+              <p className="text-gray-500 leading-relaxed text-sm">
+                הארנק החכם לילדים —<br />מטלות, כוכבים, חסכון ופרסים
+              </p>
             </div>
-            <Button size="lg" onClick={() => showModal('addChild')}>
-              + הוסף ילד ראשון
+
+            {/* Features grid */}
+            <div className="grid grid-cols-2 gap-2.5 w-full">
+              {ONBOARDING_FEATURES.map(({ e, t }) => (
+                <div key={t} className="bg-white rounded-2xl p-3 flex items-center gap-2.5 shadow-sm text-right">
+                  <span className="text-2xl flex-shrink-0">{e}</span>
+                  <span className="text-sm font-semibold text-gray-700">{t}</span>
+                </div>
+              ))}
+            </div>
+
+            <Button size="lg" fullWidth onClick={() => showModal('addChild')}>
+              🚀 בואו נתחיל — הוסף ילד ראשון
             </Button>
           </div>
         ) : (
+          /* ── Children list ──────────────────────────────────────── */
           <>
             <p className="text-sm text-gray-500 mb-3 font-medium animate-fade-in">
               {children.length} {children.length === 1 ? 'ילד' : 'ילדים'}
             </p>
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-4">
               {children.map((child, i) => (
                 <div
                   key={child.id}
                   className="animate-slide-up"
                   style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
                 >
+                  {/* Child card */}
                   <ChildCard child={child} index={i} />
+
+                  {/* Quick action strip */}
+                  <div className="flex gap-2 mt-1.5 px-1">
+                    <button
+                      onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
+                      className="flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-2xl bg-amber-100 text-amber-700 active:scale-95 transition-all shadow-sm hover:bg-amber-200"
+                    >
+                      <span>⭐</span>
+                      <span>מטלה מהירה</span>
+                    </button>
+                    <button
+                      onClick={() => showModal('addMoney', { childId: child.id })}
+                      className="flex-1 h-9 flex items-center justify-center gap-1.5 text-xs font-bold rounded-2xl bg-emerald-100 text-emerald-700 active:scale-95 transition-all shadow-sm hover:bg-emerald-200"
+                    >
+                      <span>💵</span>
+                      <span>הפקדה מהירה</span>
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>

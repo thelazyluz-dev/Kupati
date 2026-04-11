@@ -1,9 +1,26 @@
+import { useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
 export default function ChildCard({ child, index }) {
-  const { navigate, settings } = useApp()
+  const { navigate, settings, getTransactions } = useApp()
+
+  // This-week earnings for the summary chip
+  const weekStart = useMemo(() => {
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    today.setDate(today.getDate() - today.getDay()) // back to Sunday
+    return today.getTime()
+  }, [])
+
+  const transactions = getTransactions(child.id)
+  const weekStars = transactions
+    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars' && !['convert_out', 'prize_redeem'].includes(tx.type))
+    .reduce((sum, tx) => sum + tx.amount, 0)
+  const weekShekels = transactions
+    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
+    .reduce((sum, tx) => sum + tx.amount, 0)
   const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
 
@@ -64,6 +81,14 @@ export default function ChildCard({ child, index }) {
               <span className="text-sm">₪</span>
               <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
             </div>
+            {/* This week's earnings chip */}
+            {(weekStars > 0 || weekShekels > 0) && (
+              <div className="flex items-center gap-1 bg-white/30 rounded-xl px-2.5 py-1 text-xs font-semibold">
+                <span className="opacity-80">השבוע:</span>
+                {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
+                {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
+              </div>
+            )}
           </div>
 
           {/* Goal progress bar */}

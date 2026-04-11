@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -50,6 +50,47 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
     onMouseDown: start, onMouseUp: end, onMouseLeave: cancel,
     onTouchStart: start, onTouchMove: move, onTouchEnd: end,
   }
+}
+
+// Deterministic star/coin scatter using golden-angle distribution
+function IconCloud({ icons }) {
+  if (!icons.length) return null
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
+      {icons.map((emoji, i) => {
+        const angle = (i * 137.508) % 360
+        const r = 12 + (i % 5) * 9
+        const x = 50 + r * Math.cos(angle * Math.PI / 180)
+        const y = 50 + r * Math.sin(angle * Math.PI / 180)
+        return (
+          <span
+            key={i}
+            className="absolute leading-none select-none"
+            style={{
+              left: `${Math.max(4, Math.min(94, x))}%`,
+              top:  `${Math.max(4, Math.min(94, y))}%`,
+              fontSize: 9,
+              opacity: 0.38,
+              transform: 'translate(-50%, -50%)',
+            }}
+          >{emoji}</span>
+        )
+      })}
+    </div>
+  )
+}
+
+function StarIconCloud({ count }) {
+  const n = Math.min(Math.round(count), 50)
+  const icons = Array.from({ length: n }, () => '⭐')
+  return <IconCloud icons={icons} />
+}
+
+function ShekelIconCloud({ balance }) {
+  const bills = Math.min(Math.floor(balance / 100), 6)
+  const coins  = Math.min(Math.floor((balance % 100) / 10), 9)
+  const icons  = [...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]
+  return <IconCloud icons={icons} />
 }
 
 export default function ChildDashboard({ childId }) {
@@ -106,6 +147,7 @@ export default function ChildDashboard({ childId }) {
     ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
   const totalValue = getTotalValue(child)
   const goals      = getGoals(child)
+  const streak     = calculateStreak(transactions)
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
@@ -143,6 +185,12 @@ export default function ChildDashboard({ childId }) {
                 ))}
               </div>
             )}
+            {/* Streak chip */}
+            {streak >= 2 && (
+              <div className="inline-block mt-1.5 bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
+                🔥 {streak} ימים ברצף!
+              </div>
+            )}
           </div>
 
           <button
@@ -158,23 +206,39 @@ export default function ChildDashboard({ childId }) {
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Shekels card */}
-          <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
-            <div key={child.shekelBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
+          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
+            <ShekelIconCloud balance={child.shekelBalance} />
+            <div key={child.shekelBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
             </div>
-            <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
+            <div className="relative text-sm opacity-90 mt-1">💵 שקלים</div>
+            {(child.shekelBalancePeak || 0) > 0 && (
+              <div className="relative text-xs opacity-60 mt-0.5">
+                {child.shekelBalance >= (child.shekelBalancePeak || 0)
+                  ? '🌟 שיא חדש!'
+                  : `🏆 שיא: ${formatNumber(child.shekelBalancePeak)}₪`}
+              </div>
+            )}
             {firstGoal && totalValue < firstGoal.targetAmount && (
-              <div className="text-xs opacity-70 mt-1 bg-white/20 rounded-full px-2 py-0.5 inline-block">
+              <div className="relative text-xs opacity-70 mt-1 bg-white/20 rounded-full px-2 py-0.5 inline-block">
                 עוד {formatNumber(firstGoal.targetAmount - totalValue)}₪
               </div>
             )}
           </div>
           {/* Stars card */}
-          <div className="bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
-            <div key={child.starBalance} className="text-4xl font-bold animate-wiggle" dir="ltr">
+          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
+            <StarIconCloud count={child.starBalance} />
+            <div key={child.starBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
             </div>
-            <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
+            <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
+            {(child.starBalancePeak || 0) > 0 && (
+              <div className="relative text-xs opacity-60 mt-0.5">
+                {child.starBalance >= (child.starBalancePeak || 0)
+                  ? '🌟 שיא חדש!'
+                  : `🏆 שיא: ${formatNumber(child.starBalancePeak)}⭐`}
+              </div>
+            )}
           </div>
         </div>
       </header>

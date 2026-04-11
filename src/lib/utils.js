@@ -78,6 +78,27 @@ export function starsNeededForGoal(child, settings, goal, chores) {
   return Math.ceil(starsGap / avgStars)   // number of average chores
 }
 
+// Consecutive days the child has done at least one chore, ending today (or yesterday)
+export function calculateStreak(transactions) {
+  function hasChoreOn(dayMs) {
+    return transactions.some(
+      (tx) => tx.type === 'chore' && tx.timestamp >= dayMs && tx.timestamp < dayMs + 86400000
+    )
+  }
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  let check = today.getTime()
+  // If today has no chores yet, allow streak from yesterday to still be alive
+  if (!hasChoreOn(check)) check -= 86400000
+  let streak = 0
+  while (hasChoreOn(check)) {
+    streak++
+    check -= 86400000
+    if (streak > 365) break
+  }
+  return streak
+}
+
 // Returns days until next birthday, 0 if today, null if no birthday set
 export function daysUntilBirthday(birthdayMMDD) {
   if (!birthdayMMDD) return null
