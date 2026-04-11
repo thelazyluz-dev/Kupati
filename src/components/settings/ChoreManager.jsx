@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import Button from '../ui/Button.jsx'
+import SortableList from '../ui/SortableList.jsx'
 
-function ChoreRow({ chore, onSave, onDelete, onMoveUp, onMoveDown }) {
+function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
   const [editing, setEditing] = useState(false)
   const [name, setName]   = useState(chore.name)
   const [stars, setStars] = useState(String(chore.defaultStars))
@@ -45,25 +46,11 @@ function ChoreRow({ chore, onSave, onDelete, onMoveUp, onMoveDown }) {
 
   return (
     <div className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0">
-      {/* Reorder */}
-      <div className="flex flex-col gap-0.5">
-        <button
-          onClick={onMoveUp}
-          disabled={!onMoveUp}
-          className="w-6 h-6 flex items-center justify-center rounded-lg text-xs text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 disabled:opacity-20 transition-colors"
-        >▲</button>
-        <button
-          onClick={onMoveDown}
-          disabled={!onMoveDown}
-          className="w-6 h-6 flex items-center justify-center rounded-lg text-xs text-gray-400 hover:text-indigo-500 hover:bg-indigo-50 disabled:opacity-20 transition-colors"
-        >▼</button>
-      </div>
-
+      {dragHandle}
       <span className="text-amber-500 font-bold text-sm w-10 text-center" dir="ltr">
         {chore.defaultStars}⭐
       </span>
       <span className="flex-1 font-medium text-gray-800 text-sm">{chore.name}</span>
-
       <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-indigo-500 transition-colors px-1">✏️</button>
       <button onClick={() => onDelete(chore.id)} className="text-gray-400 hover:text-red-500 transition-colors px-1">🗑️</button>
     </div>
@@ -123,18 +110,22 @@ export default function ChoreManager() {
       )}
 
       <div className="bg-white rounded-2xl shadow-sm overflow-hidden px-3">
-        {chores.map((chore, i) => (
-          <ChoreRow
-            key={chore.id}
-            chore={chore}
-            onSave={(id, updates) => updateChore(id, updates)}
-            onDelete={(id) => deleteChore(id)}
-            onMoveUp={i > 0 ? () => reorderChores(i, i - 1) : null}
-            onMoveDown={i < chores.length - 1 ? () => reorderChores(i, i + 1) : null}
-          />
-        ))}
-        {chores.length === 0 && (
+        {chores.length === 0 ? (
           <p className="text-center text-gray-400 py-6 text-sm">אין מטלות — לחץ הוסף</p>
+        ) : (
+          <SortableList
+            items={chores}
+            onReorder={(from, to) => reorderChores(from, to)}
+            keyExtractor={(c) => c.id}
+            renderItem={(chore, idx, dragHandle) => (
+              <ChoreRow
+                chore={chore}
+                dragHandle={dragHandle}
+                onSave={(id, updates) => updateChore(id, updates)}
+                onDelete={(id) => deleteChore(id)}
+              />
+            )}
+          />
         )}
       </div>
     </div>

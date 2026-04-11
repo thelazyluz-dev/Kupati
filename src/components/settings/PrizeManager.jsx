@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext.jsx'
 import { DEFAULT_PRIZES } from '../../lib/defaults.js'
 import { generateId } from '../../lib/utils.js'
 import Button from '../ui/Button.jsx'
+import SortableList from '../ui/SortableList.jsx'
 
 const PRIZE_EMOJIS = ['🍭','🍦','🍫','🎮','📱','🚴','🎬','⚽','🛹','🎸','✈️','🏖️','🎨','📚','🎁','🌈','🎠','🚗','🎯','🎤']
 
@@ -46,32 +47,26 @@ export default function PrizeManager() {
     savePrizes(prizes.filter((p) => p.id !== id))
   }
 
-  function movePrize(idx, dir) {
-    const next = [...prizes]
-    const target = idx + dir
-    if (target < 0 || target >= next.length) return
-    ;[next[idx], next[target]] = [next[target], next[idx]]
-    savePrizes(next)
-  }
-
   const isEditing = editId !== null
 
   return (
     <div className="space-y-3">
       {/* Prize list */}
-      {prizes.map((prize, i) => (
-        <div key={prize.id}>
-          {editId === prize.id ? (
+      <SortableList
+        items={prizes}
+        onReorder={(from, to) => {
+          const next = [...prizes]
+          const [item] = next.splice(from, 1)
+          next.splice(to, 0, item)
+          savePrizes(next)
+        }}
+        keyExtractor={(p) => p.id}
+        renderItem={(prize, idx, dragHandle) => (
+          editId === prize.id ? (
             <PrizeForm form={form} onChange={setForm} onSave={submitForm} onCancel={cancelEdit} emojis={PRIZE_EMOJIS} />
           ) : (
             <div className="flex items-center gap-2 bg-purple-50 rounded-2xl px-3 py-3">
-              {/* Reorder */}
-              <div className="flex flex-col gap-0.5">
-                <button type="button" onClick={() => movePrize(i, -1)} disabled={i === 0}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg text-xs text-gray-400 hover:text-purple-500 hover:bg-purple-100 disabled:opacity-20 transition-colors">▲</button>
-                <button type="button" onClick={() => movePrize(i, 1)} disabled={i === prizes.length - 1}
-                  className="w-6 h-6 flex items-center justify-center rounded-lg text-xs text-gray-400 hover:text-purple-500 hover:bg-purple-100 disabled:opacity-20 transition-colors">▼</button>
-              </div>
+              {dragHandle}
               <span className="text-2xl">{prize.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 text-sm truncate">{prize.name}</p>
@@ -82,9 +77,9 @@ export default function PrizeManager() {
               <button type="button" onClick={() => deletePrize(prize.id)}
                 className="text-gray-400 hover:text-red-500 text-sm px-2 py-1 active:scale-90">🗑️</button>
             </div>
-          )}
-        </div>
-      ))}
+          )
+        )}
+      />
 
       {/* Add new */}
       {editId === 'new' ? (
