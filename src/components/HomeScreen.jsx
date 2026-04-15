@@ -128,17 +128,17 @@ export default function HomeScreen() {
                   <div className="flex gap-2 mt-1.5 px-1">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="flex-1 bg-white rounded-2xl shadow-sm border border-amber-200 border-b-[3px] border-b-amber-400 px-3 py-2 flex items-center justify-center gap-1.5 text-sm font-bold text-amber-600 active:scale-95 active:shadow-inner transition-all"
+                      className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-2xl shadow-md px-3 py-3 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
-                      <span>⭐</span>
-                      <span>מטלה מהירה</span>
+                      <span className="text-xl leading-none">⭐</span>
+                      <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
                     </button>
                     <button
                       onClick={() => showModal('addMoney', { childId: child.id })}
-                      className="flex-1 bg-white rounded-2xl shadow-sm border border-emerald-200 border-b-[3px] border-b-emerald-400 px-3 py-2 flex items-center justify-center gap-1.5 text-sm font-bold text-emerald-600 active:scale-95 active:shadow-inner transition-all"
+                      className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-2xl shadow-md px-3 py-3 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
-                      <span>💵</span>
-                      <span>הפקדה מהירה</span>
+                      <span className="text-xl leading-none">💵</span>
+                      <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
                     </button>
                   </div>
                 </div>

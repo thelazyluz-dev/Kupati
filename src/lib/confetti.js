@@ -34,6 +34,25 @@ export function celebrateStars() {
   })
 }
 
+// Multi-burst celebration for chore completion — more impressive
+export function celebrateChore() {
+  const colors = ['#f59e0b', '#fcd34d', '#fb923c', '#6366f1', '#a78bfa', '#34d399', '#f472b6']
+
+  // First burst — center
+  confetti({ particleCount: 80, spread: 90, origin: { x: 0.5, y: 0.55 }, colors })
+
+  // Side bursts after short delays
+  setTimeout(() => {
+    confetti({ particleCount: 40, angle: 60,  spread: 60, origin: { x: 0, y: 0.6 }, colors })
+    confetti({ particleCount: 40, angle: 120, spread: 60, origin: { x: 1, y: 0.6 }, colors })
+  }, 200)
+
+  // Top shower
+  setTimeout(() => {
+    confetti({ particleCount: 50, spread: 120, startVelocity: 20, origin: { x: 0.5, y: 0 }, colors, gravity: 0.8 })
+  }, 500)
+}
+
 export function celebrateSmall() {
   confetti({
     particleCount: 30,

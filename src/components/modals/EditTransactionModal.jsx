@@ -19,11 +19,10 @@ const TYPE_LABEL = {
 
 // Compute balance delta when reversing or adjusting a transaction
 function balanceDelta(tx, amountDiff) {
-  // amountDiff = newAmount - oldAmount (0 for delete, diff for edit)
+  // amountDiff = newAmount - oldAmount (negative for delete = -tx.amount)
   const currency = tx.currency // 'stars' | 'shekels'
-  const isDeduct = tx.type === 'expense' || tx.type === 'convert_out'
-  // For income types: balance goes up by amount → delta = amountDiff
-  // For deduct types: balance goes down by amount → delta = -amountDiff
+  // Types that REDUCE the balance (deductions)
+  const isDeduct = ['expense', 'convert_out', 'prize_redeem', 'savings_open'].includes(tx.type)
   return { currency, delta: isDeduct ? -amountDiff : amountDiff }
 }
 

@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { celebrateStars } from '../../lib/confetti.js'
+import { celebrateChore } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import SuccessOverlay from '../SuccessOverlay.jsx'
 
 export default function AddStarsModal() {
-  const { closeModal, modalData, addStars, children, chores, settings, addTransaction } = useApp()
+  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction } = useApp()
   const childId = modalData?.childId
   const allowFreeEntry = modalData?.allowFreeEntry ?? false
   const child = children.find((c) => c.id === childId)
@@ -41,12 +41,12 @@ export default function AddStarsModal() {
     if (!amount || amount <= 0) return
 
     addStars(childId, amount)
-    addTransaction(childId, { type, amount, currency: 'stars', description, note })
+    const tx = addTransaction(childId, { type, amount, currency: 'stars', description, note })
 
     sounds.star()
-    if (amount >= settings.confettiThreshold) celebrateStars()
+    celebrateChore()
 
-    setSuccess({ amount, description })
+    setSuccess({ amount, description, choreEmoji: selectedChore?.emoji ?? null, txId: tx.id })
   }
 
   const title = allowFreeEntry ? '⭐ הוסף כוכבים — מצב הורה ✏️' : '⭐ עשיתי מטלה!'
@@ -57,7 +57,13 @@ export default function AddStarsModal() {
         name={child.name}
         amount={success.amount}
         description={success.description}
+        choreEmoji={success.choreEmoji}
         onDone={closeModal}
+        onUndo={() => {
+          adjustStars(childId, -success.amount)
+          deleteTransaction(childId, success.txId)
+          closeModal()
+        }}
       />
     )
   }
