@@ -42,7 +42,7 @@ function AppInner() {
       )}
       {screen === 'settings' && <SettingsPanel />}
       <ModalRouter />
-      <div className="fixed bottom-2 inset-x-0 text-center text-[10px] text-white/25 pointer-events-none z-[1] select-none tracking-widest">
+      <div className="fixed bottom-1.5 inset-x-0 text-center text-[9px] text-slate-400/50 pointer-events-none z-0 select-none tracking-widest font-light">
         made by illouzman
       </div>
     </div>
