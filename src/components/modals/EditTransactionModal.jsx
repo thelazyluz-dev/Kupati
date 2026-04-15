@@ -15,6 +15,7 @@ const TYPE_LABEL = {
   savings_open: 'פתיחת חסכון 🏦',
   savings_close: 'חסכון הבשיל 💰',
   savings_early: 'פדיון מוקדם ⚠️',
+  penalty: 'קנס ⚡',
 }
 
 // Compute balance delta when reversing or adjusting a transaction
@@ -22,7 +23,7 @@ function balanceDelta(tx, amountDiff) {
   // amountDiff = newAmount - oldAmount (negative for delete = -tx.amount)
   const currency = tx.currency // 'stars' | 'shekels'
   // Types that REDUCE the balance (deductions)
-  const isDeduct = ['expense', 'convert_out', 'prize_redeem', 'savings_open'].includes(tx.type)
+  const isDeduct = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty'].includes(tx.type)
   return { currency, delta: isDeduct ? -amountDiff : amountDiff }
 }
 

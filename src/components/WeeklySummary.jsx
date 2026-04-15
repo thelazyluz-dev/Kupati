@@ -26,11 +26,13 @@ export default function WeeklySummary({ transactions }) {
       .reduce((s, tx) => s + tx.amount, 0)
   }
 
-  const starsByDay   = days.map((d) => sumTx(d, (tx) => tx.currency === 'stars'   && tx.type !== 'convert_out'))
-  const shekelsByDay = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
+  const starsByDay     = days.map((d) => sumTx(d, (tx) => tx.currency === 'stars'   && tx.type !== 'convert_out' && tx.type !== 'penalty'))
+  const shekelsByDay   = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
+  const penaltiesByDay = days.map((d) => sumTx(d, (tx) => tx.type === 'penalty'))
 
-  const totalStars   = starsByDay.reduce((a, b) => a + b, 0)
-  const totalShekels = shekelsByDay.reduce((a, b) => a + b, 0)
+  const totalStars     = starsByDay.reduce((a, b) => a + b, 0)
+  const totalShekels   = shekelsByDay.reduce((a, b) => a + b, 0)
+  const totalPenalties = penaltiesByDay.reduce((a, b) => a + b, 0)
 
   // Last week totals (for trend chip)
   const lastWeekStart = new Date(weekStart)
@@ -44,6 +46,7 @@ export default function WeeklySummary({ transactions }) {
   )
   const maxStars     = Math.max(...starsByDay, 1)
   const maxShekels   = Math.max(...shekelsByDay, 0.01)
+  const maxPenalties = Math.max(...penaltiesByDay, 0.01)
   const todayIndex   = sundayOffset // index 0-6 within the week
 
   const BAR_H = 64 // px — chart area height
@@ -60,7 +63,10 @@ export default function WeeklySummary({ transactions }) {
           {totalShekels > 0 && (
             <span className="font-bold text-emerald-600">₪ {formatNumber(totalShekels)}</span>
           )}
-          {totalStars === 0 && totalShekels === 0 && (
+          {totalPenalties > 0 && (
+            <span className="font-bold text-red-500">⚡ {totalPenalties}</span>
+          )}
+          {totalStars === 0 && totalShekels === 0 && totalPenalties === 0 && (
             <span className="text-gray-400 text-xs">עדיין לא הרווחת השבוע</span>
           )}
         </div>
@@ -128,6 +134,43 @@ export default function WeeklySummary({ transactions }) {
                             ? 'linear-gradient(to top, #059669, #34d399)'
                             : 'linear-gradient(to top, #10b981, #6ee7b7)',
                       boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(16,185,129,0.35)' : 'none',
+                    }}
+                    className="w-full rounded-t-lg transition-all duration-500"
+                  />
+                </div>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {/* Penalties chart */}
+      {totalPenalties > 0 && (
+        <>
+          <p className="text-xs text-red-400 mb-1 text-right mt-3">⚡ קנסות</p>
+          <div className="flex items-end gap-1 mb-1" style={{ height: 40 }}>
+            {days.map((day, i) => {
+              const val    = penaltiesByDay[i]
+              const isToday   = i === todayIndex
+              const isFuture  = i > todayIndex
+              const barH   = val > 0 ? Math.max(6, (val / maxPenalties) * 32) : 0
+
+              return (
+                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 40 }}>
+                  {val > 0 && (
+                    <span className="text-xs font-bold mb-0.5 text-red-500">{val}</span>
+                  )}
+                  <div
+                    style={{
+                      height: barH || 3,
+                      background: barH === 0
+                        ? '#f3f4f6'
+                        : isFuture
+                          ? '#fee2e2'
+                          : isToday
+                            ? 'linear-gradient(to top, #dc2626, #f87171)'
+                            : 'linear-gradient(to top, #ef4444, #fca5a5)',
+                      boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(239,68,68,0.35)' : 'none',
                     }}
                     className="w-full rounded-t-lg transition-all duration-500"
                   />

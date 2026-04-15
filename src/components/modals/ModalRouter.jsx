@@ -9,6 +9,7 @@ import PinModal from './PinModal.jsx'
 import EditTransactionModal from './EditTransactionModal.jsx'
 import RedeemPrizeModal from './RedeemPrizeModal.jsx'
 import SavingsModal from './SavingsModal.jsx'
+import PenaltyModal from './PenaltyModal.jsx'
 
 export default function ModalRouter() {
   const { openModal } = useApp()
@@ -26,6 +27,7 @@ export default function ModalRouter() {
     editTransaction: EditTransactionModal,
     redeemPrize: RedeemPrizeModal,
     savings: SavingsModal,
+    penalty: PenaltyModal,
   }
 
   const ModalComponent = map[openModal]

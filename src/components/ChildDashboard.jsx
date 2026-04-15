@@ -315,6 +315,15 @@ export default function ChildDashboard({ childId }) {
           </button>
         </div>
 
+        {/* Penalty button — full width, subtle red, for parents only */}
+        <button
+          onClick={() => showModal('penalty', { childId })}
+          className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 active:scale-95 transition-all text-white shadow-md font-bold text-sm"
+        >
+          <span className="text-lg">⚡</span>
+          <span>קנס — הורד כוכב</span>
+        </button>
+
         <Button
           variant="ghost"
           fullWidth
