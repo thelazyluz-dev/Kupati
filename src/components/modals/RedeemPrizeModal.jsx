@@ -88,7 +88,7 @@ export default function RedeemPrizeModal() {
                         'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all',
                         canAfford
                           ? 'bg-gradient-to-b from-purple-50 to-white border-purple-200 hover:border-purple-400 hover:shadow-md active:scale-95'
-                          : 'bg-gray-50 border-gray-200 grayscale opacity-50',
+                          : 'bg-gray-50 border-gray-200 opacity-70',
                       ].join(' ')}
                     >
                       <span className="text-4xl">{prize.emoji}</span>
@@ -96,11 +96,18 @@ export default function RedeemPrizeModal() {
                       <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${canAfford ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
                         {prize.starCost}⭐
                       </div>
-                      {!canAfford && (
-                        <p className="text-xs text-gray-400 leading-tight">
-                          חסרים {formatNumber(prize.starCost - child.starBalance)}⭐
+                      {/* Progress bar */}
+                      <div className="w-full">
+                        <div className="w-full bg-gray-200 rounded-full h-1.5">
+                          <div
+                            className={`h-1.5 rounded-full transition-all duration-500 ${canAfford ? 'bg-purple-500' : 'bg-amber-400'}`}
+                            style={{ width: `${Math.min(100, Math.round((child.starBalance / prize.starCost) * 100))}%` }}
+                          />
+                        </div>
+                        <p className={`text-[10px] mt-0.5 font-semibold ${canAfford ? 'text-purple-600' : 'text-gray-400'}`}>
+                          {canAfford ? '✅ יש מספיק!' : `${Math.round((child.starBalance / prize.starCost) * 100)}% · חסרים ${formatNumber(prize.starCost - child.starBalance)}⭐`}
                         </p>
-                      )}
+                      </div>
                     </button>
                   )
                 })}

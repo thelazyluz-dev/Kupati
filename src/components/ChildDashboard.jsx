@@ -99,9 +99,12 @@ function StarIconCloud({ count }) {
 }
 
 function ShekelIconCloud({ balance }) {
-  const bills = Math.min(Math.floor(balance / 100), 6)
-  const coins  = Math.min(Math.floor((balance % 100) / 10), 9)
-  const icons  = [...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]
+  if (balance <= 0) return <IconCloud icons={[]} />
+  const totalIcons = Math.max(5, Math.min(30, Math.round(5 + 25 * Math.sqrt(balance / 1000))))
+  const billFrac   = Math.min(balance / 500, 1)
+  const bills      = Math.round(totalIcons * billFrac * 0.6)
+  const coins      = totalIcons - bills
+  const icons      = [...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]
   return <IconCloud icons={icons} />
 }
 
@@ -270,6 +273,24 @@ export default function ChildDashboard({ childId }) {
                 totalValue={totalValue}
                 onRedeem={() => handleRedeem(goal)}
               />
+            ))}
+          </div>
+        )}
+
+        {/* Onboarding tips — shown only when child has no transactions yet */}
+        {transactions.length === 0 && (
+          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
+            <p className="text-xs font-bold text-indigo-600 mb-1">💡 איך מתחילים?</p>
+            {[
+              { icon: '⭐', text: 'לחץ "עשיתי מטלה!" אחרי כל מטלה שהילד השלים' },
+              { icon: '💝', text: 'לחץ "קיבלתי כסף" להפקדת כסף מתנה מסבא/סבתא' },
+              { icon: '🎁', text: 'כשצוברים כוכבים — אפשר לממש פרסים מהמחירון' },
+              { icon: '⚙️', text: 'בהגדרות תוסיף מטלות ופרסים משלך' },
+            ].map(({ icon, text }) => (
+              <div key={icon} className="flex items-start gap-2">
+                <span className="text-sm flex-shrink-0 mt-0.5">{icon}</span>
+                <p className="text-xs text-gray-600 leading-snug">{text}</p>
+              </div>
             ))}
           </div>
         )}
