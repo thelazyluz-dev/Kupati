@@ -18,13 +18,33 @@ function SectionHeader({ icon, label, color }) {
   )
 }
 
-function SettingsSection({ icon, label, iconColor, accent, children }) {
+function SettingsSection({ icon, label, iconColor, accent, children, collapsible = false, defaultOpen = true }) {
+  const [open, setOpen] = useState(defaultOpen)
   return (
     <section>
-      <SectionHeader icon={icon} label={label} color={iconColor} />
-      <div className={`bg-white rounded-2xl shadow-sm p-4 border-r-4 ${accent}`}>
-        {children}
-      </div>
+      {collapsible ? (
+        <button
+          type="button"
+          className="flex items-center gap-2 mb-2 w-full active:opacity-70"
+          onClick={() => setOpen((v) => !v)}
+        >
+          <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0 ${iconColor}`}>
+            {icon}
+          </span>
+          <h3 className="font-bold text-gray-700 text-sm flex-1 text-right">{label}</h3>
+          <span
+            className="text-gray-400 text-[11px] transition-transform duration-200 flex-shrink-0"
+            style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+          >▼</span>
+        </button>
+      ) : (
+        <SectionHeader icon={icon} label={label} color={iconColor} />
+      )}
+      {(!collapsible || open) && (
+        <div className={`bg-white rounded-2xl shadow-sm p-4 border-r-4 ${accent}`}>
+          {children}
+        </div>
+      )}
     </section>
   )
 }
@@ -128,9 +148,19 @@ export default function SettingsPanel() {
       </header>
 
       <main className="flex-1 px-4 py-5 space-y-5">
-        <ChoreManager />
+        <SettingsSection
+          icon="📋" label="רשימת מטלות"
+          iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400"
+          collapsible defaultOpen={false}
+        >
+          <ChoreManager hideTitle />
+        </SettingsSection>
 
-        <SettingsSection icon="🎁" label="מחירון פרסים בכוכבים" iconColor="bg-purple-100 text-purple-600" accent="border-purple-400">
+        <SettingsSection
+          icon="🎁" label="מחירון פרסים בכוכבים"
+          iconColor="bg-purple-100 text-purple-600" accent="border-purple-400"
+          collapsible defaultOpen={false}
+        >
           <PrizeManager />
         </SettingsSection>
 

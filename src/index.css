@@ -91,6 +91,12 @@
     100% { transform: translateY(-90vh) scale(0.4) rotate(-10deg); opacity: 0;   }
   }
 
+  /* Balance card icons drifting wall-to-wall (uses CSS custom props --dx --dy per element) */
+  @keyframes icon-drift {
+    from { transform: translate(calc(-50% + var(--dx, 6px)), calc(-50% + var(--dy, 4px))); }
+    to   { transform: translate(calc(-50% - var(--dx, 6px)), calc(-50% - var(--dy, 4px))); }
+  }
+
   /* Floating particles (HomeScreen header) */
   @keyframes particle-float {
     0%, 100% { transform: translateY(0px)   rotate(0deg)   scale(1);    }

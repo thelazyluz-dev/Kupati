@@ -118,17 +118,6 @@ export default function SuccessOverlay({ name, amount, description, choreEmoji, 
           )}
         </div>
 
-        {/* Undo button — visible for UNDO_MS */}
-        {onUndo && !undoGone && (
-          <button
-            onClick={handleUndo}
-            className="mt-1 bg-white/20 hover:bg-white/35 active:scale-95 transition-all rounded-2xl px-6 py-2 text-sm font-bold animate-fade-in border border-white/30"
-            style={{ animationDelay: '0.5s', animationFillMode: 'both' }}
-          >
-            ↩️ בטל בטעות
-          </button>
-        )}
-
         {/* Hint */}
         <p
           className="text-sm opacity-50 animate-fade-in mt-1"
@@ -137,6 +126,17 @@ export default function SuccessOverlay({ name, amount, description, choreEmoji, 
           לחץ להמשך
         </p>
       </div>
+
+      {/* Undo — isolated at bottom-start corner, small, far from main tap zone */}
+      {onUndo && !undoGone && (
+        <button
+          onClick={handleUndo}
+          className="absolute bottom-8 start-6 bg-black/20 hover:bg-black/30 active:scale-95 transition-all rounded-xl px-3 py-1.5 text-xs font-medium border border-white/15 opacity-70 animate-fade-in"
+          style={{ animationDelay: '0.8s', animationFillMode: 'both' }}
+        >
+          ↩️ בטל בטעות
+        </button>
+      )}
     </div>
   )
 }

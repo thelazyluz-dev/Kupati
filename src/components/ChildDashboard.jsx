@@ -52,26 +52,38 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
   }
 }
 
-// Deterministic star/coin scatter using golden-angle distribution
+// Deterministic star/coin scatter — each icon drifts gently wall-to-wall
 function IconCloud({ icons }) {
   if (!icons.length) return null
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
       {icons.map((emoji, i) => {
         const angle = (i * 137.508) % 360
-        const r = 12 + (i % 5) * 9
-        const x = 50 + r * Math.cos(angle * Math.PI / 180)
-        const y = 50 + r * Math.sin(angle * Math.PI / 180)
+        const r     = 12 + (i % 5) * 9
+        const x     = 50 + r * Math.cos(angle * Math.PI / 180)
+        const y     = 50 + r * Math.sin(angle * Math.PI / 180)
+        // Individual drift amounts so icons don't move in sync
+        const dx  = 5 + (i % 6) * 2.5   // 5–17.5 px horizontal
+        const dy  = 3 + (i % 4) * 1.5   // 3–7.5 px vertical
+        const dur = 4 + (i % 5) * 0.9   // 4–7.6 s per cycle
+        const del = -((i * 1.4) % dur)   // start mid-cycle so no pop-in
         return (
           <span
             key={i}
             className="absolute leading-none select-none"
             style={{
-              left: `${Math.max(4, Math.min(94, x))}%`,
-              top:  `${Math.max(4, Math.min(94, y))}%`,
+              left: `${Math.max(8, Math.min(90, x))}%`,
+              top:  `${Math.max(8, Math.min(90, y))}%`,
               fontSize: 9,
-              opacity: 0.38,
-              transform: 'translate(-50%, -50%)',
+              opacity: 0.4,
+              animationName:            'icon-drift',
+              animationDuration:        `${dur}s`,
+              animationDelay:           `${del}s`,
+              animationTimingFunction:  'ease-in-out',
+              animationIterationCount:  'infinite',
+              animationDirection:       'alternate',
+              '--dx': `${dx}px`,
+              '--dy': `${dy}px`,
             }}
           >{emoji}</span>
         )

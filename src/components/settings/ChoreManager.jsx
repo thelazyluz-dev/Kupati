@@ -78,7 +78,7 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
   )
 }
 
-export default function ChoreManager() {
+export default function ChoreManager({ hideTitle = false }) {
   const { chores, addChore, updateChore, deleteChore, reorderChores } = useApp()
   const [showAdd, setShowAdd]   = useState(false)
   const [newEmoji, setNewEmoji] = useState('🧹')
@@ -96,8 +96,8 @@ export default function ChoreManager() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-gray-700">📋 רשימת מטלות</h3>
+      <div className={`flex items-center justify-between mb-3 ${hideTitle ? 'justify-end' : ''}`}>
+        {!hideTitle && <h3 className="font-bold text-gray-700">📋 רשימת מטלות</h3>}
         <Button size="sm" onClick={() => setShowAdd((v) => !v)}>
           {showAdd ? '✕' : '+ הוסף'}
         </Button>
