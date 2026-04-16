@@ -6,7 +6,7 @@ import { sounds } from '../../lib/sounds.js'
 import { celebrateGoal } from '../../lib/confetti.js'
 import { formatNumber } from '../../lib/utils.js'
 
-const SPIN_COST = 10   // stars to pay per spin
+const SPIN_COST = 12   // stars to pay per spin
 
 const SEGMENTS = [
   { stars: 3,  color: '#fb923c', label: '3⭐' },
