@@ -30,6 +30,7 @@ export default {
         'shimmer':        'shimmer 2.2s linear infinite',
         'glow-amber':     'glow-amber 2s ease-in-out infinite',
         'tab-in':         'tab-in 0.18s ease-out',
+        'star-fly':       'star-fly 0.7s ease-in forwards',
       },
       keyframes: {
         'progress-fill': {
@@ -95,6 +96,11 @@ export default {
         'tab-in': {
           from: { opacity: '0', transform: 'translateX(-8px)' },
           to:   { opacity: '1', transform: 'translateX(0)' },
+        },
+        'star-fly': {
+          '0%':   { opacity: '1', transform: 'translate(0, 0) scale(1.4)' },
+          '75%':  { opacity: '1', transform: 'translate(30px, -35vh) scale(2)' },
+          '100%': { opacity: '0', transform: 'translate(35px, -42vh) scale(0.4)' },
         },
       },
     },

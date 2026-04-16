@@ -1,4 +1,13 @@
 import { useApp } from '../context/AppContext.jsx'
+
+function getTimeGradient() {
+  const h = new Date().getHours()
+  if (h < 6)  return 'from-slate-700 to-indigo-800'
+  if (h < 11) return 'from-sky-400 to-indigo-500'
+  if (h < 17) return 'from-indigo-500 to-purple-600'
+  if (h < 21) return 'from-orange-400 to-pink-500'
+  return 'from-slate-600 to-purple-900'
+}
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
@@ -32,7 +41,7 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg">
+      <header className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}>
         {/* Floating stars & coins */}
         {PARTICLES.map((p, i) => (
           <span

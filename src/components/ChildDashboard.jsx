@@ -8,7 +8,7 @@ import TransactionList from './TransactionList.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import HintBanner from './ui/HintBanner.jsx'
-import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_PRIZES } from '../lib/defaults.js'
 
 // Long-press hook: fires onLong after holdMs, onTap on quick release.
 // Cancels entirely if finger moves >8px (i.e. the user is scrolling).
@@ -114,6 +114,7 @@ export default function ChildDashboard({ childId }) {
           pendingBadge, clearPendingBadge } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
+  const [flyingStar, setFlyingStar] = useState(false)
 
   const child = children.find((c) => c.id === childId)
 
@@ -137,8 +138,13 @@ export default function ChildDashboard({ childId }) {
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Long-press on ⭐ button: regular tap = chores only, long = parent mode (free entry)
+  const triggerStarFly = useCallback(() => {
+    setFlyingStar(true)
+    setTimeout(() => setFlyingStar(false), 750)
+  }, [])
+
   const starsLongPress = useLongPress(
-    useCallback(() => showModal('addStars', { childId, allowFreeEntry: false }), [childId, showModal]),
+    useCallback(() => { triggerStarFly(); showModal('addStars', { childId, allowFreeEntry: false }) }, [childId, showModal, triggerStarFly]),
     useCallback(() => showModal('addStars', { childId, allowFreeEntry: true }),  [childId, showModal]),
   )
 
@@ -160,6 +166,14 @@ export default function ChildDashboard({ childId }) {
   const childIndex = children.indexOf(child)
   const gradient   = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
+
+  const BG_TINTS = { purple:'#f5f3ff', pink:'#fdf2f8', amber:'#fffbeb', emerald:'#ecfdf5', sky:'#f0f9ff', red:'#fff1f2', lime:'#f7fee7', cyan:'#ecfeff', fuchsia:'#fdf4ff', yellow:'#fefce8' }
+  const bgTint = (child.colorKey && BG_TINTS[child.colorKey]) || '#f1f5f9'
+
+  const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
+  const cheapestStarCost = Math.min(...prizes.map((p) => p.starCost))
+  const prizeArcPct = Math.min(1, child.starBalance / cheapestStarCost)
+  const ARC_C = 94.25
   const totalValue = getTotalValue(child)
   const goals      = getGoals(child)
   const streak     = calculateStreak(transactions)
@@ -170,7 +184,14 @@ export default function ChildDashboard({ childId }) {
   const firstGoal = goals[0] ?? null
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-100">
+    <div className="min-h-screen flex flex-col" style={{ backgroundColor: bgTint }}>
+      {/* Flying star trail */}
+      {flyingStar && (
+        <div
+          className="fixed pointer-events-none z-50 text-3xl animate-star-fly"
+          style={{ bottom: '42%', left: '50%', transform: 'translateX(-50%)' }}
+        >⭐</div>
+      )}
       {/* Header */}
       <header className={`bg-gradient-to-br ${gradient} px-5 pt-8 pb-6 text-white`}>
         <div className="flex items-center justify-between mb-4">
@@ -221,7 +242,7 @@ export default function ChildDashboard({ childId }) {
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Shekels card */}
-          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
+          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg animate-slide-up" style={{ animationDelay: '60ms', animationFillMode: 'both' }}>
             <ShekelIconCloud balance={child.shekelBalance} />
             <div key={child.shekelBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
@@ -241,7 +262,7 @@ export default function ChildDashboard({ childId }) {
             )}
           </div>
           {/* Stars card */}
-          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg">
+          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg animate-slide-up" style={{ animationDelay: '130ms', animationFillMode: 'both' }}>
             <StarIconCloud count={child.starBalance} />
             <div key={child.starBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
@@ -254,6 +275,20 @@ export default function ChildDashboard({ childId }) {
                   : `🏆 שיא: ${formatNumber(child.starBalancePeak)}⭐`}
               </div>
             )}
+            {/* Prize arc */}
+            <div className="absolute bottom-2 left-2">
+              <svg width="36" height="36" viewBox="0 0 38 38" aria-hidden="true">
+                <circle cx="19" cy="19" r="15" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
+                <circle
+                  cx="19" cy="19" r="15" fill="none"
+                  stroke={prizeArcPct >= 1 ? '#fbbf24' : 'rgba(255,255,255,0.7)'}
+                  strokeWidth="3" strokeLinecap="round"
+                  strokeDasharray={`${prizeArcPct * ARC_C} ${ARC_C}`}
+                  transform="rotate(-90 19 19)"
+                />
+                <text x="19" y="23" textAnchor="middle" fontSize="11">🎁</text>
+              </svg>
+            </div>
           </div>
         </div>
       </header>
@@ -367,7 +402,15 @@ export default function ChildDashboard({ childId }) {
 
         <div>
           <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>
-          <TransactionList transactions={transactions} childId={childId} />
+          <div className="relative">
+            <div className="max-h-[460px] overflow-y-auto rounded-2xl">
+              <TransactionList transactions={transactions} childId={childId} />
+            </div>
+            <div
+              className="pointer-events-none absolute bottom-0 inset-x-0 h-14 rounded-b-2xl"
+              style={{ background: `linear-gradient(to top, ${bgTint}, transparent)` }}
+            />
+          </div>
         </div>
       </main>
 
