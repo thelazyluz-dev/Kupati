@@ -1,35 +1,43 @@
-import { useMemo, useState, useRef, useCallback } from 'react'
+import { useMemo, useState, useRef } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
-function useLongPress(onTap, onLong, holdMs = 700) {
-  const timer    = useRef(null)
-  const fired    = useRef(false)
-  const moved    = useRef(false)
-  const startPos = useRef({ x: 0, y: 0 })
-  const start = useCallback((e) => {
-    fired.current = false; moved.current = false
-    const t = e.touches?.[0]
-    startPos.current = t ? { x: t.clientX, y: t.clientY } : { x: e.clientX, y: e.clientY }
-    timer.current = setTimeout(() => { if (!moved.current) { fired.current = true; onLong() } }, holdMs)
-  }, [onLong, holdMs])
-  const move = useCallback((e) => {
-    const t = e.touches?.[0]
-    const x = t ? t.clientX : e.clientX
-    const y = t ? t.clientY : e.clientY
-    if (Math.abs(x - startPos.current.x) > 10 || Math.abs(y - startPos.current.y) > 10) {
-      moved.current = true; clearTimeout(timer.current)
-    }
-  }, [])
-  const end = useCallback(() => { clearTimeout(timer.current); if (!fired.current && !moved.current) onTap() }, [onTap])
-  // onMouseMove replaces onMouseLeave — tracks real movement without firing on child-element transitions
-  return { onMouseDown: start, onMouseUp: end, onMouseMove: move, onTouchStart: start, onTouchMove: move, onTouchEnd: end }
-}
-
 export default function ChildCard({ child, index }) {
   const { navigate, settings, getTransactions } = useApp()
   const [flipped, setFlipped] = useState(false)
+
+  // Long-press tracking (touch only — for flip gesture)
+  const lpTimer   = useRef(null)
+  const lpFired   = useRef(false)
+  const lpStart   = useRef({ x: 0, y: 0 })
+
+  function handleTouchStart(e) {
+    lpFired.current = false
+    const t = e.touches[0]
+    lpStart.current = { x: t.clientX, y: t.clientY }
+    lpTimer.current = setTimeout(() => {
+      lpFired.current = true
+      setFlipped((f) => !f)
+    }, 700)
+  }
+  function handleTouchMove(e) {
+    const t = e.touches[0]
+    if (Math.abs(t.clientX - lpStart.current.x) > 8 || Math.abs(t.clientY - lpStart.current.y) > 8) {
+      clearTimeout(lpTimer.current)
+    }
+  }
+  function handleTouchEnd() { clearTimeout(lpTimer.current) }
+
+  // onClick handles navigation on both desktop and mobile (synthetic tap)
+  function handleClick() {
+    if (lpFired.current) { lpFired.current = false; return } // was a long-press, skip
+    if (flipped) setFlipped(false)
+    else navigate('dashboard', child.id)
+  }
+
+  // Right-click flips on desktop
+  function handleContextMenu(e) { e.preventDefault(); setFlipped((f) => !f) }
 
   const weekStart = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -65,13 +73,16 @@ export default function ChildCard({ child, index }) {
     ? 'ring-2 ring-yellow-300 ring-offset-1'
     : birthdayToday ? 'ring-2 ring-pink-300 ring-offset-1 animate-pulse-ring' : ''
 
-  const press = useLongPress(
-    useCallback(() => { if (flipped) setFlipped(false); else navigate('dashboard', child.id) }, [flipped, navigate, child.id]),
-    useCallback(() => setFlipped((f) => !f), [])
-  )
-
   return (
-    <div {...press} style={{ perspective: '900px' }} className="select-none cursor-pointer w-full">
+    <div
+      onClick={handleClick}
+      onContextMenu={handleContextMenu}
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{ perspective: '900px' }}
+      className="select-none cursor-pointer w-full"
+    >
       <div
         style={{
           transformStyle: 'preserve-3d',
@@ -146,13 +157,18 @@ export default function ChildCard({ child, index }) {
               )}
             </div>
           </div>
-          {/* Flip hint */}
-          <p className="absolute bottom-1.5 left-3 text-[9px] opacity-30 font-medium">לחץ לחץ ארוך לסטטיסטיקות</p>
+          <p className="absolute bottom-1.5 left-3 text-[9px] opacity-25 font-medium">לחץ ארוך לסטטיסטיקות</p>
         </div>
 
         {/* ── Back face ── */}
         <div
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, pointerEvents: flipped ? 'auto' : 'none' }}
+          style={{
+            backfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)',
+            position: 'absolute',
+            inset: 0,
+            pointerEvents: flipped ? 'auto' : 'none',
+          }}
           className={`bg-gradient-to-bl ${gradient} rounded-3xl p-4 text-white flex flex-col items-center justify-center gap-3`}
         >
           <p className="text-sm font-bold opacity-85">📊 סטטיסטיקות כלליות</p>
