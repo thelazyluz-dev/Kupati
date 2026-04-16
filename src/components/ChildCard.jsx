@@ -7,33 +7,38 @@ export default function ChildCard({ child, index }) {
   const { navigate, settings, getTransactions } = useApp()
   const [flipped, setFlipped] = useState(false)
 
-  // Long-press tracking (touch only — for flip gesture)
+  // Long-press / tap tracking (touch only)
   const lpTimer   = useRef(null)
-  const lpFired   = useRef(false)
+  const lpFired   = useRef(false)  // long-press fired → flip happened
+  const lpMoved   = useRef(false)  // finger moved enough to be a scroll
   const lpStart   = useRef({ x: 0, y: 0 })
 
   function handleTouchStart(e) {
     lpFired.current = false
+    lpMoved.current = false
     const t = e.touches[0]
     lpStart.current = { x: t.clientX, y: t.clientY }
     lpTimer.current = setTimeout(() => {
-      lpFired.current = true
-      setFlipped((f) => !f)
+      if (!lpMoved.current) {
+        lpFired.current = true
+        setFlipped((f) => !f)
+      }
     }, 700)
   }
   function handleTouchMove(e) {
     const t = e.touches[0]
-    if (Math.abs(t.clientX - lpStart.current.x) > 8 || Math.abs(t.clientY - lpStart.current.y) > 8) {
-      clearTimeout(lpTimer.current)
-    }
+    const dx = Math.abs(t.clientX - lpStart.current.x)
+    const dy = Math.abs(t.clientY - lpStart.current.y)
+    if (dx > 8 || dy > 8) lpMoved.current = true   // mark scroll early
+    if (dx > 14 || dy > 14) clearTimeout(lpTimer.current) // cancel long-press on real scroll
   }
   function handleTouchEnd(e) {
     clearTimeout(lpTimer.current)
-    // preventDefault stops the browser from firing a synthetic click ~300ms later.
-    // Without this, after navigate() the synthetic click lands on whatever element
-    // is at the same position in the newly-rendered dashboard (e.g. "קיבלתי כסף").
+    // Prevent synthesized mouse/click events that would fire ~300ms later on the
+    // newly-rendered dashboard and open the wrong modal.
     e.preventDefault()
-    if (!lpFired.current) {
+    if (!lpFired.current && !lpMoved.current) {
+      // Clean tap: navigate or unflip
       if (flipped) setFlipped(false)
       else navigate('dashboard', child.id)
     }

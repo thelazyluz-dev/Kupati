@@ -279,19 +279,6 @@ export default function ChildDashboard({ childId }) {
                   : `🏆 שיא: ${formatNumber(child.starBalancePeak)}⭐`}
               </div>
             )}
-            {/* Prize arc */}
-            <div className="absolute bottom-2 left-2">
-              <svg width="36" height="36" viewBox="0 0 38 38" aria-hidden="true">
-                <circle cx="19" cy="19" r="15" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="3" />
-                <circle
-                  cx="19" cy="19" r="15" fill="none"
-                  stroke={prizeArcPct >= 1 ? '#fbbf24' : 'rgba(255,255,255,0.7)'}
-                  strokeWidth="3" strokeLinecap="round"
-                  strokeDasharray={`${prizeArcPct * ARC_C} ${ARC_C}`}
-                  transform="rotate(-90 19 19)"
-                />
-              </svg>
-            </div>
           </div>
         </div>
       </header>
