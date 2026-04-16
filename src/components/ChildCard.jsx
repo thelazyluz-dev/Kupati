@@ -27,11 +27,21 @@ export default function ChildCard({ child, index }) {
       clearTimeout(lpTimer.current)
     }
   }
-  function handleTouchEnd() { clearTimeout(lpTimer.current) }
+  function handleTouchEnd(e) {
+    clearTimeout(lpTimer.current)
+    // preventDefault stops the browser from firing a synthetic click ~300ms later.
+    // Without this, after navigate() the synthetic click lands on whatever element
+    // is at the same position in the newly-rendered dashboard (e.g. "קיבלתי כסף").
+    e.preventDefault()
+    if (!lpFired.current) {
+      if (flipped) setFlipped(false)
+      else navigate('dashboard', child.id)
+    }
+    lpFired.current = false
+  }
 
-  // onClick handles navigation on both desktop and mobile (synthetic tap)
+  // onClick fires only for real desktop mouse clicks (touch is handled above)
   function handleClick() {
-    if (lpFired.current) { lpFired.current = false; return } // was a long-press, skip
     if (flipped) setFlipped(false)
     else navigate('dashboard', child.id)
   }
