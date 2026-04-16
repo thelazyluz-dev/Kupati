@@ -111,19 +111,19 @@ export default function ChildCard({ child, index }) {
         stateRing,
       ].join(' ')}
     >
-      {/* Avatar watermark */}
+      {/* Avatar watermark — bottom-right corner, half-clipped by overflow-hidden */}
       {child.avatarImage ? (
         <img
           src={child.avatarImage}
           alt=""
           aria-hidden="true"
-          className="absolute right-3 top-0 select-none pointer-events-none rounded-full object-cover"
-          style={{ width: 82, height: 82, opacity: 0.1 }}
+          className="absolute select-none pointer-events-none rounded-full object-cover"
+          style={{ width: 100, height: 100, opacity: 0.12, bottom: -14, right: -10 }}
         />
       ) : (
         <span
-          className="absolute right-3 top-0 select-none pointer-events-none leading-none"
-          style={{ fontSize: 82, opacity: 0.06 }}
+          className="absolute select-none pointer-events-none leading-none"
+          style={{ fontSize: 100, opacity: 0.07, bottom: -18, right: -8 }}
           aria-hidden="true"
         >{child.avatar}</span>
       )}
