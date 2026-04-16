@@ -28,7 +28,7 @@ function balanceDelta(tx, amountDiff) {
 }
 
 export default function EditTransactionModal() {
-  const { closeModal, modalData, updateTransaction, deleteTransaction, adjustStars, adjustShekels } = useApp()
+  const { closeModal, modalData, updateTransaction, deleteTransaction, adjustStars, adjustShekels, requirePin } = useApp()
   const { childId, transaction: tx } = modalData || {}
 
   const isConvert = tx?.type === 'convert_out' || tx?.type === 'convert_in'
@@ -47,27 +47,31 @@ export default function EditTransactionModal() {
 
   function handleSubmit(e) {
     e.preventDefault()
-    const newAmount = isConvert ? tx.amount : Math.max(0, parseFloat(amount) || tx.amount)
-    const amountDiff = newAmount - tx.amount
-    if (amountDiff !== 0) {
-      const { currency, delta } = balanceDelta(tx, amountDiff)
-      applyBalanceDelta(currency, delta)
-    }
-    updateTransaction(childId, tx.id, {
-      description: description.trim() || tx.description,
-      note: note.trim(),
-      amount: newAmount,
+    requirePin(() => {
+      const newAmount = isConvert ? tx.amount : Math.max(0, parseFloat(amount) || tx.amount)
+      const amountDiff = newAmount - tx.amount
+      if (amountDiff !== 0) {
+        const { currency, delta } = balanceDelta(tx, amountDiff)
+        applyBalanceDelta(currency, delta)
+      }
+      updateTransaction(childId, tx.id, {
+        description: description.trim() || tx.description,
+        note: note.trim(),
+        amount: newAmount,
+      })
+      closeModal()
     })
-    closeModal()
   }
 
   function handleDelete() {
     if (!confirmDelete) { setConfirmDelete(true); return }
-    // Reverse the full transaction effect
-    const { currency, delta } = balanceDelta(tx, -tx.amount)
-    applyBalanceDelta(currency, delta)
-    deleteTransaction(childId, tx.id)
-    closeModal()
+    requirePin(() => {
+      // Reverse the full transaction effect
+      const { currency, delta } = balanceDelta(tx, -tx.amount)
+      applyBalanceDelta(currency, delta)
+      deleteTransaction(childId, tx.id)
+      closeModal()
+    })
   }
 
   const currencySymbol = tx.currency === 'stars' ? '⭐' : '₪'

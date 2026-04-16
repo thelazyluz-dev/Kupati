@@ -8,10 +8,8 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
 
   const [mm, dd] = birthdayMMDD.split('-')
   const dateLabel = `${dd}/${mm}`
-  const weeks    = Math.floor(birthdayDays / 7)
-  const remDays  = birthdayDays % 7
-  const isUrgent = birthdayDays <= 7
-  const isSoon   = birthdayDays <= 30
+  const isUrgent  = birthdayDays <= 7
+  const isSoon    = birthdayDays <= 30
 
   if (birthdayToday) {
     return (
@@ -29,42 +27,13 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
     }`}>
       <span className={`text-xl flex-shrink-0 ${isUrgent ? 'animate-bounce' : ''}`}>🎂</span>
       <div className="flex items-baseline gap-1 flex-shrink-0">
-        {weeks > 0 ? (
-          <>
-            <span className={`font-black leading-none ${isUrgent ? 'text-2xl' : 'text-xl'}`}>{weeks}</span>
-            <span className="text-[10px] opacity-75">שב׳</span>
-            {remDays > 0 && (
-              <>
-                <span className={`font-black leading-none ${isUrgent ? 'text-2xl' : 'text-xl'}`}>{remDays}</span>
-                <span className="text-[10px] opacity-75">י׳</span>
-              </>
-            )}
-          </>
-        ) : (
-          <>
-            <span className={`font-black leading-none ${isUrgent ? 'text-3xl' : 'text-2xl'}`}>{birthdayDays}</span>
-            <span className="text-[10px] opacity-75">ימים</span>
-          </>
-        )}
+        <span className={`font-black leading-none ${isUrgent ? 'text-3xl' : 'text-2xl'}`}>{birthdayDays}</span>
+        <span className="text-[10px] opacity-75">ימים</span>
       </div>
       <div className="flex-1 text-right min-w-0">
-        <div className="text-xs font-bold opacity-90 leading-tight">יום הולדת</div>
+        <div className="text-xs font-bold opacity-90 leading-tight">ליום הולדת</div>
         <div className="text-[11px] opacity-60 leading-tight">{dateLabel}</div>
       </div>
-      {isUrgent && (
-        <div className="flex gap-0.5 flex-shrink-0">
-          {Array.from({ length: 7 }, (_, i) => (
-            <div
-              key={i}
-              className="w-1 rounded-full"
-              style={{
-                height: 8 + (i % 3) * 4,
-                background: i < (7 - birthdayDays) ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.25)',
-              }}
-            />
-          ))}
-        </div>
-      )}
     </div>
   )
 }
