@@ -136,15 +136,14 @@ export default function SpinWheelModal() {
       <div className="flex flex-col items-center gap-4 pb-1">
 
         {/* Balance + cost info */}
-        <div className="flex items-center gap-3 w-full justify-center">
-          <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-xl px-3 py-1.5">
-            <span className="text-base">⭐</span>
-            <span className="text-sm font-bold text-amber-700">{formatNumber(balance)}</span>
+        <div className="flex gap-2 w-full">
+          <div className="flex-1 bg-amber-50 border border-amber-200 rounded-xl px-3 py-2 text-center">
+            <div className="text-[10px] font-semibold text-amber-500 mb-0.5">יתרת כוכבים</div>
+            <div className="text-base font-black text-amber-700">⭐ {formatNumber(balance)}</div>
           </div>
-          <span className="text-gray-300 text-lg">→</span>
-          <div className="flex items-center gap-1.5 bg-violet-50 border border-violet-200 rounded-xl px-3 py-1.5">
-            <span className="text-xs font-semibold text-violet-600">עלות סיבוב:</span>
-            <span className="text-sm font-bold text-violet-700">{SPIN_COST}⭐</span>
+          <div className="flex-1 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-center">
+            <div className="text-[10px] font-semibold text-violet-500 mb-0.5">עלות סיבוב</div>
+            <div className="text-base font-black text-violet-700">⭐ {SPIN_COST}</div>
           </div>
         </div>
 
