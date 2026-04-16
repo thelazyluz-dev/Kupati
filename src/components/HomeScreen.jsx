@@ -32,7 +32,7 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen flex flex-col">
       {/* Header */}
-      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 px-5 pt-6 pb-10 text-white rounded-b-[2.5rem] shadow-lg">
+      <header className="relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg">
         {/* Floating stars & coins */}
         {PARTICLES.map((p, i) => (
           <span
@@ -51,7 +51,7 @@ export default function HomeScreen() {
           >{p.e}</span>
         ))}
         {/* Top row — action buttons */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-3">
           <button
             onClick={() => navigate('settings')}
             className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-xl"
@@ -70,14 +70,14 @@ export default function HomeScreen() {
 
         {/* Hero — pig + title */}
         <div className="text-center">
-          <div className="relative inline-flex items-center justify-center mb-3">
-            <div className="absolute w-20 h-20 rounded-full bg-white/10 animate-ping" style={{ animationDuration: '3s' }} />
-            <div className="relative w-16 h-16 rounded-full bg-white/20 ring-2 ring-white/35 flex items-center justify-center shadow-inner">
-              <span className="text-4xl animate-float">🐷</span>
+          <div className="relative inline-flex items-center justify-center mb-1.5">
+            <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: '3s' }} />
+            <div className="relative w-11 h-11 rounded-full bg-white/20 ring-2 ring-white/35 flex items-center justify-center shadow-inner">
+              <span className="text-2xl animate-float">🐷</span>
             </div>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight">הארנק שלי</h1>
-          <p className="text-sm text-white/65 mt-0.5">כסף חכם לילדים 💡</p>
+          <h1 className="text-lg font-bold tracking-tight">הארנק שלי</h1>
+          <p className="text-xs text-white/65 mt-0.5">כסף חכם לילדים 💡</p>
         </div>
       </header>
 
@@ -114,30 +114,39 @@ export default function HomeScreen() {
             <p className="text-sm text-gray-500 mb-3 font-medium animate-fade-in">
               {children.length} {children.length === 1 ? 'ילד' : 'ילדים'}
             </p>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
               {children.map((child, i) => (
                 <div
                   key={child.id}
                   className="animate-slide-up"
                   style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}
                 >
+                  {/* Divider between children */}
+                  {i > 0 && (
+                    <div className="flex items-center gap-3 my-3 px-1">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                      <span className="text-sm opacity-40">🐷</span>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                    </div>
+                  )}
+
                   {/* Child card */}
                   <ChildCard child={child} index={i} />
 
-                  {/* Quick action strip */}
-                  <div className="flex gap-2 mt-1.5 px-1">
+                  {/* Quick action strip — framed tray */}
+                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner flex gap-2">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-2xl shadow-md px-3 py-3 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
-                      <span className="text-xl leading-none">⭐</span>
+                      <span className="text-lg leading-none">⭐</span>
                       <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
                     </button>
                     <button
                       onClick={() => showModal('addMoney', { childId: child.id })}
-                      className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-2xl shadow-md px-3 py-3 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
-                      <span className="text-xl leading-none">💵</span>
+                      <span className="text-lg leading-none">💵</span>
                       <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
                     </button>
                   </div>
