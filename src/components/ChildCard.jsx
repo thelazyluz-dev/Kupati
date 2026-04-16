@@ -48,9 +48,11 @@ export default function ChildCard({ child, index }) {
   }, [])
 
   const transactions = getTransactions(child.id)
+  // Net star balance change this week (earned minus spent)
+  const STAR_DEDUCT = new Set(['convert_out', 'prize_redeem', 'penalty', 'wheel_spin'])
   const weekStars = transactions
-    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars' && !['convert_out', 'prize_redeem', 'penalty', 'savings_open'].includes(tx.type))
-    .reduce((sum, tx) => tx.type === 'wheel_spin' ? sum - tx.amount : sum + tx.amount, 0)
+    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars')
+    .reduce((sum, tx) => STAR_DEDUCT.has(tx.type) ? sum - tx.amount : sum + tx.amount, 0)
   const weekShekels = transactions
     .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
     .reduce((sum, tx) => sum + tx.amount, 0)
