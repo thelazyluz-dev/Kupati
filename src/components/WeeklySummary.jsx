@@ -1,10 +1,14 @@
+import { useState } from 'react'
 import { formatNumber } from '../lib/utils.js'
 
 // Israeli week: Sunday (0) → Saturday (6)
 const DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
-const DAY_FULL  = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת']
+
+const BAR_H = 88 // px — chart area height
 
 export default function WeeklySummary({ transactions }) {
+  const [mode, setMode] = useState('stars')
+
   // Current week: Sunday through Saturday
   const today = new Date()
   today.setHours(0, 0, 0, 0)
@@ -33,6 +37,7 @@ export default function WeeklySummary({ transactions }) {
   const totalStars     = starsByDay.reduce((a, b) => a + b, 0)
   const totalShekels   = shekelsByDay.reduce((a, b) => a + b, 0)
   const totalPenalties = penaltiesByDay.reduce((a, b) => a + b, 0)
+  const todayIndex     = sundayOffset
 
   // Last week totals (for trend chip)
   const lastWeekStart = new Date(weekStart)
@@ -44,47 +49,54 @@ export default function WeeklySummary({ transactions }) {
   const hadLastWeek = transactions.some(
     (tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
   )
-  const maxStars     = Math.max(...starsByDay, 1)
-  const maxShekels   = Math.max(...shekelsByDay, 0.01)
-  const maxPenalties = Math.max(...penaltiesByDay, 0.01)
-  const todayIndex   = sundayOffset // index 0-6 within the week
 
-  const BAR_H = 64 // px — chart area height
+  // Active dataset based on toggle
+  const data   = mode === 'stars' ? starsByDay : shekelsByDay
+  const maxVal = mode === 'stars'
+    ? Math.max(...starsByDay, 1)
+    : Math.max(...shekelsByDay, 0.01)
+  const maxPenalties = Math.max(...penaltiesByDay, 0.01)
+
+  // Colors per mode
+  const todayGrad   = mode === 'stars' ? 'linear-gradient(to top,#f97316,#fbbf24)' : 'linear-gradient(to top,#059669,#34d399)'
+  const normalGrad  = mode === 'stars' ? 'linear-gradient(to top,#f59e0b,#fcd34d)' : 'linear-gradient(to top,#10b981,#6ee7b7)'
+  const futureColor = mode === 'stars' ? '#fef3c7' : '#d1fae5'
+  const glowColor   = mode === 'stars' ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)'
+  const labelColor  = mode === 'stars' ? 'text-amber-500' : 'text-emerald-600'
 
   return (
     <div className="bg-white rounded-2xl shadow-sm p-4">
-      {/* Header */}
+      {/* Header + toggle */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-bold text-gray-700 text-sm">📊 השבוע הנוכחי</h3>
-        <div className="flex gap-3 text-sm">
-          {totalStars > 0 && (
-            <span className="font-bold text-amber-500">⭐ {formatNumber(totalStars)}</span>
-          )}
-          {totalShekels > 0 && (
-            <span className="font-bold text-emerald-600">₪ {formatNumber(totalShekels)}</span>
-          )}
-          {totalPenalties > 0 && (
-            <span className="font-bold text-red-500">⚡ {totalPenalties}</span>
-          )}
-          {totalStars === 0 && totalShekels === 0 && totalPenalties === 0 && (
-            <span className="text-gray-400 text-xs">עדיין לא הרווחת השבוע</span>
-          )}
+        <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-0.5">
+          <button
+            onClick={() => setMode('stars')}
+            className={`text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 ${
+              mode === 'stars' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >⭐ כוכבים</button>
+          <button
+            onClick={() => setMode('shekels')}
+            className={`text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 ${
+              mode === 'shekels' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400 hover:text-gray-600'
+            }`}
+          >₪ כסף</button>
         </div>
       </div>
 
-      {/* Stars chart */}
-      <p className="text-xs text-gray-400 mb-1 text-right">⭐ כוכבים</p>
-      <div className="flex items-end gap-1 mb-1" style={{ height: BAR_H }}>
+      {/* Main chart — key=mode triggers fade-in on switch */}
+      <div key={mode} className="flex items-end gap-1.5 animate-fade-in" style={{ height: BAR_H }}>
         {days.map((day, i) => {
-          const val    = starsByDay[i]
-          const isToday   = i === todayIndex
-          const isFuture  = i > todayIndex
-          const barH   = val > 0 ? Math.max(8, (val / maxStars) * (BAR_H - 16)) : 0
+          const val      = data[i]
+          const isToday  = i === todayIndex
+          const isFuture = i > todayIndex
+          const barH     = val > 0 ? Math.max(10, (val / maxVal) * (BAR_H - 22)) : 0
 
           return (
             <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: BAR_H }}>
-              {/* Value label */}
-              <span className={`text-xs font-bold mb-0.5 ${val > 0 ? 'text-amber-600' : 'text-transparent'}`}>
+              {/* Value label — always rendered so layout doesn't shift */}
+              <span className={`text-[10px] font-bold mb-0.5 leading-none ${val > 0 ? labelColor : 'text-transparent'}`}>
                 {val > 0 ? formatNumber(val) : '0'}
               </span>
               {/* Bar */}
@@ -92,93 +104,49 @@ export default function WeeklySummary({ transactions }) {
                 style={{
                   height: barH || 3,
                   background: barH === 0
-                    ? '#f3f4f6'
+                    ? '#f1f5f9'
                     : isFuture
-                      ? '#fef3c7'
+                      ? futureColor
                       : isToday
-                        ? 'linear-gradient(to top, #f97316, #fbbf24)'
-                        : 'linear-gradient(to top, #f59e0b, #fcd34d)',
-                  boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(245,158,11,0.35)' : 'none',
+                        ? todayGrad
+                        : normalGrad,
+                  boxShadow: barH > 0 && !isFuture ? `0 2px 8px ${glowColor}` : 'none',
+                  transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1)',
                 }}
-                className="w-full rounded-t-lg transition-all duration-500"
+                className="w-full rounded-t-lg"
               />
             </div>
           )
         })}
       </div>
 
-      {/* Shekels chart */}
-      {totalShekels > 0 && (
-        <>
-          <p className="text-xs text-gray-400 mb-1 text-right mt-3">₪ כסף שנכנס</p>
-          <div className="flex items-end gap-1 mb-1" style={{ height: 40 }}>
-            {days.map((day, i) => {
-              const val    = shekelsByDay[i]
-              const isToday   = i === todayIndex
-              const isFuture  = i > todayIndex
-              const barH   = val > 0 ? Math.max(6, (val / maxShekels) * 32) : 0
-
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 40 }}>
-                  {val > 0 && (
-                    <span className="text-xs font-bold mb-0.5 text-emerald-600">{formatNumber(val)}</span>
-                  )}
-                  <div
-                    style={{
-                      height: barH || 3,
-                      background: barH === 0
-                        ? '#f3f4f6'
-                        : isFuture
-                          ? '#d1fae5'
-                          : isToday
-                            ? 'linear-gradient(to top, #059669, #34d399)'
-                            : 'linear-gradient(to top, #10b981, #6ee7b7)',
-                      boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(16,185,129,0.35)' : 'none',
-                    }}
-                    className="w-full rounded-t-lg transition-all duration-500"
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </>
-      )}
-
-      {/* Penalties chart */}
+      {/* Penalties mini-chart */}
       {totalPenalties > 0 && (
-        <>
-          <p className="text-xs text-red-400 mb-1 text-right mt-3">⚡ קנסות</p>
-          <div className="flex items-end gap-1 mb-1" style={{ height: 40 }}>
+        <div className="mt-3">
+          <p className="text-xs text-red-400 mb-1 text-right">⚡ קנסות</p>
+          <div className="flex items-end gap-1.5" style={{ height: 34 }}>
             {days.map((day, i) => {
-              const val    = penaltiesByDay[i]
-              const isToday   = i === todayIndex
-              const isFuture  = i > todayIndex
-              const barH   = val > 0 ? Math.max(6, (val / maxPenalties) * 32) : 0
-
+              const val  = penaltiesByDay[i]
+              const barH = val > 0 ? Math.max(6, (val / maxPenalties) * 28) : 0
               return (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 40 }}>
+                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 34 }}>
                   {val > 0 && (
-                    <span className="text-xs font-bold mb-0.5 text-red-500">{val}</span>
+                    <span className="text-[9px] font-bold mb-0.5 text-red-500 leading-none">{val}</span>
                   )}
                   <div
                     style={{
-                      height: barH || 3,
-                      background: barH === 0
-                        ? '#f3f4f6'
-                        : isFuture
-                          ? '#fee2e2'
-                          : isToday
-                            ? 'linear-gradient(to top, #dc2626, #f87171)'
-                            : 'linear-gradient(to top, #ef4444, #fca5a5)',
-                      boxShadow: barH > 0 && !isFuture ? '0 2px 6px rgba(239,68,68,0.35)' : 'none',
+                      height: barH || 2,
+                      background: barH === 0 ? '#f1f5f9' : 'linear-gradient(to top,#ef4444,#fca5a5)',
+                      boxShadow: barH > 0 ? '0 2px 6px rgba(239,68,68,0.3)' : 'none',
+                      transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1)',
                     }}
-                    className="w-full rounded-t-lg transition-all duration-500"
+                    className="w-full rounded-t-md"
                   />
                 </div>
               )
             })}
           </div>
-        </>
+        </div>
       )}
 
       {/* Trend chip */}
@@ -203,16 +171,16 @@ export default function WeeklySummary({ transactions }) {
       )}
 
       {/* Day labels */}
-      <div className="flex gap-1 mt-1">
+      <div className="flex gap-1.5 mt-2">
         {days.map((day, i) => {
           const isToday  = i === todayIndex
           const isFuture = i > todayIndex
           return (
             <div key={i} className="flex-1 flex flex-col items-center gap-0.5">
               <span className={[
-                'text-xs font-semibold',
-                isToday  ? 'text-indigo-600' :
-                isFuture ? 'text-gray-300'   : 'text-gray-500',
+                'text-xs',
+                isToday  ? 'font-black text-indigo-600' :
+                isFuture ? 'font-normal text-gray-300'  : 'font-semibold text-gray-400',
               ].join(' ')}>
                 {DAY_NAMES[day.getDay()]}
               </span>
