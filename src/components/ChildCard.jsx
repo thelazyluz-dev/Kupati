@@ -48,11 +48,10 @@ export default function ChildCard({ child, index }) {
   }, [])
 
   const transactions = getTransactions(child.id)
-  // Net star balance change this week (earned minus spent)
-  const STAR_DEDUCT = new Set(['convert_out', 'prize_redeem', 'penalty', 'wheel_spin'])
+  // Stars earned from chores this week only (effort metric, always positive)
   const weekStars = transactions
-    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars')
-    .reduce((sum, tx) => STAR_DEDUCT.has(tx.type) ? sum - tx.amount : sum + tx.amount, 0)
+    .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars' && tx.type === 'chore')
+    .reduce((sum, tx) => sum + tx.amount, 0)
   const weekShekels = transactions
     .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
     .reduce((sum, tx) => sum + tx.amount, 0)
@@ -128,7 +127,7 @@ export default function ChildCard({ child, index }) {
             </div>
             {(weekStars > 0 || weekShekels > 0) && (
               <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
-                <span className="opacity-75">השבוע:</span>
+                <span className="opacity-75">מטלות השבוע:</span>
                 {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
                 {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
               </div>
