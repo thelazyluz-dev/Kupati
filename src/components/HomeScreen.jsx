@@ -120,9 +120,13 @@ export default function HomeScreen() {
         ) : (
           /* ── Children list ──────────────────────────────────────── */
           <>
-            <p className="text-sm text-gray-500 mb-3 font-medium animate-fade-in">
-              {children.length} {children.length === 1 ? 'ילד' : 'ילדים'}
-            </p>
+            <div className="flex items-center gap-2 mb-3 animate-fade-in">
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+              <span className="text-xs text-gray-400 font-semibold px-1">
+                {children.length === 1 ? 'ילד אחד' : `${children.length} ילדים`}
+              </span>
+              <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+            </div>
             <div className="flex flex-col gap-2">
               {children.map((child, i) => (
                 <div
