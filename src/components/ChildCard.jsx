@@ -112,11 +112,21 @@ export default function ChildCard({ child, index }) {
       ].join(' ')}
     >
       {/* Avatar watermark */}
-      <span
-        className="absolute right-3 top-0 select-none pointer-events-none leading-none"
-        style={{ fontSize: 82, opacity: 0.06 }}
-        aria-hidden="true"
-      >{child.avatar}</span>
+      {child.avatarImage ? (
+        <img
+          src={child.avatarImage}
+          alt=""
+          aria-hidden="true"
+          className="absolute right-3 top-0 select-none pointer-events-none rounded-full object-cover"
+          style={{ width: 82, height: 82, opacity: 0.1 }}
+        />
+      ) : (
+        <span
+          className="absolute right-3 top-0 select-none pointer-events-none leading-none"
+          style={{ fontSize: 82, opacity: 0.06 }}
+          aria-hidden="true"
+        >{child.avatar}</span>
+      )}
 
       {/* Status badges */}
       {(hasActiveSavings || goalReached || birthdayToday) && (
@@ -128,8 +138,11 @@ export default function ChildCard({ child, index }) {
       )}
 
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-white/25 ring-2 ring-white/40 flex items-center justify-center flex-shrink-0">
-          <span className="text-4xl">{child.avatar}</span>
+        <div className="w-16 h-16 rounded-full bg-white/25 ring-2 ring-white/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+          {child.avatarImage
+            ? <img src={child.avatarImage} alt={child.name} className="w-full h-full object-cover" />
+            : <span className="text-4xl">{child.avatar}</span>
+          }
         </div>
         <div className="flex-1 min-w-0">
           <div className="font-bold text-xl mb-2 truncate">{child.name}</div>

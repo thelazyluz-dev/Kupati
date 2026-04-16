@@ -5,6 +5,27 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import EmojiPicker from '../ui/EmojiPicker.jsx'
 
+// Resize + center-crop an image File to a square JPEG dataURL
+function resizeImage(file, size = 200) {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      URL.revokeObjectURL(url)
+      const canvas = document.createElement('canvas')
+      canvas.width  = size
+      canvas.height = size
+      const ctx = canvas.getContext('2d')
+      const minDim = Math.min(img.width, img.height)
+      const sx = (img.width  - minDim) / 2
+      const sy = (img.height - minDim) / 2
+      ctx.drawImage(img, sx, sy, minDim, minDim, 0, 0, size, size)
+      resolve(canvas.toDataURL('image/jpeg', 0.75))
+    }
+    img.src = url
+  })
+}
+
 const MONTHS = [
   'ינואר','פברואר','מרץ','אפריל','מאי','יוני',
   'יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר',
@@ -102,18 +123,29 @@ export default function EditChildModal() {
   const [birthday, setBirthday] = useState(child?.birthday || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  // undefined = unchanged, null = remove, string = new dataURL
+  const [avatarImage, setAvatarImage] = useState(undefined)
+
+  async function handlePhotoChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const dataUrl = await resizeImage(file, 200)
+    setAvatarImage(dataUrl)
+  }
 
   if (!child) return null
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim()) return
-    updateChild(child.id, {
+    const updates = {
       name: name.trim(),
       avatar,
       colorKey: colorKey || null,
       birthday: birthday || null,
-    })
+    }
+    if (avatarImage !== undefined) updates.avatarImage = avatarImage  // null removes it
+    updateChild(child.id, updates)
     closeModal()
   }
 
@@ -136,6 +168,38 @@ export default function EditChildModal() {
           value={avatar}
           onChange={setAvatar}
         />
+
+        {/* Photo avatar */}
+        <div>
+          <label className="text-sm font-semibold text-gray-600 block mb-2">📸 תמונה (מחליפה אימוג׳י)</label>
+          {(avatarImage ?? child?.avatarImage) ? (
+            <div className="flex items-center gap-3">
+              <img
+                src={avatarImage ?? child.avatarImage}
+                alt="preview"
+                className="w-16 h-16 rounded-full object-cover ring-2 ring-indigo-300 flex-shrink-0"
+              />
+              <div className="flex-1 space-y-1.5">
+                <label className="flex items-center justify-center gap-1.5 w-full text-xs bg-gray-100 hover:bg-gray-200 rounded-xl py-2 cursor-pointer transition-colors font-semibold text-gray-600">
+                  🔄 החלף תמונה
+                  <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setAvatarImage(null)}
+                  className="w-full text-xs text-red-400 bg-red-50 hover:bg-red-100 rounded-xl py-2 transition-colors font-semibold"
+                >
+                  🗑️ הסר תמונה
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex items-center justify-center gap-2 w-full h-14 border-2 border-dashed border-gray-200 rounded-2xl cursor-pointer hover:border-indigo-300 hover:bg-indigo-50 transition-all text-gray-400 text-sm font-medium">
+              📸 צלם או בחר תמונה
+              <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+            </label>
+          )}
+        </div>
 
         {/* Name */}
         <div>

@@ -208,7 +208,15 @@ export default function ChildDashboard({ childId }) {
           </button>
 
           <div className="text-center">
-            <div className="text-6xl mb-1">{child.avatar}</div>
+            {child.avatarImage ? (
+              <img
+                src={child.avatarImage}
+                alt={child.name}
+                className="w-20 h-20 rounded-full object-cover ring-4 ring-white/50 mx-auto mb-1 shadow-lg"
+              />
+            ) : (
+              <div className="text-6xl mb-1">{child.avatar}</div>
+            )}
             <h1 className="text-2xl font-bold">{child.name}</h1>
             {showBirthday && (
               <div className="inline-block mt-1 bg-white/25 rounded-full px-3 py-0.5 text-sm font-semibold animate-pop">
@@ -299,6 +307,17 @@ export default function ChildDashboard({ childId }) {
                 onRedeem={() => handleRedeem(goal)}
               />
             ))}
+          </div>
+        )}
+
+        {/* Parent note card */}
+        {child.parentNote && (
+          <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up">
+            <span className="text-2xl flex-shrink-0">💌</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
+              <p className="text-sm text-gray-700 leading-snug">{child.parentNote}</p>
+            </div>
           </div>
         )}
 

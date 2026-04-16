@@ -147,21 +147,43 @@ export default function HomeScreen() {
                   <ChildCard child={child} index={i} />
 
                   {/* Quick action strip — framed tray */}
-                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner flex gap-2">
-                    <button
-                      onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
-                    >
-                      <span className="text-lg leading-none">⭐</span>
-                      <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
-                    </button>
-                    <button
-                      onClick={() => showModal('addMoney', { childId: child.id })}
-                      className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
-                    >
-                      <span className="text-lg leading-none">💵</span>
-                      <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
-                    </button>
+                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner space-y-1.5">
+                    {/* Row 1 — child actions */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
+                        className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      >
+                        <span className="text-lg leading-none">⭐</span>
+                        <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
+                      </button>
+                      <button
+                        onClick={() => showModal('addMoney', { childId: child.id })}
+                        className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      >
+                        <span className="text-lg leading-none">💵</span>
+                        <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
+                      </button>
+                    </div>
+                    {/* Row 2 — parent extras */}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => showModal('parentNote', { childId: child.id, child })}
+                        className="flex-1 bg-white rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 text-gray-600 active:scale-95 transition-all"
+                      >
+                        <span className="text-sm leading-none">💌</span>
+                        <span className="text-xs font-semibold">
+                          {child.parentNote ? 'ערוך הודעה' : 'שלח הודעה'}
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
+                        className="flex-1 bg-white rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 text-gray-600 active:scale-95 transition-all"
+                      >
+                        <span className="text-sm leading-none">🎰</span>
+                        <span className="text-xs font-semibold">הפתעה!</span>
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
