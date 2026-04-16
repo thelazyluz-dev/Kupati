@@ -12,7 +12,9 @@ const TYPE_STYLE = {
   savings_open:   { icon: '🏦', label: 'חסכון נפתח',   bg: 'bg-blue-50',    border: 'border-r-4 border-blue-400',    amount: 'text-blue-600'     },
   savings_close:  { icon: '💰', label: 'חסכון הבשיל',  bg: 'bg-teal-50',    border: 'border-r-4 border-teal-400',    amount: 'text-teal-600'     },
   savings_early:  { icon: '⚠️', label: 'פדיון מוקדם',  bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'   },
-  penalty:        { icon: '⚡', label: 'קנס',          bg: 'bg-red-50',     border: 'border-r-4 border-red-500',     amount: 'text-red-600'      },
+  penalty:        { icon: '⚡', label: 'קנס',            bg: 'bg-red-50',     border: 'border-r-4 border-red-500',     amount: 'text-red-600'      },
+  wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
+  wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
 }
 
 const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-gray-50', border: 'border-r-4 border-gray-300', amount: 'text-gray-600' }
@@ -21,7 +23,7 @@ export default function TransactionItem({ transaction, childId }) {
   const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const style = TYPE_STYLE[type] ?? FALLBACK
-  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty'
+  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty' || type === 'wheel_spin'
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
   const sign = isDeduct ? '-' : '+'
 

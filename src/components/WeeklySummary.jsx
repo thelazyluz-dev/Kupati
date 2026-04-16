@@ -30,7 +30,18 @@ export default function WeeklySummary({ transactions }) {
       .reduce((s, tx) => s + tx.amount, 0)
   }
 
-  const starsByDay     = days.map((d) => sumTx(d, (tx) => tx.currency === 'stars'   && tx.type !== 'convert_out' && tx.type !== 'penalty'))
+  // Stars per day: positive types add, wheel_spin subtracts (net wheel result)
+  const STARS_EXCLUDE = new Set(['convert_out', 'penalty', 'prize_redeem', 'savings_open'])
+  const starsByDay = days.map((d) => {
+    const start = d.getTime(), end = start + 86400000
+    return transactions
+      .filter((tx) => tx.timestamp >= start && tx.timestamp < end && tx.currency === 'stars')
+      .reduce((s, tx) => {
+        if (STARS_EXCLUDE.has(tx.type)) return s
+        if (tx.type === 'wheel_spin') return s - tx.amount   // cost counted as negative
+        return s + tx.amount
+      }, 0)
+  })
   const shekelsByDay   = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
   const penaltiesByDay = days.map((d) => sumTx(d, (tx) => tx.type === 'penalty'))
 
@@ -43,9 +54,12 @@ export default function WeeklySummary({ transactions }) {
   const lastWeekStart = new Date(weekStart)
   lastWeekStart.setDate(weekStart.getDate() - 7)
   const lastWeekStars = transactions
-    .filter((tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
-                 && tx.currency === 'stars' && tx.type !== 'convert_out')
-    .reduce((s, tx) => s + tx.amount, 0)
+    .filter((tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime() && tx.currency === 'stars')
+    .reduce((s, tx) => {
+      if (STARS_EXCLUDE.has(tx.type)) return s
+      if (tx.type === 'wheel_spin') return s - tx.amount
+      return s + tx.amount
+    }, 0)
   const hadLastWeek = transactions.some(
     (tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
   )

@@ -84,10 +84,10 @@ export default function SpinWheelModal() {
     // Deduct cost immediately
     adjustStars(childId, -SPIN_COST)
     addTransaction(childId, {
-      type: 'convert_out',
+      type: 'wheel_spin',
       amount: SPIN_COST,
       currency: 'stars',
-      description: `🎰 גלגל המזל — שולמו ${SPIN_COST}⭐`,
+      description: `🎰 גלגל המזל — עלות סיבוב`,
     })
     setPaid(true)
 
@@ -114,10 +114,10 @@ export default function SpinWheelModal() {
     if (!result) return
     adjustStars(childId, result.stars)
     addTransaction(childId, {
-      type: 'chore',
+      type: 'wheel_win',
       amount: result.stars,
       currency: 'stars',
-      description: `🎰 גלגל המזל — זכה ב-${result.stars}⭐`,
+      description: `🎰 גלגל המזל — זכייה`,
     })
     sounds.goal()
     closeModal()
