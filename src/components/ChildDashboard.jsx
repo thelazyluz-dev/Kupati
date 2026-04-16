@@ -290,7 +290,6 @@ export default function ChildDashboard({ childId }) {
                   strokeDasharray={`${prizeArcPct * ARC_C} ${ARC_C}`}
                   transform="rotate(-90 19 19)"
                 />
-                <text x="19" y="23" textAnchor="middle" fontSize="11">🎁</text>
               </svg>
             </div>
           </div>
