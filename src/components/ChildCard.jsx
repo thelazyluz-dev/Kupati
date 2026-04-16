@@ -11,18 +11,20 @@ function useLongPress(onTap, onLong, holdMs = 700) {
   const start = useCallback((e) => {
     fired.current = false; moved.current = false
     const t = e.touches?.[0]
-    if (t) startPos.current = { x: t.clientX, y: t.clientY }
+    startPos.current = t ? { x: t.clientX, y: t.clientY } : { x: e.clientX, y: e.clientY }
     timer.current = setTimeout(() => { if (!moved.current) { fired.current = true; onLong() } }, holdMs)
   }, [onLong, holdMs])
   const move = useCallback((e) => {
-    const t = e.touches?.[0]; if (!t) return
-    if (Math.abs(t.clientX - startPos.current.x) > 8 || Math.abs(t.clientY - startPos.current.y) > 8) {
+    const t = e.touches?.[0]
+    const x = t ? t.clientX : e.clientX
+    const y = t ? t.clientY : e.clientY
+    if (Math.abs(x - startPos.current.x) > 10 || Math.abs(y - startPos.current.y) > 10) {
       moved.current = true; clearTimeout(timer.current)
     }
   }, [])
-  const cancel = useCallback(() => { moved.current = true; clearTimeout(timer.current) }, [])
   const end = useCallback(() => { clearTimeout(timer.current); if (!fired.current && !moved.current) onTap() }, [onTap])
-  return { onMouseDown: start, onMouseUp: end, onMouseLeave: cancel, onTouchStart: start, onTouchMove: move, onTouchEnd: end }
+  // onMouseMove replaces onMouseLeave — tracks real movement without firing on child-element transitions
+  return { onMouseDown: start, onMouseUp: end, onMouseMove: move, onTouchStart: start, onTouchMove: move, onTouchEnd: end }
 }
 
 export default function ChildCard({ child, index }) {
@@ -150,7 +152,7 @@ export default function ChildCard({ child, index }) {
 
         {/* ── Back face ── */}
         <div
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0 }}
+          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)', position: 'absolute', inset: 0, pointerEvents: flipped ? 'auto' : 'none' }}
           className={`bg-gradient-to-bl ${gradient} rounded-3xl p-4 text-white flex flex-col items-center justify-center gap-3`}
         >
           <p className="text-sm font-bold opacity-85">📊 סטטיסטיקות כלליות</p>

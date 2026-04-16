@@ -119,6 +119,10 @@ export default function ChildDashboard({ childId }) {
   const child = children.find((c) => c.id === childId)
 
   useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [childId])
+
+  useEffect(() => {
     if (!child) navigate('home')
   }, [child, navigate])
 
