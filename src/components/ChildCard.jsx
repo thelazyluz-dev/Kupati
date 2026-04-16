@@ -3,13 +3,87 @@ import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
 
+function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
+  if (!birthdayMMDD) return null
+
+  const [mm, dd] = birthdayMMDD.split('-')
+  const dateLabel = `${dd}/${mm}`
+
+  const weeks    = Math.floor(birthdayDays / 7)
+  const remDays  = birthdayDays % 7
+  const isUrgent = birthdayDays <= 7
+  const isSoon   = birthdayDays <= 30
+
+  if (birthdayToday) {
+    return (
+      <div className="mt-2.5 rounded-2xl bg-white/35 ring-1 ring-white/50 px-3 py-2 flex items-center justify-center gap-2">
+        <span className="text-lg animate-bounce">🎂</span>
+        <span className="font-bold text-sm">יום הולדת שמח!</span>
+        <span className="text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>🎉</span>
+      </div>
+    )
+  }
+
+  return (
+    <div className={`mt-2.5 rounded-2xl px-3 py-2 flex items-center gap-3 ${
+      isUrgent ? 'bg-white/35 ring-1 ring-white/50' : isSoon ? 'bg-white/25' : 'bg-white/15'
+    }`}>
+      {/* Cake icon */}
+      <span className={`text-xl flex-shrink-0 ${isUrgent ? 'animate-bounce' : ''}`}>🎂</span>
+
+      {/* Day counter */}
+      <div className="flex items-baseline gap-1 flex-shrink-0">
+        {weeks > 0 ? (
+          <>
+            <span className={`font-black leading-none ${isUrgent ? 'text-2xl' : 'text-xl'}`}>{weeks}</span>
+            <span className="text-[10px] opacity-75">שב׳</span>
+            {remDays > 0 && (
+              <>
+                <span className={`font-black leading-none ${isUrgent ? 'text-2xl' : 'text-xl'}`}>{remDays}</span>
+                <span className="text-[10px] opacity-75">י׳</span>
+              </>
+            )}
+          </>
+        ) : (
+          <>
+            <span className={`font-black leading-none ${isUrgent ? 'text-3xl' : 'text-2xl'}`}>{birthdayDays}</span>
+            <span className="text-[10px] opacity-75">ימים</span>
+          </>
+        )}
+      </div>
+
+      {/* Label + date */}
+      <div className="flex-1 text-right min-w-0">
+        <div className="text-xs font-bold opacity-90 leading-tight">יום הולדת</div>
+        <div className="text-[11px] opacity-60 leading-tight">{dateLabel}</div>
+      </div>
+
+      {/* Urgency bar */}
+      {isUrgent && (
+        <div className="flex gap-0.5 flex-shrink-0">
+          {Array.from({ length: 7 }, (_, i) => (
+            <div
+              key={i}
+              className="w-1 rounded-full"
+              style={{
+                height: 8 + (i % 3) * 4,
+                background: i < (7 - birthdayDays) ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.25)',
+              }}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function ChildCard({ child, index }) {
   const { navigate, settings, getTransactions } = useApp()
   const [flipped, setFlipped] = useState(false)
 
   // Long-press / tap tracking (touch only)
   const lpTimer   = useRef(null)
-  const lpFired   = useRef(false)  // long-press fired → flip happened
+  const lpFired   = useRef(false)  // long-press fired → flip happened, absorb next click
   const lpMoved   = useRef(false)  // finger moved enough to be a scroll
   const lpStart   = useRef({ x: 0, y: 0 })
 
@@ -29,24 +103,25 @@ export default function ChildCard({ child, index }) {
     const t = e.touches[0]
     const dx = Math.abs(t.clientX - lpStart.current.x)
     const dy = Math.abs(t.clientY - lpStart.current.y)
-    if (dx > 8 || dy > 8) lpMoved.current = true   // mark scroll early
+    if (dx > 8  || dy > 8)  lpMoved.current = true      // mark as scroll → blocks navigation
     if (dx > 14 || dy > 14) clearTimeout(lpTimer.current) // cancel long-press on real scroll
   }
   function handleTouchEnd(e) {
     clearTimeout(lpTimer.current)
-    // Prevent synthesized mouse/click events that would fire ~300ms later on the
-    // newly-rendered dashboard and open the wrong modal.
+    // Prevent synthesized mouse/click that fires ~300ms later on newly-rendered dashboard.
     e.preventDefault()
     if (!lpFired.current && !lpMoved.current) {
       // Clean tap: navigate or unflip
       if (flipped) setFlipped(false)
       else navigate('dashboard', child.id)
     }
-    lpFired.current = false
+    // Do NOT reset lpFired here — let handleClick absorb the synthetic click if it fires anyway
   }
 
-  // onClick fires only for real desktop mouse clicks (touch is handled above)
+  // onClick: desktop mouse clicks + safety net for synthetic touch clicks.
+  // If lpFired is true a long-press just happened — absorb the click without acting.
   function handleClick() {
+    if (lpFired.current) { lpFired.current = false; return }
     if (flipped) setFlipped(false)
     else navigate('dashboard', child.id)
   }
@@ -81,7 +156,6 @@ export default function ChildCard({ child, index }) {
   const totalValue = getTotalValue(child)
   const birthdayDays  = daysUntilBirthday(child.birthday)
   const birthdayToday = birthdayDays === 0
-  const showBirthday  = birthdayDays !== null
   const hasActiveSavings = (child.savings || []).some((s) => s.status === 'active')
   const goalReached      = firstGoal != null && totalValue >= firstGoal.targetAmount
   const stateRing = goalReached
@@ -165,13 +239,16 @@ export default function ChildCard({ child, index }) {
                   </div>
                 </div>
               )}
-              {showBirthday && (
-                <div className="mt-2 inline-block bg-white/25 rounded-full px-2.5 py-0.5 text-xs font-semibold">
-                  {birthdayToday ? '🎂 יום הולדת!' : `🎂 עוד ${birthdayDays} ימים`}
-                </div>
-              )}
             </div>
           </div>
+
+          {/* Birthday countdown */}
+          <BirthdayCountdown
+            birthdayMMDD={child.birthday}
+            birthdayDays={birthdayDays}
+            birthdayToday={birthdayToday}
+          />
+
           <p className="absolute bottom-1.5 left-3 text-[9px] opacity-25 font-medium">לחץ ארוך לסטטיסטיקות</p>
         </div>
 
