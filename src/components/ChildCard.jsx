@@ -1,4 +1,4 @@
-import { useMemo, useState, useRef } from 'react'
+import { useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
@@ -8,7 +8,6 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
 
   const [mm, dd] = birthdayMMDD.split('-')
   const dateLabel = `${dd}/${mm}`
-
   const weeks    = Math.floor(birthdayDays / 7)
   const remDays  = birthdayDays % 7
   const isUrgent = birthdayDays <= 7
@@ -28,10 +27,7 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
     <div className={`mt-2.5 rounded-2xl px-3 py-2 flex items-center gap-3 ${
       isUrgent ? 'bg-white/35 ring-1 ring-white/50' : isSoon ? 'bg-white/25' : 'bg-white/15'
     }`}>
-      {/* Cake icon */}
       <span className={`text-xl flex-shrink-0 ${isUrgent ? 'animate-bounce' : ''}`}>🎂</span>
-
-      {/* Day counter */}
       <div className="flex items-baseline gap-1 flex-shrink-0">
         {weeks > 0 ? (
           <>
@@ -51,14 +47,10 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
           </>
         )}
       </div>
-
-      {/* Label + date */}
       <div className="flex-1 text-right min-w-0">
         <div className="text-xs font-bold opacity-90 leading-tight">יום הולדת</div>
         <div className="text-[11px] opacity-60 leading-tight">{dateLabel}</div>
       </div>
-
-      {/* Urgency bar */}
       {isUrgent && (
         <div className="flex gap-0.5 flex-shrink-0">
           {Array.from({ length: 7 }, (_, i) => (
@@ -79,55 +71,6 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
 
 export default function ChildCard({ child, index }) {
   const { navigate, settings, getTransactions } = useApp()
-  const [flipped, setFlipped] = useState(false)
-
-  // Long-press / tap tracking (touch only)
-  const lpTimer   = useRef(null)
-  const lpFired   = useRef(false)  // long-press fired → flip happened, absorb next click
-  const lpMoved   = useRef(false)  // finger moved enough to be a scroll
-  const lpStart   = useRef({ x: 0, y: 0 })
-
-  function handleTouchStart(e) {
-    lpFired.current = false
-    lpMoved.current = false
-    const t = e.touches[0]
-    lpStart.current = { x: t.clientX, y: t.clientY }
-    lpTimer.current = setTimeout(() => {
-      if (!lpMoved.current) {
-        lpFired.current = true
-        setFlipped((f) => !f)
-      }
-    }, 700)
-  }
-  function handleTouchMove(e) {
-    const t = e.touches[0]
-    const dx = Math.abs(t.clientX - lpStart.current.x)
-    const dy = Math.abs(t.clientY - lpStart.current.y)
-    if (dx > 8  || dy > 8)  lpMoved.current = true      // mark as scroll → blocks navigation
-    if (dx > 14 || dy > 14) clearTimeout(lpTimer.current) // cancel long-press on real scroll
-  }
-  function handleTouchEnd(e) {
-    clearTimeout(lpTimer.current)
-    // Prevent synthesized mouse/click that fires ~300ms later on newly-rendered dashboard.
-    e.preventDefault()
-    if (!lpFired.current && !lpMoved.current) {
-      // Clean tap: navigate or unflip
-      if (flipped) setFlipped(false)
-      else navigate('dashboard', child.id)
-    }
-    // Do NOT reset lpFired here — let handleClick absorb the synthetic click if it fires anyway
-  }
-
-  // onClick: desktop mouse clicks + safety net for synthetic touch clicks.
-  // If lpFired is true a long-press just happened — absorb the click without acting.
-  function handleClick() {
-    if (lpFired.current) { lpFired.current = false; return }
-    if (flipped) setFlipped(false)
-    else navigate('dashboard', child.id)
-  }
-
-  // Right-click flips on desktop
-  function handleContextMenu(e) { e.preventDefault(); setFlipped((f) => !f) }
 
   const weekStart = useMemo(() => {
     const today = new Date(); today.setHours(0, 0, 0, 0)
@@ -142,11 +85,6 @@ export default function ChildCard({ child, index }) {
   const weekShekels = transactions
     .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
     .reduce((sum, tx) => sum + tx.amount, 0)
-
-  // Back-face stats
-  const totalStarsEarned  = transactions.filter((tx) => tx.type === 'chore').reduce((s, tx) => s + tx.amount, 0)
-  const prizesRedeemed    = transactions.filter((tx) => tx.type === 'prize_redeem').length
-  const totalTransactions = transactions.length
 
   const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
@@ -163,124 +101,74 @@ export default function ChildCard({ child, index }) {
     : birthdayToday ? 'ring-2 ring-pink-300 ring-offset-1 animate-pulse-ring' : ''
 
   return (
-    <div
-      onClick={handleClick}
-      onContextMenu={handleContextMenu}
-      onTouchStart={handleTouchStart}
-      onTouchMove={handleTouchMove}
-      onTouchEnd={handleTouchEnd}
-      style={{ perspective: '900px' }}
-      className="select-none cursor-pointer w-full"
+    <button
+      type="button"
+      onClick={() => navigate('dashboard', child.id)}
+      className={[
+        `bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right`,
+        'card-shimmer shadow-xl w-full relative overflow-hidden',
+        'active:scale-95 hover:brightness-110 transition-all duration-200',
+        stateRing,
+      ].join(' ')}
     >
-      <div
-        style={{
-          transformStyle: 'preserve-3d',
-          transform: flipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
-          transition: 'transform 0.5s cubic-bezier(0.4,0,0.2,1)',
-          position: 'relative',
-        }}
-      >
-        {/* ── Front face ── */}
-        <div
-          style={{ backfaceVisibility: 'hidden' }}
-          className={[
-            `bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right`,
-            'card-shimmer shadow-xl w-full relative overflow-hidden',
-            stateRing,
-          ].join(' ')}
-        >
-          {/* Avatar watermark */}
-          <span
-            className="absolute right-3 top-0 select-none pointer-events-none leading-none"
-            style={{ fontSize: 82, opacity: 0.06 }}
-            aria-hidden="true"
-          >{child.avatar}</span>
+      {/* Avatar watermark */}
+      <span
+        className="absolute right-3 top-0 select-none pointer-events-none leading-none"
+        style={{ fontSize: 82, opacity: 0.06 }}
+        aria-hidden="true"
+      >{child.avatar}</span>
 
-          {/* Status badges */}
-          {(hasActiveSavings || goalReached || birthdayToday) && (
-            <div className="absolute top-3 left-3 flex gap-1">
-              {birthdayToday    && <span className="text-base leading-none animate-bounce" title="יום הולדת!">🎂</span>}
-              {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
-              {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
+      {/* Status badges */}
+      {(hasActiveSavings || goalReached || birthdayToday) && (
+        <div className="absolute top-3 left-3 flex gap-1">
+          {birthdayToday    && <span className="text-base leading-none animate-bounce" title="יום הולדת!">🎂</span>}
+          {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
+          {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
+        </div>
+      )}
+
+      <div className="flex items-center gap-4">
+        <div className="w-16 h-16 rounded-full bg-white/25 ring-2 ring-white/40 flex items-center justify-center flex-shrink-0">
+          <span className="text-4xl">{child.avatar}</span>
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-xl mb-2 truncate">{child.name}</div>
+          <div className="flex gap-2 flex-wrap">
+            <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
+              <span className="text-sm">⭐</span>
+              <span className="font-bold text-sm">{formatNumber(child.starBalance)}</span>
+            </div>
+            <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
+              <span className="text-sm">₪</span>
+              <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
+            </div>
+            {(weekStars > 0 || weekShekels > 0) && (
+              <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
+                <span className="opacity-75">השבוע:</span>
+                {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
+                {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
+              </div>
+            )}
+          </div>
+          {firstGoal && (
+            <div className="mt-2.5">
+              <div className="flex items-center justify-between text-xs opacity-85 mb-1">
+                <span>{Math.round(progress * 100)}%</span>
+                <span className="truncate max-w-[130px]">{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
+              </div>
+              <div className="w-full bg-white/30 rounded-full h-2">
+                <div className="bg-white rounded-full h-2 transition-all duration-700" style={{ width: `${progress * 100}%` }} />
+              </div>
             </div>
           )}
-
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-white/25 ring-2 ring-white/40 flex items-center justify-center flex-shrink-0">
-              <span className="text-4xl">{child.avatar}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="font-bold text-xl mb-2 truncate">{child.name}</div>
-              <div className="flex gap-2 flex-wrap">
-                <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
-                  <span className="text-sm">⭐</span>
-                  <span className="font-bold text-sm">{formatNumber(child.starBalance)}</span>
-                </div>
-                <div className="flex items-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2.5 py-1">
-                  <span className="text-sm">₪</span>
-                  <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
-                </div>
-                {(weekStars > 0 || weekShekels > 0) && (
-                  <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
-                    <span className="opacity-75">השבוע:</span>
-                    {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
-                    {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
-                  </div>
-                )}
-              </div>
-              {firstGoal && (
-                <div className="mt-2.5">
-                  <div className="flex items-center justify-between text-xs opacity-85 mb-1">
-                    <span>{Math.round(progress * 100)}%</span>
-                    <span className="truncate max-w-[130px]">{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
-                  </div>
-                  <div className="w-full bg-white/30 rounded-full h-2">
-                    <div className="bg-white rounded-full h-2 transition-all duration-700" style={{ width: `${progress * 100}%` }} />
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Birthday countdown */}
-          <BirthdayCountdown
-            birthdayMMDD={child.birthday}
-            birthdayDays={birthdayDays}
-            birthdayToday={birthdayToday}
-          />
-
-          <p className="absolute bottom-1.5 left-3 text-[9px] opacity-25 font-medium">לחץ ארוך לסטטיסטיקות</p>
-        </div>
-
-        {/* ── Back face ── */}
-        <div
-          style={{
-            backfaceVisibility: 'hidden',
-            transform: 'rotateY(180deg)',
-            position: 'absolute',
-            inset: 0,
-            pointerEvents: flipped ? 'auto' : 'none',
-          }}
-          className={`bg-gradient-to-bl ${gradient} rounded-3xl p-4 text-white flex flex-col items-center justify-center gap-3`}
-        >
-          <p className="text-sm font-bold opacity-85">📊 סטטיסטיקות כלליות</p>
-          <div className="grid grid-cols-3 gap-2 w-full">
-            <div className="bg-white/20 rounded-2xl p-2.5 text-center">
-              <div className="text-xl font-black">{formatNumber(totalStarsEarned)}</div>
-              <div className="text-[10px] opacity-75 mt-0.5">⭐ נצברו</div>
-            </div>
-            <div className="bg-white/20 rounded-2xl p-2.5 text-center">
-              <div className="text-xl font-black">{prizesRedeemed}</div>
-              <div className="text-[10px] opacity-75 mt-0.5">🎁 פרסים</div>
-            </div>
-            <div className="bg-white/20 rounded-2xl p-2.5 text-center">
-              <div className="text-xl font-black">{totalTransactions}</div>
-              <div className="text-[10px] opacity-75 mt-0.5">📋 פעולות</div>
-            </div>
-          </div>
-          <p className="text-[10px] opacity-50">לחץ לחזרה</p>
         </div>
       </div>
-    </div>
+
+      <BirthdayCountdown
+        birthdayMMDD={child.birthday}
+        birthdayDays={birthdayDays}
+        birthdayToday={birthdayToday}
+      />
+    </button>
   )
 }
