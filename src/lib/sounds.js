@@ -95,4 +95,35 @@ export const sounds = {
       beep({ freq: f, duration: 0.18, delay: i * 0.16 })
     )
   },
+
+  // Wheel click tick — short percussive snap
+  wheelTick: () => beep({ freq: 380, type: 'square', duration: 0.03, gain: 0.22 }),
+
+  // Rising suspense swoop (last ~0.5s before reveal)
+  wheelSuspense: () => {
+    if (!isSoundEnabled()) return
+    try {
+      const ac = getCtx()
+      const osc = ac.createOscillator()
+      const g   = ac.createGain()
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(180, ac.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(780, ac.currentTime + 0.55)
+      g.gain.setValueAtTime(0.0, ac.currentTime)
+      g.gain.linearRampToValueAtTime(0.22, ac.currentTime + 0.25)
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6)
+      osc.start(ac.currentTime)
+      osc.stop(ac.currentTime + 0.65)
+    } catch {}
+  },
+
+  // Grand reveal fanfare (7 ascending notes with reverb-like tail)
+  wheelReveal: () => {
+    haptic([30, 15, 30, 15, 80, 20, 120])
+    const notes = [392, 494, 587, 659, 784, 988, 1175]
+    notes.forEach((f, i) =>
+      beep({ freq: f, duration: 0.28 + i * 0.04, delay: i * 0.09, gain: 0.3 - i * 0.02 })
+    )
+  },
 }

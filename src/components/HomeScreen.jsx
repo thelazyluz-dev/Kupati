@@ -181,7 +181,7 @@ export default function HomeScreen() {
                         className="flex-1 bg-white rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 text-gray-600 active:scale-95 transition-all"
                       >
                         <span className="text-sm leading-none">🎰</span>
-                        <span className="text-xs font-semibold">הפתעה!</span>
+                        <span className="text-xs font-semibold">גלגל המזל</span>
                       </button>
                     </div>
                   </div>
