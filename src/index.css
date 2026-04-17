@@ -91,6 +91,13 @@
     100% { transform: translateY(-90vh) scale(0.4) rotate(-10deg); opacity: 0;   }
   }
 
+  /* Money rain — falling emoji coins/bills from top */
+  @keyframes money-fall {
+    0%   { transform: translateY(0) rotate(0deg) scale(1);    opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translateY(105vh) rotate(540deg) scale(0.8); opacity: 0; }
+  }
+
   /* Balance card icons drifting wall-to-wall (uses CSS custom props --dx --dy per element) */
   @keyframes icon-drift {
     from { transform: translate(calc(-50% + var(--dx, 6px)), calc(-50% + var(--dy, 4px))); }

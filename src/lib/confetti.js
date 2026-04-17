@@ -53,6 +53,31 @@ export function celebrateChore() {
   }, 500)
 }
 
+export function celebrateMoney() {
+  const emojis = ['💵', '🪙', '💰', '💸', '💵', '🪙', '💵', '🪙']
+  const count = 22
+  for (let i = 0; i < count; i++) {
+    setTimeout(() => {
+      const el = document.createElement('span')
+      el.textContent = emojis[Math.floor(Math.random() * emojis.length)]
+      const size = 18 + Math.floor(Math.random() * 16)
+      const dur  = 1.6 + Math.random() * 1.4
+      el.style.cssText = [
+        'position:fixed',
+        'top:-44px',
+        `left:${5 + Math.random() * 90}%`,
+        `font-size:${size}px`,
+        'pointer-events:none',
+        'z-index:9998',
+        `animation:money-fall ${dur.toFixed(2)}s ease-in forwards`,
+        'will-change:transform',
+      ].join(';')
+      document.body.appendChild(el)
+      setTimeout(() => el.remove(), (dur + 0.2) * 1000)
+    }, i * 70)
+  }
+}
+
 export function celebrateSmall() {
   confetti({
     particleCount: 30,

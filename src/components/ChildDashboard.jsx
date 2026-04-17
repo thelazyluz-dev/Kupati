@@ -92,6 +92,58 @@ function IconCloud({ icons }) {
   )
 }
 
+function StatTile({ icon, label, value, color, bg }) {
+  return (
+    <div className={`${bg} rounded-xl p-3 text-center`}>
+      <div className="text-lg mb-0.5">{icon}</div>
+      <div className={`text-base font-black ${color}`}>{value}</div>
+      <div className="text-xs text-gray-500 leading-tight mt-0.5">{label}</div>
+    </div>
+  )
+}
+
+function MonthlySummary({ transactions }) {
+  const now = Date.now()
+  const monthAgo = now - 30 * 86400000
+  const monthTx = transactions.filter((tx) => tx.timestamp >= monthAgo)
+  if (monthTx.length === 0) return null
+
+  const starsEarned = monthTx
+    .filter((tx) => tx.currency === 'stars' && tx.type === 'chore')
+    .reduce((s, tx) => s + tx.amount, 0)
+  const prizesRedeemed = monthTx
+    .filter((tx) => tx.type === 'prize_redeem')
+    .reduce((s, tx) => s + tx.amount, 0)
+  const shekelIn = monthTx
+    .filter((tx) => tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
+    .reduce((s, tx) => s + tx.amount, 0)
+  const shekelOut = monthTx
+    .filter((tx) => tx.type === 'expense')
+    .reduce((s, tx) => s + tx.amount, 0)
+  const penalties = monthTx
+    .filter((tx) => tx.type === 'penalty')
+    .reduce((s, tx) => s + tx.amount, 0)
+
+  const tiles = [
+    starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-600',   bg: 'bg-amber-50'   },
+    prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-600',  bg: 'bg-purple-50'  },
+    shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-600',    bg: 'bg-rose-50'    },
+    penalties > 0    && { icon: '⚡', label: 'קנסות',           value: `-${formatNumber(penalties)}⭐`,      color: 'text-red-600',     bg: 'bg-red-50'     },
+  ].filter(Boolean)
+
+  if (tiles.length === 0) return null
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm p-4">
+      <h3 className="font-bold text-gray-700 text-sm mb-3">📅 30 הימים האחרונים</h3>
+      <div className="grid grid-cols-2 gap-2">
+        {tiles.map((t) => <StatTile key={t.label} {...t} />)}
+      </div>
+    </div>
+  )
+}
+
 function StarIconCloud({ count }) {
   const n = Math.min(Math.round(count), 50)
   const icons = Array.from({ length: n }, () => '⭐')
@@ -408,6 +460,8 @@ export default function ChildDashboard({ childId }) {
         </Button>
 
         <WeeklySummary transactions={transactions} />
+
+        <MonthlySummary transactions={transactions} />
 
         <div>
           <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>

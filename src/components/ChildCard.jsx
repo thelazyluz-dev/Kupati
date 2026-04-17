@@ -127,7 +127,7 @@ export default function ChildCard({ child, index }) {
             </div>
             {(weekStars > 0 || weekShekels > 0) && (
               <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
-                <span className="opacity-75">מטלות השבוע:</span>
+                <span className="opacity-75">נצברו השבוע:</span>
                 {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
                 {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
               </div>

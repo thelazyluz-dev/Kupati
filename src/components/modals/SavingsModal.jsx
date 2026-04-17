@@ -6,6 +6,52 @@ import Button from '../ui/Button.jsx'
 
 const MONTH_OPTIONS = [1, 2, 3, 6, 12]
 
+function SavingsGrowthChart({ saving }) {
+  const W = 220, H = 68
+  const PL = 4, PR = 4, PT = 6, PB = 18
+  const chartW = W - PL - PR
+  const chartH = H - PT - PB
+
+  const interest = saving.amount * 0.10 * saving.termMonths
+  const total = saving.amount + interest
+  const minV = saving.amount * 0.97
+  const maxV = total * 1.03
+
+  function mapX(month) { return PL + (month / saving.termMonths) * chartW }
+  function mapY(v) { return PT + chartH - ((v - minV) / (maxV - minV)) * chartH }
+
+  const pts = Array.from({ length: saving.termMonths + 1 }, (_, m) => ({
+    x: mapX(m),
+    y: mapY(saving.amount + (interest / saving.termMonths) * m),
+  }))
+
+  const now = Date.now()
+  const totalMs = saving.maturityDate - saving.startDate
+  const prog = Math.max(0, Math.min(1, (now - saving.startDate) / totalMs))
+  const cx = mapX(prog * saving.termMonths)
+  const cy = mapY(saving.amount + interest * prog)
+
+  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
+  const fillPath = `${linePath} L${pts.at(-1).x},${H - PB} L${PL},${H - PB} Z`
+
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
+      <defs>
+        <linearGradient id={`sg-${saving.id}`} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.35" />
+          <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path d={fillPath} fill={`url(#sg-${saving.id})`} />
+      <path d={linePath} fill="none" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx={cx} cy={cy} r="5" fill="#0d9488" />
+      <circle cx={cx} cy={cy} r="9" fill="#0d9488" fillOpacity="0.18" />
+      <text x={PL} y={H - 4} fontSize="9" fill="#9ca3af" textAnchor="start">{formatNumber(saving.amount)}₪</text>
+      <text x={W - PR} y={H - 4} fontSize="9" fill="#0d9488" fontWeight="bold" textAnchor="end">{formatNumber(total)}₪</text>
+    </svg>
+  )
+}
+
 function SavingCard({ saving, childId, onEarlyWithdraw }) {
   const now = Date.now()
   const totalMs = saving.maturityDate - saving.startDate
@@ -48,6 +94,12 @@ function SavingCard({ saving, childId, onEarlyWithdraw }) {
             style={{ width: `${progress * 100}%` }}
           />
         </div>
+      </div>
+
+      {/* Growth chart */}
+      <div className="bg-white rounded-xl px-2 pt-2 pb-1">
+        <p className="text-[10px] text-gray-400 text-center mb-1">גרף צמיחת החסכון</p>
+        <SavingsGrowthChart saving={saving} />
       </div>
 
       <div className="bg-white rounded-xl py-2 text-center">
