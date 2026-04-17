@@ -24,16 +24,16 @@ export function useLocalStorage(key, defaultValue) {
   }, [key]) // only key — defaultRef is stable
 
   const setState = useCallback((valueOrUpdater) => {
-    // Keep updater pure: write localStorage here, dispatch event after
-    setStateRaw((prev) => {
-      const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater
-      set(key, next)
-      return next
-    })
-    // Dispatch after React finishes processing the state update
-    queueMicrotask(() => {
-      window.dispatchEvent(new CustomEvent(EVENT, { detail: { key } }))
-    })
+    // Read latest value from localStorage (always in sync) to use as prev,
+    // then write synchronously before dispatching the event.
+    // Using queueMicrotask caused a race: the event fired before React's
+    // scheduler flushed the functional updater, so the listener read stale
+    // localStorage and overwrote the just-deleted/updated state.
+    const prev = get(key) ?? defaultRef.current
+    const next = typeof valueOrUpdater === 'function' ? valueOrUpdater(prev) : valueOrUpdater
+    set(key, next)
+    setStateRaw(next)
+    window.dispatchEvent(new CustomEvent(EVENT, { detail: { key } }))
   }, [key])
 
   return [state, setState]
