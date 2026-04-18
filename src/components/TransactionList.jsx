@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useApp } from '../context/AppContext.jsx'
 import TransactionItem from './TransactionItem.jsx'
 import { formatDateLabel } from '../lib/utils.js'
 
@@ -21,8 +22,11 @@ function DaySeparator({ label }) {
 }
 
 export default function TransactionList({ transactions, childId }) {
+  const { deleteTransaction } = useApp()
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState('all')
+  const [selectMode, setSelectMode] = useState(false)
+  const [selected, setSelected] = useState(new Set())
 
   const filterFn = FILTERS.find((f) => f.key === filter)?.match ?? (() => true)
   const filtered  = transactions.filter(filterFn)
@@ -30,6 +34,29 @@ export default function TransactionList({ transactions, childId }) {
   function handleFilter(key) {
     setFilter(key)
     setPage(0)
+  }
+
+  function toggleSelect(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  function selectAll() {
+    setSelected(new Set(filtered.map((tx) => tx.id)))
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false)
+    setSelected(new Set())
+  }
+
+  function deleteSelected() {
+    selected.forEach((id) => deleteTransaction(childId, id))
+    exitSelectMode()
   }
 
   if (transactions.length === 0) {
@@ -44,7 +71,6 @@ export default function TransactionList({ transactions, childId }) {
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE)
   const visible    = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE)
 
-  // Interleave day-separator rows
   function buildRows(txList) {
     const rows = []
     let lastLabel = null
@@ -64,23 +90,63 @@ export default function TransactionList({ transactions, childId }) {
 
   return (
     <div>
-      {/* Filter chips */}
-      <div className="flex gap-2 mb-3 overflow-x-auto no-scrollbar pb-0.5">
-        {FILTERS.map((f) => (
-          <button
-            key={f.key}
-            type="button"
-            onClick={() => handleFilter(f.key)}
-            className={[
-              'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95',
-              filter === f.key
-                ? 'bg-indigo-500 text-white shadow-sm'
-                : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50',
-            ].join(' ')}
-          >
-            {f.label}
-          </button>
-        ))}
+      {/* Filter chips + select button */}
+      <div className="flex items-center gap-2 mb-3 overflow-x-auto no-scrollbar pb-0.5">
+        {!selectMode ? (
+          <>
+            {FILTERS.map((f) => (
+              <button
+                key={f.key}
+                type="button"
+                onClick={() => handleFilter(f.key)}
+                className={[
+                  'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95',
+                  filter === f.key
+                    ? 'bg-indigo-500 text-white shadow-sm'
+                    : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50',
+                ].join(' ')}
+              >
+                {f.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={() => setSelectMode(true)}
+              className="flex-shrink-0 mr-auto px-3 py-1.5 rounded-full text-xs font-bold bg-white text-gray-500 shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+            >
+              ☑️ בחר
+            </button>
+          </>
+        ) : (
+          <div className="flex items-center gap-2 w-full">
+            <button
+              type="button"
+              onClick={exitSelectMode}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 shadow-sm active:scale-95 transition-all"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={selectAll}
+              className="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-indigo-600 shadow-sm active:scale-95 transition-all"
+            >
+              בחר הכל
+            </button>
+            <span className="text-xs text-gray-500 font-medium mr-1">
+              {selected.size > 0 ? `${selected.size} נבחרו` : 'בחר פריטים'}
+            </span>
+            {selected.size > 0 && (
+              <button
+                type="button"
+                onClick={deleteSelected}
+                className="mr-auto px-3 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shadow-sm active:scale-95 transition-all"
+              >
+                🗑️ מחק ({selected.size})
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       {filtered.length === 0 ? (
@@ -99,7 +165,13 @@ export default function TransactionList({ transactions, childId }) {
                   className="animate-slide-up"
                   style={{ animationDelay: `${row.idx * 35}ms`, animationFillMode: 'both' }}
                 >
-                  <TransactionItem transaction={row.tx} childId={childId} />
+                  <TransactionItem
+                    transaction={row.tx}
+                    childId={childId}
+                    selectMode={selectMode}
+                    isSelected={selected.has(row.tx.id)}
+                    onToggle={() => toggleSelect(row.tx.id)}
+                  />
                 </div>
               )
             )}

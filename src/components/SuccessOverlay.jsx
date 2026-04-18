@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Stars that shoot upward from the bottom
 const SHOOTERS = Array.from({ length: 14 }, (_, i) => ({
@@ -21,14 +21,21 @@ const BG_STARS = [
 
 // onUndo is optional — if provided, shows an undo button for 4s
 // onBeforeDone fires immediately on dismiss (before the fade delay) — use for animations/sounds
+// onBeforeDone receives the coin element's DOMRect so the caller can launch
+// the coin animation from the exact position it appears in the overlay.
 export default function SuccessOverlay({ name, amount, description, choreEmoji, onDone, onUndo, onBeforeDone }) {
   const [fading,    setFading]    = useState(false)
   const [undoGone,  setUndoGone]  = useState(false)
+  const coinRef = useRef(null)
   const DISPLAY_MS = 4000
   const UNDO_MS    = 4000
 
   useEffect(() => {
-    const dismiss = () => { onBeforeDone?.(); setFading(true); setTimeout(onDone, 280) }
+    const dismiss = () => {
+      onBeforeDone?.(coinRef.current?.getBoundingClientRect() ?? null)
+      setFading(true)
+      setTimeout(onDone, 280)
+    }
     const auto    = setTimeout(dismiss, DISPLAY_MS)
     const hideUndo = onUndo ? setTimeout(() => setUndoGone(true), UNDO_MS) : null
     return () => { clearTimeout(auto); clearTimeout(hideUndo) }
@@ -36,7 +43,7 @@ export default function SuccessOverlay({ name, amount, description, choreEmoji, 
 
   function handleDismiss() {
     if (fading) return
-    onBeforeDone?.()
+    onBeforeDone?.(coinRef.current?.getBoundingClientRect() ?? null)
     setFading(true)
     setTimeout(onDone, 280)
   }
@@ -120,9 +127,19 @@ export default function SuccessOverlay({ name, amount, description, choreEmoji, 
           )}
         </div>
 
+        {/* Coin — visual launch point for the fly animation */}
+        <div
+          ref={coinRef}
+          className="text-5xl animate-float select-none"
+          style={{ animationDelay: '0.3s', animationFillMode: 'both', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.3))' }}
+          aria-hidden="true"
+        >
+          🪙
+        </div>
+
         {/* Hint */}
         <p
-          className="text-sm opacity-50 animate-fade-in mt-1"
+          className="text-sm opacity-50 animate-fade-in"
           style={{ animationDelay: '0.7s', animationFillMode: 'both' }}
         >
           לחץ להמשך

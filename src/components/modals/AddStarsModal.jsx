@@ -59,9 +59,11 @@ export default function AddStarsModal() {
         amount={success.amount}
         description={success.description}
         choreEmoji={success.choreEmoji}
-        onBeforeDone={() => {
+        onBeforeDone={(coinRect) => {
           if (success.isChore) {
-            fireCoin(childId, window.innerWidth / 2, window.innerHeight / 2, {
+            const srcX = coinRect ? coinRect.left + coinRect.width  / 2 : window.innerWidth  / 2
+            const srcY = coinRect ? coinRect.top  + coinRect.height / 2 : window.innerHeight / 2
+            fireCoin(childId, srcX, srcY, {
               onFly:  () => sounds.coinFly(),
               onLand: () => sounds.coinLand(),
             })

@@ -19,7 +19,7 @@ const TYPE_STYLE = {
 
 const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-gray-50', border: 'border-r-4 border-gray-300', amount: 'text-gray-600' }
 
-export default function TransactionItem({ transaction, childId }) {
+export default function TransactionItem({ transaction, childId, selectMode = false, isSelected = false, onToggle }) {
   const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const style = TYPE_STYLE[type] ?? FALLBACK
@@ -27,12 +27,25 @@ export default function TransactionItem({ transaction, childId }) {
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
   const sign = isDeduct ? '-' : '+'
 
+  function handleRowClick() {
+    if (selectMode) onToggle?.()
+  }
+
   return (
-    <div className={`flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0 ${style.bg} ${style.border}`}>
-      {/* Icon */}
-      <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 text-lg flex-shrink-0 shadow-sm">
-        {style.icon}
-      </div>
+    <div
+      onClick={handleRowClick}
+      className={`flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0 ${style.bg} ${style.border} ${selectMode ? 'cursor-pointer active:brightness-95' : ''} ${isSelected ? 'ring-2 ring-inset ring-indigo-400' : ''}`}
+    >
+      {/* Select circle or type icon */}
+      {selectMode ? (
+        <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 flex-shrink-0 transition-all ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-300'}`}>
+          {isSelected && <span className="text-white text-base font-bold">✓</span>}
+        </div>
+      ) : (
+        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 text-lg flex-shrink-0 shadow-sm">
+          {style.icon}
+        </div>
+      )}
 
       {/* Description + time */}
       <div className="flex-1 min-w-0">
@@ -52,8 +65,8 @@ export default function TransactionItem({ transaction, childId }) {
         {sign}{formatNumber(amount)}{currencySymbol}
       </div>
 
-      {/* Edit button */}
-      {childId && (
+      {/* Edit button — hidden in select mode */}
+      {childId && !selectMode && (
         <button
           type="button"
           onClick={() => showModal('editTransaction', { childId, transaction })}
