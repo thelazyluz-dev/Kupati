@@ -20,8 +20,9 @@ export function AppProvider({ children: reactChildren }) {
   const [activeChildId, setActiveChildId] = useState(null)
   const [openModal, setOpenModal] = useState(null)
   const [modalData, setModalData] = useState(null)
-  const [pendingBadge, setPendingBadge] = useState(null)
+  const [pendingBadge,    setPendingBadge]    = useState(null)
   const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
+  const [pendingCoinAnim, setPendingCoinAnim] = useState(null)
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -133,6 +134,9 @@ export function AppProvider({ children: reactChildren }) {
     clearPendingBadge: () => setPendingBadge(null),
     pendingFreeSpin,
     clearPendingFreeSpin: () => setPendingFreeSpin(null),
+    pendingCoinAnim,
+    triggerCoinAnim:  (childId) => setPendingCoinAnim({ childId }),
+    clearCoinAnim:    () => setPendingCoinAnim(null),
     syncStatus,
     screen,
     activeChildId,

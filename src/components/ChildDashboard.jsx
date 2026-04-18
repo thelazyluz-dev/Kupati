@@ -1,4 +1,5 @@
-import { useEffect, useRef, useCallback, useState } from 'react'
+import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+import { flyCoinToSlotMachine } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
@@ -164,10 +165,22 @@ export default function ChildDashboard({ childId }) {
   const { children, navigate, showModal, settings, getTransactions,
           adjustShekels, deleteGoal, addTransaction, finishSavings,
           pendingBadge, clearPendingBadge,
-          pendingFreeSpin, clearPendingFreeSpin } = useApp()
+          pendingFreeSpin, clearPendingFreeSpin,
+          pendingCoinAnim, clearCoinAnim } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
   const [flyingStar, setFlyingStar] = useState(false)
+
+  const choresBtnRef = useRef(null)
+  const backBtnRef   = useRef(null)
+
+  useEffect(() => {
+    if (!pendingCoinAnim || pendingCoinAnim.childId !== childId) return
+    clearCoinAnim()
+    const src = choresBtnRef.current?.getBoundingClientRect()
+    const tgt = backBtnRef.current?.getBoundingClientRect()
+    if (src) flyCoinToSlotMachine(src, tgt ?? null)
+  }, [pendingCoinAnim, childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const child = children.find((c) => c.id === childId)
 
@@ -295,6 +308,7 @@ export default function ChildDashboard({ childId }) {
           </div>
 
           <button
+            ref={backBtnRef}
             onClick={() => navigate('home')}
             className="flex items-center gap-1 pl-3 pr-2 py-2 rounded-2xl bg-white/25 hover:bg-white/40 active:scale-95 transition-all text-sm font-bold shadow-sm"
             aria-label="חזרה לבית"
@@ -395,6 +409,7 @@ export default function ChildDashboard({ childId }) {
         {/* Action buttons — first-person labels, long-press on ⭐ for parent mode */}
         <div className="grid grid-cols-2 gap-3">
           <button
+            ref={choresBtnRef}
             {...starsLongPress}
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-90 transition-all text-white shadow-md font-bold select-none animate-glow-amber"
           >

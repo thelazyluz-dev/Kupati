@@ -7,7 +7,7 @@ import Button from '../ui/Button.jsx'
 import SuccessOverlay from '../SuccessOverlay.jsx'
 
 export default function AddStarsModal() {
-  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction } = useApp()
+  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction, triggerCoinAnim } = useApp()
   const childId = modalData?.childId
   const allowFreeEntry = modalData?.allowFreeEntry ?? false
   const child = children.find((c) => c.id === childId)
@@ -46,7 +46,7 @@ export default function AddStarsModal() {
     sounds.star()
     celebrateChore()
 
-    setSuccess({ amount, description, choreEmoji: selectedChore?.emoji ?? null, txId: tx.id })
+    setSuccess({ amount, description, choreEmoji: selectedChore?.emoji ?? null, txId: tx.id, isChore: type === 'chore' })
   }
 
   const title = allowFreeEntry ? '⭐ הוסף כוכבים — מצב הורה ✏️' : '⭐ עשיתי מטלה!'
@@ -58,7 +58,10 @@ export default function AddStarsModal() {
         amount={success.amount}
         description={success.description}
         choreEmoji={success.choreEmoji}
-        onDone={closeModal}
+        onDone={() => {
+          if (success.isChore) triggerCoinAnim(childId)
+          closeModal()
+        }}
         onUndo={() => {
           adjustStars(childId, -success.amount)
           deleteTransaction(childId, success.txId)
