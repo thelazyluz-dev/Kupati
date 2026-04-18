@@ -24,7 +24,6 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
   const arcX = dx * 0.25 - Math.sign(dx) * 40
   const arcY = dy * 0.45 - 70
 
-  // Emoji coin — same visual style as the 🪙 shown in SuccessOverlay
   const coin = document.createElement('div')
   coin.textContent = '🪙'
   coin.style.cssText = [
@@ -47,7 +46,6 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
 
   onFly?.()
 
-  // Scale stays close to 1 throughout — consistent emoji size, slight launch bounce
   coin.animate(
     [
       { offset: 0,    transform: 'translate(-50%,-50%) scale(1.0)  rotate(0deg)',   opacity: 1 },
@@ -69,11 +67,9 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
       },
     ],
     { duration: DURATION, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)' }
-  ).finished.then(() => coin.remove())
-
-  // Landing ring fires AFTER coin reaches target (at 92% = 1656ms),
-  // well after the coin visually arrives at offset 0.88 = 1584ms
-  setTimeout(() => {
+  ).finished.then(() => {
+    coin.remove()
+    // Ring fires only AFTER coin animation fully completes — coin enters slot, then slot reacts
     onLand?.()
     const ring = document.createElement('div')
     ring.style.cssText = [
@@ -97,5 +93,5 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
       ],
       { duration: 420, easing: 'ease-out' }
     ).finished.then(() => ring.remove())
-  }, DURATION * 0.92)
+  })
 }

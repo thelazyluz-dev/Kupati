@@ -208,17 +208,16 @@ export default function HomeScreen() {
                                 </span>
                               )}
                             </div>
-                            {/* Progress dots toward next free spin */}
+                            {/* 🪙 progress toward next free spin */}
                             <div className="flex gap-0.5">
                               {Array.from({ length: 5 }, (_, j) => (
-                                <div
+                                <span
                                   key={j}
-                                  className={`w-3 h-3 rounded-full transition-all ${
-                                    j < filled
-                                      ? freeSpins > 0 ? 'bg-white' : 'bg-amber-400'
-                                      : freeSpins > 0 ? 'bg-white/30' : 'bg-gray-200'
-                                  }`}
-                                />
+                                  className="text-sm leading-none transition-all"
+                                  style={{ opacity: j < filled ? 1 : 0.2 }}
+                                >
+                                  🪙
+                                </span>
                               ))}
                             </div>
                           </button>

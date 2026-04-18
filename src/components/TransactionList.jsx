@@ -22,7 +22,7 @@ function DaySeparator({ label }) {
 }
 
 export default function TransactionList({ transactions, childId }) {
-  const { deleteTransaction, requirePin } = useApp()
+  const { deleteTransaction, requirePin, adjustStars, adjustShekels } = useApp()
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState('all')
   const [selectMode, setSelectMode] = useState(false)
@@ -54,9 +54,20 @@ export default function TransactionList({ transactions, childId }) {
     setSelected(new Set())
   }
 
+  // Same balance-reversal logic as EditTransactionModal.handleDelete
+  const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin']
+
   function deleteSelected() {
     requirePin(() => {
-      selected.forEach((id) => deleteTransaction(childId, id))
+      selected.forEach((id) => {
+        const tx = transactions.find((t) => t.id === id)
+        if (tx) {
+          const delta = DEDUCT_TYPES.includes(tx.type) ? tx.amount : -tx.amount
+          if (tx.currency === 'stars') adjustStars(childId, delta)
+          else adjustShekels(childId, delta)
+        }
+        deleteTransaction(childId, id)
+      })
       exitSelectMode()
     })
   }
