@@ -24,21 +24,22 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
   const arcX = dx * 0.25 - Math.sign(dx) * 40
   const arcY = dy * 0.45 - 70
 
-  // Flying coin
+  // Emoji coin — same visual style as the 🪙 shown in SuccessOverlay
   const coin = document.createElement('div')
+  coin.textContent = '🪙'
   coin.style.cssText = [
     'position:fixed',
     `left:${startX}px`,
     `top:${startY}px`,
-    'width:40px',
-    'height:40px',
-    'border-radius:50%',
-    'background:radial-gradient(circle at 35% 35%, #ffe066, #f5a623 60%, #c97f00)',
-    'box-shadow:0 3px 14px rgba(0,0,0,0.38),inset 0 1px 3px rgba(255,255,255,0.6)',
+    'font-size:42px',
+    'line-height:1',
     'pointer-events:none',
     'z-index:9999',
     'transform:translate(-50%,-50%)',
     'will-change:transform,opacity',
+    'user-select:none',
+    '-webkit-user-select:none',
+    'filter:drop-shadow(0 3px 10px rgba(0,0,0,0.28))',
   ].join(';')
   document.body.appendChild(coin)
 
@@ -46,30 +47,32 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
 
   onFly?.()
 
+  // Scale stays close to 1 throughout — consistent emoji size, slight launch bounce
   coin.animate(
     [
-      { offset: 0,    transform: 'translate(-50%,-50%) scale(2.8) rotate(0deg)',   opacity: 1 },
+      { offset: 0,    transform: 'translate(-50%,-50%) scale(1.0)  rotate(0deg)',   opacity: 1 },
+      { offset: 0.10, transform: 'translate(-50%,-50%) scale(1.18) rotate(18deg)',  opacity: 1 },
       {
-        offset: 0.45,
-        transform: `translate(calc(-50% + ${arcX}px), calc(-50% + ${arcY}px)) scale(1.1) rotate(185deg)`,
+        offset: 0.48,
+        transform: `translate(calc(-50% + ${arcX}px), calc(-50% + ${arcY}px)) scale(1.05) rotate(190deg)`,
         opacity: 1,
       },
       {
-        offset: 0.85,
-        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.28) rotate(340deg)`,
+        offset: 0.88,
+        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.72) rotate(348deg)`,
         opacity: 1,
       },
       {
         offset: 1,
-        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0) rotate(360deg)`,
+        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.0) rotate(360deg)`,
         opacity: 0,
       },
     ],
     { duration: DURATION, easing: 'cubic-bezier(0.22, 0.61, 0.36, 1)' }
   ).finished.then(() => coin.remove())
 
-  // Landing ring — expands from target as coin arrives
-  const ringDelay = DURATION * 0.82
+  // Landing ring fires AFTER coin reaches target (at 92% = 1656ms),
+  // well after the coin visually arrives at offset 0.88 = 1584ms
   setTimeout(() => {
     onLand?.()
     const ring = document.createElement('div')
@@ -83,16 +86,16 @@ export function flyCoinToSlotMachine(sourceRect, targetRect, { onFly, onLand } =
       'border:3px solid #f5a623',
       'pointer-events:none',
       'z-index:9998',
-      'transform:translate(-50%,-50%) scale(0.2)',
+      'transform:translate(-50%,-50%) scale(0.15)',
       'opacity:1',
     ].join(';')
     document.body.appendChild(ring)
     ring.animate(
       [
-        { transform: 'translate(-50%,-50%) scale(0.2)', opacity: 0.9 },
-        { transform: 'translate(-50%,-50%) scale(2.2)', opacity: 0   },
+        { transform: 'translate(-50%,-50%) scale(0.15)', opacity: 0.95 },
+        { transform: 'translate(-50%,-50%) scale(2.4)',  opacity: 0    },
       ],
-      { duration: 500, easing: 'ease-out' }
+      { duration: 420, easing: 'ease-out' }
     ).finished.then(() => ring.remove())
-  }, ringDelay)
+  }, DURATION * 0.92)
 }

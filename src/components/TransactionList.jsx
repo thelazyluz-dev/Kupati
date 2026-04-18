@@ -22,7 +22,7 @@ function DaySeparator({ label }) {
 }
 
 export default function TransactionList({ transactions, childId }) {
-  const { deleteTransaction } = useApp()
+  const { deleteTransaction, requirePin } = useApp()
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState('all')
   const [selectMode, setSelectMode] = useState(false)
@@ -55,8 +55,10 @@ export default function TransactionList({ transactions, childId }) {
   }
 
   function deleteSelected() {
-    selected.forEach((id) => deleteTransaction(childId, id))
-    exitSelectMode()
+    requirePin(() => {
+      selected.forEach((id) => deleteTransaction(childId, id))
+      exitSelectMode()
+    })
   }
 
   if (transactions.length === 0) {
