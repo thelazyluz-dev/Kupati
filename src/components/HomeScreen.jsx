@@ -36,7 +36,16 @@ const ONBOARDING_FEATURES = [
 ]
 
 export default function HomeScreen() {
-  const { children, navigate, showModal } = useApp()
+  const { children, navigate, showModal, getTransactions } = useApp()
+
+  const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
+  // pre-compute today's chore count per child
+  const todayChores = Object.fromEntries(
+    children.map((c) => [
+      c.id,
+      getTransactions(c.id).filter((t) => t.type === 'chore' && t.timestamp >= todayStart).length,
+    ])
+  )
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -176,22 +185,43 @@ export default function HomeScreen() {
                           {child.parentNote ? 'ערוך הודעה' : 'שלח הודעה'}
                         </span>
                       </button>
-                      <button
-                        onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                        className={`flex-1 rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 active:scale-95 transition-all relative ${
-                          (child.freeSpins || 0) > 0
-                            ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
-                            : 'bg-white text-gray-600'
-                        }`}
-                      >
-                        <span className="text-sm leading-none">🎰</span>
-                        <span className="text-xs font-semibold">גלגל המזל</span>
-                        {(child.freeSpins || 0) > 0 && (
-                          <span className="absolute -top-1.5 -left-1.5 bg-red-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                            {child.freeSpins}
-                          </span>
-                        )}
-                      </button>
+                      {(() => {
+                        const freeSpins = child.freeSpins || 0
+                        const filled    = freeSpins > 0 ? 5 : (todayChores[child.id] || 0) % 5
+                        return (
+                          <button
+                            onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
+                            className={`flex-1 rounded-xl shadow-sm px-3 py-2 flex flex-col items-center gap-1 active:scale-95 transition-all relative ${
+                              freeSpins > 0
+                                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
+                                : 'bg-white text-gray-600'
+                            }`}
+                          >
+                            <div className="flex items-center gap-1">
+                              <span className="text-sm leading-none">🎰</span>
+                              <span className="text-xs font-semibold">גלגל המזל</span>
+                              {freeSpins > 0 && (
+                                <span className="bg-white/30 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                                  {freeSpins}
+                                </span>
+                              )}
+                            </div>
+                            {/* Progress dots toward next free spin */}
+                            <div className="flex gap-0.5">
+                              {Array.from({ length: 5 }, (_, j) => (
+                                <div
+                                  key={j}
+                                  className={`w-2 h-2 rounded-full transition-all ${
+                                    j < filled
+                                      ? freeSpins > 0 ? 'bg-white' : 'bg-amber-400'
+                                      : freeSpins > 0 ? 'bg-white/30' : 'bg-gray-200'
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </button>
+                        )
+                      })()}
                     </div>
                   </div>
                 </div>
