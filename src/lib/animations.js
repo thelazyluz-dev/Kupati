@@ -33,19 +33,18 @@ export function flyCoinToSlotMachine(sourceRect, targetRect) {
 
   coin.animate(
     [
-      { offset: 0,    transform: 'translate(-50%,-50%) scale(0)   rotate(0deg)',   opacity: 0 },
-      { offset: 0.12, transform: 'translate(-50%,-50%) scale(1.4) rotate(20deg)',  opacity: 1 },
+      { offset: 0,    transform: 'translate(-50%,-50%) scale(1.8) rotate(0deg)',   opacity: 1 },
       {
-        offset: 0.55,
-        transform: `translate(calc(-50% + ${arcX}px), calc(-50% + ${arcY}px)) scale(1.05) rotate(200deg)`,
+        offset: 0.45,
+        transform: `translate(calc(-50% + ${arcX}px), calc(-50% + ${arcY}px)) scale(0.9) rotate(180deg)`,
         opacity: 1,
       },
       {
         offset: 1,
-        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.25) rotate(360deg)`,
+        transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.1) rotate(360deg)`,
         opacity: 0,
       },
     ],
-    { duration: 820, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }
+    { duration: 1150, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }
   ).finished.then(() => coin.remove())
 }
