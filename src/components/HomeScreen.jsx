@@ -178,10 +178,19 @@ export default function HomeScreen() {
                       </button>
                       <button
                         onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                        className="flex-1 bg-white rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 text-gray-600 active:scale-95 transition-all"
+                        className={`flex-1 rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 active:scale-95 transition-all relative ${
+                          (child.freeSpins || 0) > 0
+                            ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
+                            : 'bg-white text-gray-600'
+                        }`}
                       >
                         <span className="text-sm leading-none">🎰</span>
                         <span className="text-xs font-semibold">גלגל המזל</span>
+                        {(child.freeSpins || 0) > 0 && (
+                          <span className="absolute -top-1.5 -left-1.5 bg-red-500 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                            {child.freeSpins}
+                          </span>
+                        )}
                       </button>
                     </div>
                   </div>

@@ -163,7 +163,8 @@ function ShekelIconCloud({ balance }) {
 export default function ChildDashboard({ childId }) {
   const { children, navigate, showModal, settings, getTransactions,
           adjustShekels, deleteGoal, addTransaction, finishSavings,
-          pendingBadge, clearPendingBadge } = useApp()
+          pendingBadge, clearPendingBadge,
+          pendingFreeSpin, clearPendingFreeSpin } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
   const [flyingStar, setFlyingStar] = useState(false)
@@ -485,6 +486,14 @@ export default function ChildDashboard({ childId }) {
         <HintBanner
           message={`${pendingBadge.emoji} קיבלת תג חדש: ${pendingBadge.label}`}
           onDone={clearPendingBadge}
+        />
+      )}
+
+      {/* Free spin earned toast */}
+      {pendingFreeSpin && pendingFreeSpin.childId === childId && (
+        <HintBanner
+          message="🎁 כל הכבוד! 5 מטלות היום — מגיע לך סיבוב חינמי בגלגל המזל!"
+          onDone={clearPendingFreeSpin}
         />
       )}
     </div>

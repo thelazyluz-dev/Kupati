@@ -21,6 +21,7 @@ export function AppProvider({ children: reactChildren }) {
   const [openModal, setOpenModal] = useState(null)
   const [modalData, setModalData] = useState(null)
   const [pendingBadge, setPendingBadge] = useState(null)
+  const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -55,7 +56,7 @@ export function AppProvider({ children: reactChildren }) {
     transactionsApi.clearTransactions(childId)
   }
 
-  // Wraps addTransaction to check for newly earned badges afterwards
+  // Wraps addTransaction to check for newly earned badges + free spins afterwards
   function addTransaction(childId, txData) {
     const tx = transactionsApi.addTransaction(childId, txData)
     const child = childrenApi.children.find((c) => c.id === childId)
@@ -65,6 +66,18 @@ export function AppProvider({ children: reactChildren }) {
       const newBadges = checkBadges(child, projected)
       newBadges.forEach((badge) => childrenApi.awardBadge(childId, badge))
       if (newBadges.length > 0) setPendingBadge({ ...newBadges[0], childId })
+
+      // Free spin: every 5 chores in a calendar day
+      if (txData.type === 'chore') {
+        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+        const todayChores = projected.filter(
+          (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
+        ).length
+        if (todayChores > 0 && todayChores % 5 === 0) {
+          childrenApi.grantFreeSpin(childId)
+          setPendingFreeSpin({ childId })
+        }
+      }
     }
     return tx
   }
@@ -118,6 +131,8 @@ export function AppProvider({ children: reactChildren }) {
     resetChildData,
     pendingBadge,
     clearPendingBadge: () => setPendingBadge(null),
+    pendingFreeSpin,
+    clearPendingFreeSpin: () => setPendingFreeSpin(null),
     syncStatus,
     screen,
     activeChildId,

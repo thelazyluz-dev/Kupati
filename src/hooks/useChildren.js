@@ -189,6 +189,22 @@ export function useChildren() {
     )
   }
 
+  function grantFreeSpin(id) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, freeSpins: (c.freeSpins || 0) + 1 } : c
+      )
+    )
+  }
+
+  function consumeFreeSpin(id) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id === id ? { ...c, freeSpins: Math.max(0, (c.freeSpins || 0) - 1) } : c
+      )
+    )
+  }
+
   return {
     children,
     addChild,
@@ -207,5 +223,7 @@ export function useChildren() {
     awardBadge,
     openSavings,
     closeSavings,
+    grantFreeSpin,
+    consumeFreeSpin,
   }
 }

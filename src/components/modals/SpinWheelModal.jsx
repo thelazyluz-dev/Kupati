@@ -64,16 +64,18 @@ function scheduleWheelSounds(onDone, totalMs = 3600) {
 }
 
 export default function SpinWheelModal() {
-  const { children, closeModal, modalData, adjustStars, addTransaction } = useApp()
+  const { children, closeModal, modalData, adjustStars, addTransaction, consumeFreeSpin } = useApp()
   const { childId, childName } = modalData || {}
 
-  const child    = children.find((c) => c.id === childId)
-  const balance  = child?.starBalance ?? 0
-  const canSpin  = balance >= SPIN_COST
+  const child     = children.find((c) => c.id === childId)
+  const balance   = child?.starBalance ?? 0
+  const freeSpins = child?.freeSpins || 0
+  const isFree    = freeSpins > 0
+  const canSpin   = isFree || balance >= SPIN_COST
 
-  const [spinning, setSpinning]   = useState(false)
-  const [result,   setResult]     = useState(null)   // winning segment
-  const [paid,     setPaid]       = useState(false)  // true after deducting cost
+  const [spinning,  setSpinning]  = useState(false)
+  const [result,    setResult]    = useState(null)
+  const [usedFree,  setUsedFree]  = useState(false)
   const wheelRef = useRef(null)
   const tickIds  = useRef([])
 
@@ -81,15 +83,18 @@ export default function SpinWheelModal() {
     if (spinning || result || !canSpin) return
     setSpinning(true)
 
-    // Deduct cost immediately
-    adjustStars(childId, -SPIN_COST)
-    addTransaction(childId, {
-      type: 'wheel_spin',
-      amount: SPIN_COST,
-      currency: 'stars',
-      description: `🎰 גלגל המזל — עלות סיבוב`,
-    })
-    setPaid(true)
+    if (isFree) {
+      consumeFreeSpin(childId)
+      setUsedFree(true)
+    } else {
+      adjustStars(childId, -SPIN_COST)
+      addTransaction(childId, {
+        type: 'wheel_spin',
+        amount: SPIN_COST,
+        currency: 'stars',
+        description: `🎰 גלגל המזל — עלות סיבוב`,
+      })
+    }
 
     const winner     = Math.floor(Math.random() * N)
     const segCenter  = winner * DEG + DEG / 2
@@ -129,11 +134,25 @@ export default function SpinWheelModal() {
     closeModal()
   }
 
-  const net = result ? result.stars - SPIN_COST : null
+  const net = result ? (usedFree ? result.stars : result.stars - SPIN_COST) : null
 
   return (
     <Modal title="🎰 גלגל המזל" onClose={handleClose} headerColor="from-violet-500 to-purple-700">
       <div className="flex flex-col items-center gap-4 pb-1">
+
+        {/* Free spin banner */}
+        {freeSpins > 0 && !result && (
+          <div className="w-full bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl px-4 py-2.5 flex items-center gap-2 text-white shadow-md animate-pop">
+            <span className="text-xl">🎁</span>
+            <div className="flex-1">
+              <p className="font-black text-sm leading-tight">סיבוב מתנה!</p>
+              <p className="text-[11px] opacity-90 leading-tight">
+                {freeSpins > 1 ? `${freeSpins} סיבובים חינמיים מחכים לך` : 'הרווחת סיבוב חינמי על 5 מטלות היום'}
+              </p>
+            </div>
+            <span className="text-xl font-black bg-white/25 rounded-full w-8 h-8 flex items-center justify-center text-sm">×{freeSpins}</span>
+          </div>
+        )}
 
         {/* Balance + cost info */}
         <div className="flex gap-2 w-full">
@@ -141,9 +160,11 @@ export default function SpinWheelModal() {
             <div className="text-[10px] font-semibold text-amber-500 mb-0.5">יתרת כוכבים</div>
             <div className="text-base font-black text-amber-700">⭐ {formatNumber(balance)}</div>
           </div>
-          <div className="flex-1 bg-violet-50 border border-violet-200 rounded-xl px-3 py-2 text-center">
-            <div className="text-[10px] font-semibold text-violet-500 mb-0.5">עלות סיבוב</div>
-            <div className="text-base font-black text-violet-700">⭐ {SPIN_COST}</div>
+          <div className={`flex-1 rounded-xl px-3 py-2 text-center border ${isFree ? 'bg-green-50 border-green-200' : 'bg-violet-50 border-violet-200'}`}>
+            <div className={`text-[10px] font-semibold mb-0.5 ${isFree ? 'text-green-600' : 'text-violet-500'}`}>עלות סיבוב</div>
+            <div className={`text-base font-black ${isFree ? 'text-green-700' : 'text-violet-700'}`}>
+              {isFree ? '🎁 חינם!' : `⭐ ${SPIN_COST}`}
+            </div>
           </div>
         </div>
 
@@ -197,9 +218,13 @@ export default function SpinWheelModal() {
             <p className="text-xl font-black text-gray-800">
               {childName || 'ילד'} זכה ב-{result.stars}⭐!
             </p>
-            <p className={`text-sm font-bold ${net > 0 ? 'text-emerald-600' : net === 0 ? 'text-gray-500' : 'text-rose-500'}`}>
-              {net > 0 ? `רווח נקי: +${net}⭐` : net === 0 ? 'יצאת בדיוק בשוויון' : `הפסד נקי: ${net}⭐`}
-            </p>
+            {usedFree ? (
+              <p className="text-sm font-bold text-emerald-600">🎁 סיבוב חינמי — רווח נקי: +{result.stars}⭐</p>
+            ) : (
+              <p className={`text-sm font-bold ${net > 0 ? 'text-emerald-600' : net === 0 ? 'text-gray-500' : 'text-rose-500'}`}>
+                {net > 0 ? `רווח נקי: +${net}⭐` : net === 0 ? 'יצאת בדיוק בשוויון' : `הפסד נקי: ${net}⭐`}
+              </p>
+            )}
             <Button size="lg" fullWidth onClick={handleClaim} className="mt-1">
               ✅ קח את הפרס — {result.stars}⭐
             </Button>
@@ -218,7 +243,7 @@ export default function SpinWheelModal() {
               disabled={spinning || !canSpin}
               className={spinning ? 'opacity-60 cursor-not-allowed' : ''}
             >
-              {spinning ? '🎰 מסתובב...' : `🎰 סובב! (${SPIN_COST}⭐)`}
+              {spinning ? '🎰 מסתובב...' : isFree ? '🎁 סובב חינם!' : `🎰 סובב! (${SPIN_COST}⭐)`}
             </Button>
           </div>
         )}
