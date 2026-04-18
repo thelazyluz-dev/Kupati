@@ -211,7 +211,7 @@ export default function HomeScreen() {
                               {Array.from({ length: 5 }, (_, j) => (
                                 <div
                                   key={j}
-                                  className={`w-2 h-2 rounded-full transition-all ${
+                                  className={`w-3 h-3 rounded-full transition-all ${
                                     j < filled
                                       ? freeSpins > 0 ? 'bg-white' : 'bg-amber-400'
                                       : freeSpins > 0 ? 'bg-white/30' : 'bg-gray-200'
