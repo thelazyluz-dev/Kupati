@@ -22,7 +22,6 @@ export function AppProvider({ children: reactChildren }) {
   const [modalData, setModalData] = useState(null)
   const [pendingBadge,    setPendingBadge]    = useState(null)
   const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
-  const [pendingCoinAnim, setPendingCoinAnim] = useState(null)
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -74,7 +73,7 @@ export function AppProvider({ children: reactChildren }) {
         const todayChores = projected.filter(
           (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
         ).length
-        if (todayChores > 0 && todayChores % 5 === 0) {
+          if (todayChores > 0 && todayChores % 5 === 0) {
           childrenApi.grantFreeSpin(childId)
           setPendingFreeSpin({ childId })
         }
@@ -134,9 +133,6 @@ export function AppProvider({ children: reactChildren }) {
     clearPendingBadge: () => setPendingBadge(null),
     pendingFreeSpin,
     clearPendingFreeSpin: () => setPendingFreeSpin(null),
-    pendingCoinAnim,
-    triggerCoinAnim:  (childId) => setPendingCoinAnim({ childId }),
-    clearCoinAnim:    () => setPendingCoinAnim(null),
     syncStatus,
     screen,
     activeChildId,

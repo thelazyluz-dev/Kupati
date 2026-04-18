@@ -96,6 +96,33 @@ export const sounds = {
     )
   },
 
+  // Swoosh during coin flight (1.4s sweep)
+  coinFly: () => {
+    if (!isSoundEnabled()) return
+    try {
+      const ac = getCtx()
+      const osc = ac.createOscillator()
+      const g   = ac.createGain()
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(220, ac.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(1100, ac.currentTime + 1.35)
+      g.gain.setValueAtTime(0.0001, ac.currentTime)
+      g.gain.linearRampToValueAtTime(0.11, ac.currentTime + 0.18)
+      g.gain.linearRampToValueAtTime(0.07, ac.currentTime + 1.1)
+      g.gain.linearRampToValueAtTime(0.0001, ac.currentTime + 1.4)
+      osc.start(ac.currentTime)
+      osc.stop(ac.currentTime + 1.4)
+    } catch {}
+  },
+
+  // Metallic clink when coin slots in
+  coinLand: () => {
+    haptic([15, 8, 25])
+    beep({ freq: 2400, type: 'triangle', duration: 0.06, gain: 0.38 })
+    beep({ freq: 1700, type: 'triangle', duration: 0.14, delay: 0.05, gain: 0.22 })
+  },
+
   // Wheel click tick — short percussive snap
   wheelTick: () => beep({ freq: 380, type: 'square', duration: 0.03, gain: 0.22 }),
 

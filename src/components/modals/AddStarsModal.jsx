@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { celebrateChore } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
+import { fireCoin } from '../../lib/animations.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 import SuccessOverlay from '../SuccessOverlay.jsx'
 
 export default function AddStarsModal() {
-  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction, triggerCoinAnim } = useApp()
+  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction } = useApp()
   const childId = modalData?.childId
   const allowFreeEntry = modalData?.allowFreeEntry ?? false
   const child = children.find((c) => c.id === childId)
@@ -58,10 +59,15 @@ export default function AddStarsModal() {
         amount={success.amount}
         description={success.description}
         choreEmoji={success.choreEmoji}
-        onDone={() => {
-          if (success.isChore) triggerCoinAnim(childId)
-          closeModal()
+        onBeforeDone={() => {
+          if (success.isChore) {
+            fireCoin(childId, window.innerWidth / 2, window.innerHeight / 2, {
+              onFly:  () => sounds.coinFly(),
+              onLand: () => sounds.coinLand(),
+            })
+          }
         }}
+        onDone={closeModal}
         onUndo={() => {
           adjustStars(childId, -success.amount)
           deleteTransaction(childId, success.txId)

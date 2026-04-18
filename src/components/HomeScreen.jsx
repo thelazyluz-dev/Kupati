@@ -1,6 +1,5 @@
 import { useApp } from '../context/AppContext.jsx'
-import { useRef, useEffect } from 'react'
-import { flyCoinToSlotMachine } from '../lib/animations.js'
+import { registerCoinTarget } from '../lib/animations.js'
 
 function getTimeGradient() {
   const h = new Date().getHours()
@@ -38,19 +37,7 @@ const ONBOARDING_FEATURES = [
 ]
 
 export default function HomeScreen() {
-  const { children, navigate, showModal, getTransactions, pendingCoinAnim, clearCoinAnim } = useApp()
-
-  const choresBtnRefs = useRef({})
-  const spinBtnRefs   = useRef({})
-
-  useEffect(() => {
-    if (!pendingCoinAnim) return
-    const { childId } = pendingCoinAnim
-    clearCoinAnim()
-    const src = choresBtnRefs.current[childId]?.getBoundingClientRect()
-    const tgt = spinBtnRefs.current[childId]?.getBoundingClientRect()
-    if (src) flyCoinToSlotMachine(src, tgt ?? null)
-  }, [pendingCoinAnim])
+  const { children, navigate, showModal, getTransactions } = useApp()
 
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   // pre-compute today's chore count per child
@@ -174,7 +161,6 @@ export default function HomeScreen() {
                     {/* Row 1 — child actions */}
                     <div className="flex gap-2">
                       <button
-                        ref={(el) => { choresBtnRefs.current[child.id] = el }}
                         onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
                         className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                       >
@@ -205,7 +191,7 @@ export default function HomeScreen() {
                         const filled    = freeSpins > 0 ? 5 : (todayChores[child.id] || 0) % 5
                         return (
                           <button
-                            ref={(el) => { spinBtnRefs.current[child.id] = el }}
+                            ref={(el) => registerCoinTarget(child.id, el)}
                             onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
                             className={`flex-1 rounded-xl shadow-sm px-3 py-2 flex flex-col items-center gap-1 active:scale-95 transition-all relative ${
                               freeSpins > 0

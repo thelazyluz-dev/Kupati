@@ -20,21 +20,23 @@ const BG_STARS = [
 ]
 
 // onUndo is optional — if provided, shows an undo button for 4s
-export default function SuccessOverlay({ name, amount, description, choreEmoji, onDone, onUndo }) {
+// onBeforeDone fires immediately on dismiss (before the fade delay) — use for animations/sounds
+export default function SuccessOverlay({ name, amount, description, choreEmoji, onDone, onUndo, onBeforeDone }) {
   const [fading,    setFading]    = useState(false)
   const [undoGone,  setUndoGone]  = useState(false)
   const DISPLAY_MS = 4000
   const UNDO_MS    = 4000
 
   useEffect(() => {
-    const dismiss = () => { setFading(true); setTimeout(onDone, 280) }
+    const dismiss = () => { onBeforeDone?.(); setFading(true); setTimeout(onDone, 280) }
     const auto    = setTimeout(dismiss, DISPLAY_MS)
     const hideUndo = onUndo ? setTimeout(() => setUndoGone(true), UNDO_MS) : null
     return () => { clearTimeout(auto); clearTimeout(hideUndo) }
-  }, [onDone, onUndo])
+  }, [onDone, onUndo, onBeforeDone])
 
   function handleDismiss() {
     if (fading) return
+    onBeforeDone?.()
     setFading(true)
     setTimeout(onDone, 280)
   }
