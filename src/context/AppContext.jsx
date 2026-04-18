@@ -22,6 +22,7 @@ export function AppProvider({ children: reactChildren }) {
   const [modalData, setModalData] = useState(null)
   const [pendingBadge,    setPendingBadge]    = useState(null)
   const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
+  const [coinInFlight,    setCoinInFlight]    = useState(null) // childId while coin is animating
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -133,6 +134,11 @@ export function AppProvider({ children: reactChildren }) {
     clearPendingBadge: () => setPendingBadge(null),
     pendingFreeSpin,
     clearPendingFreeSpin: () => setPendingFreeSpin(null),
+    coinInFlight,
+    startCoinFlight: (childId, durationMs) => {
+      setCoinInFlight(childId)
+      setTimeout(() => setCoinInFlight(null), durationMs)
+    },
     syncStatus,
     screen,
     activeChildId,

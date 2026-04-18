@@ -8,7 +8,7 @@ import Button from '../ui/Button.jsx'
 import SuccessOverlay from '../SuccessOverlay.jsx'
 
 export default function AddStarsModal() {
-  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction } = useApp()
+  const { closeModal, modalData, addStars, adjustStars, children, chores, settings, addTransaction, deleteTransaction, startCoinFlight } = useApp()
   const childId = modalData?.childId
   const allowFreeEntry = modalData?.allowFreeEntry ?? false
   const child = children.find((c) => c.id === childId)
@@ -63,6 +63,8 @@ export default function AddStarsModal() {
           if (success.isChore) {
             const srcX = coinRect ? coinRect.left + coinRect.width  / 2 : window.innerWidth  / 2
             const srcY = coinRect ? coinRect.top  + coinRect.height / 2 : window.innerHeight / 2
+            // Keep dots showing old count until coin fully lands (1800ms anim + buffer)
+            startCoinFlight(childId, 2100)
             fireCoin(childId, srcX, srcY, {
               onFly:  () => sounds.coinFly(),
               onLand: () => sounds.coinLand(),

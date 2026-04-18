@@ -37,7 +37,7 @@ const ONBOARDING_FEATURES = [
 ]
 
 export default function HomeScreen() {
-  const { children, navigate, showModal, getTransactions } = useApp()
+  const { children, navigate, showModal, getTransactions, coinInFlight } = useApp()
 
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   // pre-compute today's chore count per child
@@ -188,7 +188,11 @@ export default function HomeScreen() {
                       </button>
                       {(() => {
                         const freeSpins = child.freeSpins || 0
-                        const filled    = freeSpins > 0 ? 5 : (todayChores[child.id] || 0) % 5
+                        // While coin is mid-flight, show the pre-chore count so the dot
+                        // doesn't fill before the coin visually arrives
+                        const rawCount  = todayChores[child.id] || 0
+                        const dispCount = coinInFlight === child.id ? Math.max(0, rawCount - 1) : rawCount
+                        const filled    = freeSpins > 0 ? 5 : dispCount % 5
                         return (
                           <button
                             ref={(el) => registerCoinTarget(child.id, el)}
