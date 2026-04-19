@@ -4,7 +4,7 @@ import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { useTransactions } from '../hooks/useTransactions.js'
 import { useSyncEngine } from '../hooks/useSyncEngine.js'
-import { clearAll } from '../lib/storage.js'
+import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 
 const AppContext = createContext(null)
@@ -83,6 +83,38 @@ export function AppProvider({ children: reactChildren }) {
     return tx
   }
 
+  // Wraps deleteTransaction to keep freeSpins in sync.
+  // Reads directly from localStorage so it's correct even inside a synchronous loop.
+  const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin']
+  function deleteTransaction(childId, txId) {
+    const allTx = get('all_transactions') || {}
+    const txList = allTx[childId] || []
+    const tx = txList.find((t) => t.id === txId)
+
+    if (tx) {
+      // Reverse balance effect
+      const isDeduct = DEDUCT_TYPES.includes(tx.type)
+      const delta = isDeduct ? tx.amount : -tx.amount
+      if (tx.currency === 'stars') childrenApi.adjustStars(childId, delta)
+      else childrenApi.adjustShekels(childId, delta)
+
+      // Revoke a free spin if this chore was the one that crossed a /5 boundary
+      if (tx.type === 'chore') {
+        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+        if (tx.timestamp >= dayStart.getTime()) {
+          const todayCount = txList.filter(
+            (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
+          ).length
+          if (todayCount > 0 && Math.floor(todayCount / 5) > Math.floor((todayCount - 1) / 5)) {
+            childrenApi.consumeFreeSpin(childId)
+          }
+        }
+      }
+    }
+
+    transactionsApi.deleteTransaction(childId, txId)
+  }
+
   // ── Savings wrappers (log transaction + update child) ──────────────
   function startSavings(childId, { amount, termMonths }) {
     const saving = childrenApi.openSavings(childId, { amount, termMonths })
@@ -126,6 +158,7 @@ export function AppProvider({ children: reactChildren }) {
     ...settingsApi,
     ...transactionsApi,
     addTransaction,   // override with badge-aware version
+    deleteTransaction, // override with balance + freeSpin sync
     startSavings,
     finishSavings,
     requirePin,
