@@ -30,7 +30,8 @@ function balanceDelta(tx, amountDiff) {
 }
 
 export default function EditTransactionModal() {
-  const { closeModal, modalData, updateTransaction, deleteTransaction, adjustStars, adjustShekels, requirePin } = useApp()
+  const { closeModal, modalData, updateTransaction, deleteTransaction, adjustStars, adjustShekels, requirePin,
+          consumeFreeSpin, getTransactions } = useApp()
   const { childId, transaction: tx } = modalData || {}
 
   const isConvert = tx?.type === 'convert_out' || tx?.type === 'convert_in'
@@ -71,6 +72,20 @@ export default function EditTransactionModal() {
       // Reverse the full transaction effect
       const { currency, delta } = balanceDelta(tx, -tx.amount)
       applyBalanceDelta(currency, delta)
+
+      // If deleting a chore from today, revoke a free spin if the count drops below a multiple of 5
+      if (tx.type === 'chore') {
+        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+        if (tx.timestamp >= dayStart.getTime()) {
+          const todayCount = getTransactions(childId).filter(
+            (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
+          ).length
+          if (todayCount > 0 && Math.floor(todayCount / 5) > Math.floor((todayCount - 1) / 5)) {
+            consumeFreeSpin(childId)
+          }
+        }
+      }
+
       deleteTransaction(childId, tx.id)
       closeModal()
     })

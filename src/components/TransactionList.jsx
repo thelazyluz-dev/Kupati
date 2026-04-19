@@ -22,7 +22,7 @@ function DaySeparator({ label }) {
 }
 
 export default function TransactionList({ transactions, childId }) {
-  const { deleteTransaction, requirePin, adjustStars, adjustShekels } = useApp()
+  const { deleteTransaction, requirePin, adjustStars, adjustShekels, consumeFreeSpin } = useApp()
   const [page, setPage] = useState(0)
   const [filter, setFilter] = useState('all')
   const [selectMode, setSelectMode] = useState(false)
@@ -54,11 +54,23 @@ export default function TransactionList({ transactions, childId }) {
     setSelected(new Set())
   }
 
-  // Same balance-reversal logic as EditTransactionModal.handleDelete
   const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin']
 
   function deleteSelected() {
     requirePin(() => {
+      // Revoke free spins if today's chore count drops below a multiple of 5
+      const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+      const ts = dayStart.getTime()
+      const todayChoresBefore = transactions.filter((t) => t.type === 'chore' && t.timestamp >= ts)
+      const todayChoresToDelete = todayChoresBefore.filter((t) => selected.has(t.id)).length
+      if (todayChoresToDelete > 0) {
+        const before = todayChoresBefore.length
+        const after  = before - todayChoresToDelete
+        const toRevoke = Math.floor(before / 5) - Math.floor(after / 5)
+        for (let i = 0; i < toRevoke; i++) consumeFreeSpin(childId)
+      }
+
+      // Reverse balance for each deleted transaction
       selected.forEach((id) => {
         const tx = transactions.find((t) => t.id === id)
         if (tx) {
