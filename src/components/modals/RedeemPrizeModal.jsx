@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { formatNumber } from '../../lib/utils.js'
 import { DEFAULT_PRIZES } from '../../lib/defaults.js'
@@ -7,12 +7,22 @@ import Button from '../ui/Button.jsx'
 import { celebrateGoal } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 
+const COMPLIMENTS = ['כל הכבוד!', 'מגיע לך!', 'אתה הכי טוב!', 'יפה מאוד!', 'ממש סבבה!']
+
 export default function RedeemPrizeModal() {
   const { closeModal, modalData, settings, adjustStars, addTransaction } = useApp()
   const { childId, child } = modalData || {}
-  const [confirming, setConfirming] = useState(null) // prize being confirmed
+  const [confirming, setConfirming] = useState(null)
+  const [success, setSuccess] = useState(null)
 
   const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
+
+  // Auto-dismiss after 3 s
+  useEffect(() => {
+    if (!success) return
+    const t = setTimeout(closeModal, 3000)
+    return () => clearTimeout(t)
+  }, [success]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleSelect(prize) {
     if (child.starBalance < prize.starCost) return
@@ -30,10 +40,45 @@ export default function RedeemPrizeModal() {
     })
     celebrateGoal()
     sounds.goal()
-    closeModal()
+    setSuccess({
+      ...confirming,
+      compliment: COMPLIMENTS[Math.floor(Math.random() * COMPLIMENTS.length)],
+    })
   }
 
   if (!child) return null
+
+  // Full-screen prize success overlay
+  if (success) {
+    return (
+      <div
+        className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-gradient-to-br from-purple-600 via-violet-700 to-purple-900 text-white text-center px-8"
+        onClick={closeModal}
+      >
+        <p className="text-base font-semibold opacity-70 mb-3 animate-fade-in">
+          {child.name} קיבל/ה פרס!
+        </p>
+        <div className="text-[8rem] leading-none animate-bounce-in mb-6">
+          {success.emoji}
+        </div>
+        <h2 className="text-3xl font-black mb-3 animate-slide-up">
+          {success.name}
+        </h2>
+        <p
+          className="text-xl font-bold opacity-90 animate-slide-up"
+          style={{ animationDelay: '80ms' }}
+        >
+          {success.compliment}
+        </p>
+        <p
+          className="mt-6 text-sm opacity-40 animate-fade-in"
+          style={{ animationDelay: '500ms' }}
+        >
+          -{success.starCost}⭐ נוכו · לחץ לחזרה
+        </p>
+      </div>
+    )
+  }
 
   return (
     <Modal title="🎁 מימוש פרס" onClose={closeModal} headerColor="from-purple-500 to-violet-600">

@@ -368,14 +368,29 @@ export default function ChildDashboard({ childId }) {
         )}
 
         {/* Parent note card */}
-        {child.parentNote && (
+        {child.parentNote ? (
           <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up">
             <span className="text-2xl flex-shrink-0">💌</span>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
               <p className="text-sm text-gray-700 leading-snug">{child.parentNote}</p>
             </div>
+            <button
+              onClick={() => showModal('parentNote', { childId, child })}
+              className="text-pink-300 hover:text-pink-500 active:scale-90 transition-all flex-shrink-0 text-base leading-none mt-0.5"
+              aria-label="ערוך הודעה"
+            >
+              ✏️
+            </button>
           </div>
+        ) : (
+          <button
+            onClick={() => showModal('parentNote', { childId, child })}
+            className="w-full bg-pink-50 border border-dashed border-pink-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-400 hover:bg-pink-100 active:scale-95 transition-all"
+          >
+            <span className="text-base">💌</span>
+            <span className="text-xs font-semibold">השאר הודעה לילד</span>
+          </button>
         )}
 
         {/* Onboarding tips — shown only when child has no transactions yet */}

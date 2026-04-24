@@ -175,59 +175,48 @@ export default function HomeScreen() {
                         <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
                       </button>
                     </div>
-                    {/* Row 2 — parent extras */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => showModal('parentNote', { childId: child.id, child })}
-                        className="flex-1 bg-white rounded-xl shadow-sm px-3 py-2 flex items-center justify-center gap-1.5 text-gray-600 active:scale-95 transition-all"
-                      >
-                        <span className="text-sm leading-none">💌</span>
-                        <span className="text-xs font-semibold">
-                          {child.parentNote ? 'ערוך הודעה' : 'שלח הודעה'}
-                        </span>
-                      </button>
-                      {(() => {
-                        const freeSpins = child.freeSpins || 0
-                        // While coin is mid-flight, show the pre-chore count so the dot
-                        // doesn't fill before the coin visually arrives
-                        const rawCount  = todayChores[child.id] || 0
-                        const dispCount = coinInFlight === child.id ? Math.max(0, rawCount - 1) : rawCount
-                        const filled    = freeSpins > 0 ? 5 : dispCount % 5
-                        return (
-                          <button
-                            ref={(el) => registerCoinTarget(child.id, el)}
-                            onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                            className={`flex-1 rounded-xl shadow-sm px-3 py-2 flex flex-col items-center gap-1 active:scale-95 transition-all relative ${
-                              freeSpins > 0
-                                ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
-                                : 'bg-white text-gray-600'
-                            }`}
-                          >
-                            <div className="flex items-center gap-1">
-                              <span className="text-sm leading-none">🎰</span>
-                              <span className="text-xs font-semibold">גלגל המזל</span>
-                              {freeSpins > 0 && (
-                                <span className="bg-white/30 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
-                                  {freeSpins}
-                                </span>
-                              )}
-                            </div>
-                            {/* 🪙 progress toward next free spin */}
-                            <div className="flex gap-0.5">
-                              {Array.from({ length: 5 }, (_, j) => (
-                                <span
-                                  key={j}
-                                  className="text-sm leading-none transition-all"
-                                  style={{ opacity: j < filled ? 1 : 0.2 }}
-                                >
-                                  🪙
-                                </span>
-                              ))}
-                            </div>
-                          </button>
-                        )
-                      })()}
-                    </div>
+                    {/* Row 2 — spin wheel */}
+                    {(() => {
+                      const freeSpins = child.freeSpins || 0
+                      // While coin is mid-flight, show the pre-chore count so the dot
+                      // doesn't fill before the coin visually arrives
+                      const rawCount  = todayChores[child.id] || 0
+                      const dispCount = coinInFlight === child.id ? Math.max(0, rawCount - 1) : rawCount
+                      const filled    = freeSpins > 0 ? 5 : dispCount % 5
+                      return (
+                        <button
+                          ref={(el) => registerCoinTarget(child.id, el)}
+                          onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
+                          className={`w-full rounded-xl shadow-sm px-3 py-2 flex items-center justify-between gap-2 active:scale-95 transition-all relative ${
+                            freeSpins > 0
+                              ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
+                              : 'bg-white text-gray-600'
+                          }`}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-base leading-none">🎰</span>
+                            <span className="text-xs font-semibold">גלגל המזל</span>
+                            {freeSpins > 0 && (
+                              <span className="bg-white/30 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                                {freeSpins}
+                              </span>
+                            )}
+                          </div>
+                          {/* 🪙 progress toward next free spin */}
+                          <div className="flex gap-0.5">
+                            {Array.from({ length: 5 }, (_, j) => (
+                              <span
+                                key={j}
+                                className="text-sm leading-none transition-all"
+                                style={{ opacity: j < filled ? 1 : 0.2 }}
+                              >
+                                🪙
+                              </span>
+                            ))}
+                          </div>
+                        </button>
+                      )
+                    })()}
                   </div>
                 </div>
               ))}
