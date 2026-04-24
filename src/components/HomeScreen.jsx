@@ -187,28 +187,28 @@ export default function HomeScreen() {
                         <button
                           ref={(el) => registerCoinTarget(child.id, el)}
                           onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                          className={`w-full rounded-xl shadow-sm px-3 py-2 flex items-center justify-between gap-2 active:scale-95 transition-all relative ${
+                          className={`w-full rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
                             freeSpins > 0
-                              ? 'bg-gradient-to-r from-yellow-400 to-orange-400 text-white'
-                              : 'bg-white text-gray-600'
+                              ? 'bg-gradient-to-b from-yellow-400 to-orange-500'
+                              : 'bg-gradient-to-b from-violet-500 to-purple-600'
                           }`}
                         >
                           <div className="flex items-center gap-1.5">
-                            <span className="text-base leading-none">🎰</span>
-                            <span className="text-xs font-semibold">גלגל המזל</span>
+                            <span className="text-lg leading-none">🎰</span>
                             {freeSpins > 0 && (
-                              <span className="bg-white/30 text-white text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
+                              <span className="bg-white/30 text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">
                                 {freeSpins}
                               </span>
                             )}
                           </div>
+                          <span className="text-xs font-bold leading-tight">גלגל המזל</span>
                           {/* 🪙 progress toward next free spin */}
                           <div className="flex gap-0.5">
                             {Array.from({ length: 5 }, (_, j) => (
                               <span
                                 key={j}
                                 className="text-sm leading-none transition-all"
-                                style={{ opacity: j < filled ? 1 : 0.2 }}
+                                style={{ opacity: j < filled ? 1 : 0.3 }}
                               >
                                 🪙
                               </span>
