@@ -142,14 +142,14 @@ export function AppProvider({ children: reactChildren }) {
         description: `💰 חסכון הבשיל! (${saving.termMonths} חודש${saving.termMonths > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`,
       })
     } else {
-      // Monthly exit points: earn interest only for fully completed months
+      // Compound interest for completed months (10% per month, compounded)
       const start = new Date(saving.startDate)
       const now   = new Date()
       let cm = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
       if (now.getDate() < start.getDate()) cm--
-      cm = Math.max(0, Math.min(cm, saving.termMonths - 1))
-      const earnedInterest = saving.amount * 0.10 * cm
-      const earlyTotal     = saving.amount + earnedInterest
+      cm = Math.max(0, cm)
+      const earlyTotal     = saving.amount * Math.pow(1.10, cm)
+      const earnedInterest = earlyTotal - saving.amount
       childrenApi.closeSavings(childId, savingId, 'early', earlyTotal)
       addTransaction(childId, {
         type: 'savings_early',

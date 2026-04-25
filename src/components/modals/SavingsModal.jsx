@@ -11,6 +11,11 @@ function calcCompletedMonths(startTimestamp) {
   return Math.max(0, m)
 }
 
+// Compound interest: principal × 1.10^months
+function cv(principal, months) {
+  return principal * Math.pow(1.10, months)
+}
+
 function SavingCard({ saving, onWithdraw }) {
   const now = Date.now()
   const cm  = calcCompletedMonths(saving.startDate)
@@ -25,11 +30,11 @@ function SavingCard({ saving, onWithdraw }) {
   prevExit.setMonth(prevExit.getMonth() + cm)
   const monthProgress = Math.min(1, (now - prevExit.getTime()) / (nextExit.getTime() - prevExit.getTime()))
 
-  const currentPayout = saving.amount * (1 + 0.10 * cm)
-  const nextPayout    = saving.amount * (1 + 0.10 * (cm + 1))
+  const currentPayout = cv(saving.amount, cm)
+  const nextPayout    = cv(saving.amount, cm + 1)
 
   const [preview, setPreview] = useState(Math.max(1, cm + 1))
-  const previewPayout = saving.amount * (1 + 0.10 * preview)
+  const previewPayout = cv(saving.amount, preview)
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3">
@@ -79,7 +84,7 @@ function SavingCard({ saving, onWithdraw }) {
         <div className="text-center">
           <p className="text-2xl font-black text-teal-700">{formatNumber(previewPayout)}₪</p>
           <p className="text-xs text-gray-400 mt-0.5">
-            חודש {preview} · +{formatNumber(saving.amount * 0.10 * preview)}₪ ריבית ·{' '}
+            חודש {preview} · +{formatNumber(previewPayout - saving.amount)}₪ ריבית ·{' '}
             {preview <= cm
               ? '✅ כבר עבר'
               : `עוד ~${preview - cm} חודש${preview - cm > 1 ? 'ים' : ''}`}
@@ -141,8 +146,8 @@ export default function SavingsModal() {
         {/* Early withdrawal confirmation */}
         {earlyTarget && (() => {
           const cm = calcCompletedMonths(earlyTarget.startDate)
-          const ei = earlyTarget.amount * 0.10 * cm
-          const ep = earlyTarget.amount + ei
+          const ep = cv(earlyTarget.amount, cm)
+          const ei = ep - earlyTarget.amount
           return (
             <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-3">
               <p className="font-bold text-orange-700 text-center">💰 אישור פדיון</p>
@@ -214,7 +219,7 @@ export default function SavingsModal() {
                   {[1, 2, 3, 4, 5, 6].map((m) => (
                     <div key={m} className="flex-shrink-0 bg-gradient-to-b from-blue-50 to-teal-50 border border-blue-100 rounded-xl p-2 text-center min-w-[56px]">
                       <p className="text-[10px] text-gray-400 font-semibold">חד׳ {m}</p>
-                      <p className="text-sm font-black text-teal-700">{formatNumber(parsedAmount * (1 + 0.10 * m))}₪</p>
+                      <p className="text-sm font-black text-teal-700">{formatNumber(cv(parsedAmount, m))}₪</p>
                     </div>
                   ))}
                 </div>

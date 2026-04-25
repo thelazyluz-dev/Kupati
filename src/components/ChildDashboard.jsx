@@ -236,6 +236,19 @@ export default function ChildDashboard({ childId }) {
   const ARC_C = 94.25
   const totalValue = getTotalValue(child)
   const goals      = getGoals(child)
+
+  // Sum of current compound value of active savings (principal × 1.10^completedMonths)
+  const activeSavingsTotal = (() => {
+    const actives = (child.savings || []).filter((s) => s.status === 'active')
+    if (!actives.length) return 0
+    const now = new Date()
+    return actives.reduce((sum, s) => {
+      const sd = new Date(s.startDate)
+      let m = (now.getFullYear() - sd.getFullYear()) * 12 + (now.getMonth() - sd.getMonth())
+      if (now.getDate() < sd.getDate()) m--
+      return sum + s.amount * Math.pow(1.10, Math.max(0, m))
+    }, 0)
+  })()
   const streak     = calculateStreak(transactions)
 
   const birthdayDays = daysUntilBirthday(child.birthday)
@@ -316,7 +329,9 @@ export default function ChildDashboard({ childId }) {
             <div key={child.shekelBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
             </div>
-            <div className="relative text-sm opacity-90 mt-1">💵 שקלים</div>
+            <div className="relative text-sm opacity-90 mt-1">
+              {activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}
+            </div>
             {(child.shekelBalancePeak || 0) > 0 && (
               <div className="relative text-xs opacity-60 mt-0.5">
                 {child.shekelBalance >= (child.shekelBalancePeak || 0)
@@ -327,6 +342,13 @@ export default function ChildDashboard({ childId }) {
             {firstGoal && totalValue < firstGoal.targetAmount && (
               <div className="relative text-xs opacity-70 mt-1 bg-white/20 rounded-full px-2 py-0.5 inline-block">
                 עוד {formatNumber(firstGoal.targetAmount - totalValue)}₪
+              </div>
+            )}
+            {activeSavingsTotal > 0 && (
+              <div className="relative mt-2 pt-1.5 border-t border-white/25 flex items-center justify-center gap-1.5 text-white/85">
+                <span className="text-sm">🏦</span>
+                <span className="text-xs font-bold">{formatNumber(activeSavingsTotal)}₪</span>
+                <span className="text-[10px] opacity-70">בחסכון</span>
               </div>
             )}
           </div>
