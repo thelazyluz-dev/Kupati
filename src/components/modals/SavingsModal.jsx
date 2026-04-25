@@ -61,6 +61,15 @@ function SavingCard({ saving, childId, onEarlyWithdraw }) {
   const interest = saving.amount * 0.10 * saving.termMonths
   const total = saving.amount + interest
 
+  // Completed full months for early-exit calculation
+  const startD = new Date(saving.startDate)
+  const nowD   = new Date()
+  let cm = (nowD.getFullYear() - startD.getFullYear()) * 12 + (nowD.getMonth() - startD.getMonth())
+  if (nowD.getDate() < startD.getDate()) cm--
+  cm = Math.max(0, Math.min(cm, saving.termMonths - 1))
+  const earlyInterest = saving.amount * 0.10 * cm
+  const earlyPayout   = saving.amount + earlyInterest
+
   const maturityDate = new Date(saving.maturityDate)
   const dateStr = maturityDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })
 
@@ -112,7 +121,9 @@ function SavingCard({ saving, childId, onEarlyWithdraw }) {
         onClick={() => onEarlyWithdraw(saving)}
         className="w-full text-xs text-orange-500 hover:text-orange-700 font-semibold py-1 transition-colors"
       >
-        ⚠️ פדיון מוקדם (ריבית תאבד)
+        {cm > 0
+          ? `⚠️ פדיון מוקדם — תקבל ${formatNumber(earlyPayout)}₪ (${cm} חודש${cm > 1 ? 'ים' : ''} ריבית)`
+          : `⚠️ פדיון מוקדם — תקבל ${formatNumber(saving.amount)}₪ (פחות מחודש, ללא ריבית)`}
       </button>
     </div>
   )
@@ -159,21 +170,34 @@ export default function SavingsModal() {
       <div className="space-y-5">
 
         {/* Early withdrawal confirmation */}
-        {earlyTarget && (
-          <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-3">
-            <p className="font-bold text-orange-700 text-center">
-              ⚠️ פדיון מוקדם
-            </p>
-            <p className="text-sm text-gray-600 text-center">
-              תקבל בחזרה רק {formatNumber(earlyTarget.amount)}₪ (הקרן).<br />
-              ריבית של {formatNumber(earlyTarget.amount * 0.10 * earlyTarget.termMonths)}₪ תאבד.
-            </p>
-            <div className="flex gap-2">
-              <Button variant="warning" fullWidth onClick={confirmEarly}>פדה</Button>
-              <Button variant="secondary" fullWidth onClick={() => setEarlyTarget(null)}>ביטול</Button>
+        {earlyTarget && (() => {
+          const s = new Date(earlyTarget.startDate), n = new Date()
+          let cm = (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth())
+          if (n.getDate() < s.getDate()) cm--
+          cm = Math.max(0, Math.min(cm, earlyTarget.termMonths - 1))
+          const ei = earlyTarget.amount * 0.10 * cm
+          const ep = earlyTarget.amount + ei
+          return (
+            <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-3">
+              <p className="font-bold text-orange-700 text-center">⚠️ פדיון מוקדם</p>
+              {cm > 0 ? (
+                <p className="text-sm text-gray-600 text-center">
+                  תקבל <strong>{formatNumber(ep)}₪</strong><br />
+                  קרן {formatNumber(earlyTarget.amount)}₪ + {cm} חודש{cm > 1 ? 'ים' : ''} ריבית ({formatNumber(ei)}₪)
+                </p>
+              ) : (
+                <p className="text-sm text-gray-600 text-center">
+                  תקבל בחזרה {formatNumber(earlyTarget.amount)}₪ (הקרן בלבד)<br />
+                  <span className="text-orange-500">עוד לא עבר חודש מלא — ריבית לא הצטברה</span>
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button variant="warning" fullWidth onClick={confirmEarly}>פדה</Button>
+                <Button variant="secondary" fullWidth onClick={() => setEarlyTarget(null)}>ביטול</Button>
+              </div>
             </div>
-          </div>
-        )}
+          )
+        })()}
 
         {/* Active savings */}
         {activeSavings.length > 0 && !earlyTarget && (
@@ -254,7 +278,7 @@ export default function SavingsModal() {
               <div className="space-y-2">
                 <p className="text-sm text-indigo-700 font-semibold text-center bg-indigo-50 rounded-xl py-2">
                   הכסף ינעל ל-{termMonths} חודש{termMonths > 1 ? 'ים' : ''}.<br />
-                  פדיון מוקדם יאפשר רק קרן בחזרה.
+                  פדיון מוקדם — ריבית עד נקודת יציאה חודשית.
                 </p>
                 <div className="flex gap-2">
                   <Button variant="primary" fullWidth onClick={handleOpen}>✅ פתח חסכון</Button>

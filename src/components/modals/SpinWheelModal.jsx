@@ -8,16 +8,16 @@ import { formatNumber } from '../../lib/utils.js'
 const SPIN_COST = 12
 
 const SEGMENTS = [
-  { shekels: 1,  color: '#0ea5e9', emoji: '💵', label: '1'  },
+  { shekels: 3,  color: '#0ea5e9', emoji: '💵', label: '3'  },
   { shekels: 5,  color: '#059669', emoji: '💵', label: '5'  },
-  { shekels: 2,  color: '#0891b2', emoji: '💵', label: '2'  },
+  { shekels: 5,  color: '#0891b2', emoji: '💵', label: '5'  },
   { shekels: 10, color: '#0e7490', emoji: '💸', label: '10' },
-  { shekels: 3,  color: '#06b6d4', emoji: '💵', label: '3'  },
+  { shekels: 7,  color: '#06b6d4', emoji: '💵', label: '7'  },
   { shekels: 50, color: '#7c3aed', emoji: '🤑', label: '50' },
-  { shekels: 2,  color: '#0d9488', emoji: '💵', label: '2'  },
+  { shekels: 5,  color: '#0d9488', emoji: '💵', label: '5'  },
   { shekels: 20, color: '#15803d', emoji: '💸', label: '20' },
-  { shekels: 5,  color: '#047857', emoji: '💵', label: '5'  },
-  { shekels: 1,  color: '#0369a1', emoji: '💵', label: '1'  },
+  { shekels: 8,  color: '#047857', emoji: '💵', label: '8'  },
+  { shekels: 3,  color: '#0369a1', emoji: '💵', label: '3'  },
 ]
 const N   = SEGMENTS.length   // 10
 const DEG = 360 / N           // 36°

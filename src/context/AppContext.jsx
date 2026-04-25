@@ -142,12 +142,22 @@ export function AppProvider({ children: reactChildren }) {
         description: `💰 חסכון הבשיל! (${saving.termMonths} חודש${saving.termMonths > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`,
       })
     } else {
-      childrenApi.closeSavings(childId, savingId, 'early', saving.amount)
+      // Monthly exit points: earn interest only for fully completed months
+      const start = new Date(saving.startDate)
+      const now   = new Date()
+      let cm = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+      if (now.getDate() < start.getDate()) cm--
+      cm = Math.max(0, Math.min(cm, saving.termMonths - 1))
+      const earnedInterest = saving.amount * 0.10 * cm
+      const earlyTotal     = saving.amount + earnedInterest
+      childrenApi.closeSavings(childId, savingId, 'early', earlyTotal)
       addTransaction(childId, {
         type: 'savings_early',
-        amount: saving.amount,
+        amount: earlyTotal,
         currency: 'shekels',
-        description: `⚠️ פדיון מוקדם — ריבית של ${Math.round(interest)}₪ אבדה`,
+        description: cm > 0
+          ? `⚠️ פדיון מוקדם — ${cm} חודש${cm > 1 ? 'ים' : ''} ריבית: +${Math.round(earnedInterest)}₪`
+          : `⚠️ פדיון מוקדם — פחות מחודש, ללא ריבית`,
       })
     }
   }
