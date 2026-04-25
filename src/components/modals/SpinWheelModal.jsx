@@ -8,16 +8,16 @@ import { formatNumber } from '../../lib/utils.js'
 const SPIN_COST = 12
 
 const SEGMENTS = [
-  { stars:   3,  color: '#f97316', emoji: '⭐', label: '3'  },
-  { shekels: 1,  color: '#0d9488', emoji: '💵', label: '1'  },
-  { stars:   5,  color: '#d97706', emoji: '⭐', label: '5'  },
-  { shekels: 2,  color: '#0891b2', emoji: '💵', label: '2'  },
-  { stars:   10, color: '#7c3aed', emoji: '⭐', label: '10' },
+  { shekels: 1,  color: '#0ea5e9', emoji: '💵', label: '1'  },
   { shekels: 5,  color: '#059669', emoji: '💵', label: '5'  },
-  { stars:   8,  color: '#db2777', emoji: '⭐', label: '8'  },
-  { shekels: 10, color: '#0e7490', emoji: '💵', label: '10' },
-  { stars:   20, color: '#b45309', emoji: '⭐', label: '20' },
-  { shekels: 20, color: '#15803d', emoji: '💵', label: '20' },
+  { shekels: 2,  color: '#0891b2', emoji: '💵', label: '2'  },
+  { shekels: 10, color: '#0e7490', emoji: '💸', label: '10' },
+  { shekels: 3,  color: '#06b6d4', emoji: '💵', label: '3'  },
+  { shekels: 50, color: '#7c3aed', emoji: '🤑', label: '50' },
+  { shekels: 2,  color: '#0d9488', emoji: '💵', label: '2'  },
+  { shekels: 20, color: '#15803d', emoji: '💸', label: '20' },
+  { shekels: 5,  color: '#047857', emoji: '💵', label: '5'  },
+  { shekels: 1,  color: '#0369a1', emoji: '💵', label: '1'  },
 ]
 const N   = SEGMENTS.length   // 10
 const DEG = 360 / N           // 36°
@@ -66,7 +66,6 @@ export default function SpinWheelModal() {
 
   const [spinning, setSpinning] = useState(false)
   const [result,   setResult]   = useState(null)
-  const [usedFree, setUsedFree] = useState(false)
   const wheelRef = useRef(null)
   const tickIds  = useRef([])
 
@@ -75,7 +74,6 @@ export default function SpinWheelModal() {
     setSpinning(true)
     if (isFree) {
       consumeFreeSpin(childId)
-      setUsedFree(true)
     } else {
       adjustStars(childId, -SPIN_COST)
       addTransaction(childId, { type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: `🎰 גלגל המזל — עלות סיבוב` })
@@ -96,23 +94,15 @@ export default function SpinWheelModal() {
 
   function handleClaim() {
     if (!result) return
-    if (result.shekels != null) {
-      adjustShekels(childId, result.shekels)
-      addTransaction(childId, { type: 'wheel_win', amount: result.shekels, currency: 'shekels', description: `🎰 גלגל המזל — זכייה` })
-    } else {
-      adjustStars(childId, result.stars)
-      addTransaction(childId, { type: 'wheel_win', amount: result.stars, currency: 'stars', description: `🎰 גלגל המזל — זכייה` })
-    }
+    adjustShekels(childId, result.shekels)
+    addTransaction(childId, { type: 'wheel_win', amount: result.shekels, currency: 'shekels', description: `🎰 גלגל המזל — זכייה` })
     sounds.goal()
     closeModal()
   }
 
   function handleClose() { tickIds.current.forEach(clearTimeout); closeModal() }
 
-  const rewardLabel = result ? (result.shekels != null ? `${result.shekels}₪` : `${result.stars}⭐`) : null
-  const net = result && result.shekels == null
-    ? (usedFree ? result.stars : result.stars - SPIN_COST)
-    : null
+  const rewardLabel = result ? `${result.shekels}₪` : null
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-violet-900 to-purple-950 text-white overflow-hidden">
@@ -136,13 +126,7 @@ export default function SpinWheelModal() {
           {result ? (
             <div className="bg-white/10 rounded-2xl px-4 py-2.5 text-center animate-bounce-in">
               <p className="text-lg font-black leading-tight">🎉 {childName || 'ילד'} זכה ב-{rewardLabel}!</p>
-              {result.shekels != null ? (
-                <p className="text-xs font-bold text-emerald-300 mt-0.5">💵 הכסף נוסף לחשבון!</p>
-              ) : net != null && (
-                <p className={`text-xs font-bold mt-0.5 ${net > 0 ? 'text-emerald-300' : net === 0 ? 'text-gray-300' : 'text-rose-300'}`}>
-                  {usedFree ? `🎁 רווח נקי: +${result.stars}⭐` : net > 0 ? `רווח נקי: +${net}⭐` : net === 0 ? 'יצאת בשוויון' : `הפסד נקי: ${net}⭐`}
-                </p>
-              )}
+              <p className="text-xs font-bold text-emerald-300 mt-0.5">💵 הכסף נוסף לחשבון!</p>
             </div>
           ) : freeSpins > 0 ? (
             <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl px-3 py-2 flex items-center gap-2 text-white shadow-md animate-pop">
@@ -189,7 +173,7 @@ export default function SpinWheelModal() {
                 return <line key={`d${i}`} x1={CX} y1={CY} x2={p.x.toFixed(2)} y2={p.y.toFixed(2)} stroke="white" strokeWidth={2.5} />
               })}
 
-              {/* Layer 3 — labels: big emoji + number below */}
+              {/* Layer 3 — labels: big emoji + amount below */}
               {SEGMENTS.map((seg, i) => {
                 const lp = labelPos(i)
                 return (
@@ -198,7 +182,7 @@ export default function SpinWheelModal() {
                       {seg.emoji}
                     </text>
                     <text x={lp.x} y={lp.y + 12} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight="bold" fill="white">
-                      {seg.label}
+                      {seg.label}₪
                     </text>
                   </g>
                 )
