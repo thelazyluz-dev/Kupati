@@ -479,6 +479,15 @@ export default function ChildDashboard({ childId }) {
           🏦 חסכון
         </Button>
 
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => showModal('memories', { childId })}
+          className="active:scale-95 border-amber-200 text-amber-700 hover:bg-amber-50"
+        >
+          📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
+        </Button>
+
         <WeeklySummary transactions={transactions} />
 
         <MonthlySummary transactions={transactions} />

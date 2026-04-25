@@ -205,6 +205,24 @@ export function useChildren() {
     )
   }
 
+  // ── Memories ────────────────────────────────────────────
+  function addMemory(childId, { text, date }) {
+    const memory = { id: generateId(), text, date, timestamp: Date.now() }
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== childId ? c : { ...c, memories: [...(c.memories || []), memory] }
+      )
+    )
+  }
+
+  function deleteMemory(childId, memoryId) {
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== childId ? c : { ...c, memories: (c.memories || []).filter((m) => m.id !== memoryId) }
+      )
+    )
+  }
+
   return {
     children,
     addChild,
@@ -225,5 +243,7 @@ export function useChildren() {
     closeSavings,
     grantFreeSpin,
     consumeFreeSpin,
+    addMemory,
+    deleteMemory,
   }
 }
