@@ -116,13 +116,13 @@ export function AppProvider({ children: reactChildren }) {
   }
 
   // ── Savings wrappers (log transaction + update child) ──────────────
-  function startSavings(childId, { amount, termMonths }) {
-    const saving = childrenApi.openSavings(childId, { amount, termMonths })
+  function startSavings(childId, { amount }) {
+    const saving = childrenApi.openSavings(childId, { amount })
     addTransaction(childId, {
       type: 'savings_open',
       amount,
       currency: 'shekels',
-      description: `🏦 חסכון נפתח — ${termMonths} חודש${termMonths > 1 ? 'ים' : ''}`,
+      description: `🏦 חסכון נפתח — 10% ריבית לחודש`,
     })
     return saving
   }

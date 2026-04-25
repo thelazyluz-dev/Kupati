@@ -145,11 +145,8 @@ export function useChildren() {
   }
 
   // ── Savings ─────────────────────────────────────────────
-  function openSavings(id, { amount, termMonths }) {
-    const startDate = Date.now()
-    const md = new Date(startDate)
-    md.setMonth(md.getMonth() + termMonths)
-    const saving = { id: generateId(), amount, termMonths, startDate, maturityDate: md.getTime(), status: 'active' }
+  function openSavings(id, { amount }) {
+    const saving = { id: generateId(), amount, startDate: Date.now(), status: 'active' }
     setChildren((prev) =>
       prev.map((c) =>
         c.id !== id ? c : {

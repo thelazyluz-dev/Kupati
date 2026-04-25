@@ -4,157 +4,126 @@ import { formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
-const MONTH_OPTIONS = [1, 2, 3, 6, 12]
-
-function SavingsGrowthChart({ saving }) {
-  const W = 220, H = 68
-  const PL = 4, PR = 4, PT = 6, PB = 18
-  const chartW = W - PL - PR
-  const chartH = H - PT - PB
-
-  const interest = saving.amount * 0.10 * saving.termMonths
-  const total = saving.amount + interest
-  const minV = saving.amount * 0.97
-  const maxV = total * 1.03
-
-  function mapX(month) { return PL + (month / saving.termMonths) * chartW }
-  function mapY(v) { return PT + chartH - ((v - minV) / (maxV - minV)) * chartH }
-
-  const pts = Array.from({ length: saving.termMonths + 1 }, (_, m) => ({
-    x: mapX(m),
-    y: mapY(saving.amount + (interest / saving.termMonths) * m),
-  }))
-
-  const now = Date.now()
-  const totalMs = saving.maturityDate - saving.startDate
-  const prog = Math.max(0, Math.min(1, (now - saving.startDate) / totalMs))
-  const cx = mapX(prog * saving.termMonths)
-  const cy = mapY(saving.amount + interest * prog)
-
-  const linePath = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ')
-  const fillPath = `${linePath} L${pts.at(-1).x},${H - PB} L${PL},${H - PB} Z`
-
-  return (
-    <svg width="100%" viewBox={`0 0 ${W} ${H}`} className="overflow-visible">
-      <defs>
-        <linearGradient id={`sg-${saving.id}`} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#14b8a6" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="#14b8a6" stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      <path d={fillPath} fill={`url(#sg-${saving.id})`} />
-      <path d={linePath} fill="none" stroke="#0d9488" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx={cx} cy={cy} r="5" fill="#0d9488" />
-      <circle cx={cx} cy={cy} r="9" fill="#0d9488" fillOpacity="0.18" />
-      <text x={PL} y={H - 4} fontSize="9" fill="#9ca3af" textAnchor="start">{formatNumber(saving.amount)}₪</text>
-      <text x={W - PR} y={H - 4} fontSize="9" fill="#0d9488" fontWeight="bold" textAnchor="end">{formatNumber(total)}₪</text>
-    </svg>
-  )
+function calcCompletedMonths(startTimestamp) {
+  const s = new Date(startTimestamp), n = new Date()
+  let m = (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth())
+  if (n.getDate() < s.getDate()) m--
+  return Math.max(0, m)
 }
 
-function SavingCard({ saving, childId, onEarlyWithdraw }) {
+function SavingCard({ saving, onWithdraw }) {
   const now = Date.now()
-  const totalMs = saving.maturityDate - saving.startDate
-  const elapsed = now - saving.startDate
-  const progress = Math.min(1, elapsed / totalMs)
-  const daysLeft = Math.max(0, Math.ceil((saving.maturityDate - now) / 86400000))
-  const interest = saving.amount * 0.10 * saving.termMonths
-  const total = saving.amount + interest
+  const cm  = calcCompletedMonths(saving.startDate)
 
-  // Completed full months for early-exit calculation
-  const startD = new Date(saving.startDate)
-  const nowD   = new Date()
-  let cm = (nowD.getFullYear() - startD.getFullYear()) * 12 + (nowD.getMonth() - startD.getMonth())
-  if (nowD.getDate() < startD.getDate()) cm--
-  cm = Math.max(0, Math.min(cm, saving.termMonths - 1))
-  const earlyInterest = saving.amount * 0.10 * cm
-  const earlyPayout   = saving.amount + earlyInterest
+  // Next exit point
+  const nextExit = new Date(saving.startDate)
+  nextExit.setMonth(nextExit.getMonth() + cm + 1)
+  const daysUntilNext = Math.ceil((nextExit.getTime() - now) / 86400000)
 
-  const maturityDate = new Date(saving.maturityDate)
-  const dateStr = maturityDate.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })
+  // Progress within current month (toward next exit)
+  const prevExit = new Date(saving.startDate)
+  prevExit.setMonth(prevExit.getMonth() + cm)
+  const monthProgress = Math.min(1, (now - prevExit.getTime()) / (nextExit.getTime() - prevExit.getTime()))
+
+  const currentPayout = saving.amount * (1 + 0.10 * cm)
+  const nextPayout    = saving.amount * (1 + 0.10 * (cm + 1))
+
+  const [preview, setPreview] = useState(Math.max(1, cm + 1))
+  const previewPayout = saving.amount * (1 + 0.10 * preview)
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3">
+
+      {/* Header */}
       <div className="flex items-center justify-between">
-        <span className="text-xs text-blue-500 font-semibold">חסכון פעיל</span>
-        <span className="text-sm font-bold text-blue-700">{saving.termMonths} חודש{saving.termMonths > 1 ? 'ים' : ''}</span>
+        <span className="text-xs text-blue-500 font-semibold">🏦 חסכון פעיל</span>
+        <span className="font-black text-gray-800">
+          {formatNumber(saving.amount)}₪ <span className="text-xs font-normal text-gray-500">קרן</span>
+        </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-2 text-center">
-        <div className="bg-white rounded-xl py-2">
-          <p className="text-lg font-black text-gray-800" dir="ltr">{formatNumber(saving.amount)}₪</p>
-          <p className="text-xs text-gray-500">קרן</p>
+      {/* Progress bar — next exit point */}
+      <div className="bg-white rounded-xl p-3 space-y-1.5">
+        <div className="flex justify-between text-xs font-semibold">
+          <span className="text-gray-400">חודש {cm}{cm > 0 ? ' ✅' : ''}</span>
+          <span className="text-indigo-600">עוד {daysUntilNext} ימים → חודש {cm + 1}</span>
         </div>
-        <div className="bg-white rounded-xl py-2">
-          <p className="text-lg font-black text-teal-600" dir="ltr">+{formatNumber(interest)}₪</p>
-          <p className="text-xs text-gray-500">ריבית צפויה</p>
-        </div>
-      </div>
-
-      {/* Progress bar */}
-      <div>
-        <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
-          <span>{daysLeft > 0 ? `עוד ${daysLeft} ימים` : 'הגיע למועד פירעון!'}</span>
-          <span>פירעון: {dateStr}</span>
-        </div>
-        <div className="w-full bg-white rounded-full h-3 overflow-hidden border border-blue-200">
+        <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
           <div
-            className="h-3 rounded-full bg-gradient-to-r from-blue-400 to-teal-400 transition-all duration-700"
-            style={{ width: `${progress * 100}%` }}
+            className="h-2.5 rounded-full bg-gradient-to-r from-indigo-400 to-teal-500 transition-all duration-300"
+            style={{ width: `${monthProgress * 100}%` }}
           />
         </div>
+        <div className="flex justify-between text-xs font-bold">
+          <span className={cm > 0 ? 'text-teal-600' : 'text-gray-400'}>
+            {cm > 0 ? `עכשיו: ${formatNumber(currentPayout)}₪` : 'עוד לא חודש'}
+          </span>
+          <span className="text-indigo-600">חד׳ {cm + 1}: {formatNumber(nextPayout)}₪</span>
+        </div>
       </div>
 
-      {/* Growth chart */}
-      <div className="bg-white rounded-xl px-2 pt-2 pb-1">
-        <p className="text-[10px] text-gray-400 text-center mb-1">גרף צמיחת החסכון</p>
-        <SavingsGrowthChart saving={saving} />
+      {/* Interactive slider */}
+      <div className="bg-white rounded-xl p-3 space-y-2">
+        <p className="text-[10px] text-gray-400 text-center font-semibold uppercase tracking-wide">
+          גרור לראות כמה תקבל בכל חודש
+        </p>
+        <input
+          type="range"
+          min="1"
+          max="24"
+          step="1"
+          value={preview}
+          onChange={(e) => setPreview(Number(e.target.value))}
+          className="w-full accent-teal-500 cursor-pointer"
+        />
+        <div className="text-center">
+          <p className="text-2xl font-black text-teal-700">{formatNumber(previewPayout)}₪</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            חודש {preview} · +{formatNumber(saving.amount * 0.10 * preview)}₪ ריבית ·{' '}
+            {preview <= cm
+              ? '✅ כבר עבר'
+              : `עוד ~${preview - cm} חודש${preview - cm > 1 ? 'ים' : ''}`}
+          </p>
+        </div>
       </div>
 
-      <div className="bg-white rounded-xl py-2 text-center">
-        <p className="text-xl font-black text-teal-700" dir="ltr">{formatNumber(total)}₪</p>
-        <p className="text-xs text-gray-500">סכום סופי בפירעון</p>
-      </div>
-
-      <button
-        type="button"
-        onClick={() => onEarlyWithdraw(saving)}
-        className="w-full text-xs text-orange-500 hover:text-orange-700 font-semibold py-1 transition-colors"
-      >
-        {cm > 0
-          ? `⚠️ פדיון מוקדם — תקבל ${formatNumber(earlyPayout)}₪ (${cm} חודש${cm > 1 ? 'ים' : ''} ריבית)`
-          : `⚠️ פדיון מוקדם — תקבל ${formatNumber(saving.amount)}₪ (פחות מחודש, ללא ריבית)`}
-      </button>
+      {/* Withdraw button */}
+      {cm >= 1 ? (
+        <button
+          type="button"
+          onClick={() => onWithdraw(saving)}
+          className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white font-bold text-sm transition-all shadow-sm"
+        >
+          💰 פדה עכשיו — {formatNumber(currentPayout)}₪
+        </button>
+      ) : (
+        <div className="w-full py-2 rounded-xl bg-gray-100 text-center text-xs text-gray-400 font-semibold">
+          🔒 נעול — עוד {daysUntilNext} ימים לנקודת יציאה ראשונה
+        </div>
+      )}
     </div>
   )
 }
 
 export default function SavingsModal() {
-  const { closeModal, modalData, settings, startSavings, finishSavings, requirePin } = useApp()
+  const { closeModal, modalData, startSavings, finishSavings, requirePin } = useApp()
   const { childId, child } = modalData || {}
 
-  const [amount, setAmount] = useState('')
-  const [termMonths, setTermMonths] = useState(3)
+  const [amount,      setAmount]      = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [earlyTarget, setEarlyTarget] = useState(null)
 
   if (!child) return null
 
   const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
-  const parsedAmount = parseFloat(amount) || 0
-  const interest = parsedAmount * 0.10 * termMonths
-  const total = parsedAmount + interest
-  const canOpen = parsedAmount >= 1 && parsedAmount <= child.shekelBalance
+  const parsedAmount  = parseFloat(amount) || 0
+  const canOpen       = parsedAmount >= 1 && parsedAmount <= child.shekelBalance
 
   function handleOpen() {
     if (!canOpen) return
     if (!confirmOpen) { setConfirmOpen(true); return }
-    startSavings(childId, { amount: parsedAmount, termMonths })
+    startSavings(childId, { amount: parsedAmount })
     closeModal()
-  }
-
-  function handleEarlyWithdraw(saving) {
-    setEarlyTarget(saving)
   }
 
   function confirmEarly() {
@@ -171,24 +140,22 @@ export default function SavingsModal() {
 
         {/* Early withdrawal confirmation */}
         {earlyTarget && (() => {
-          const s = new Date(earlyTarget.startDate), n = new Date()
-          let cm = (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth())
-          if (n.getDate() < s.getDate()) cm--
-          cm = Math.max(0, Math.min(cm, earlyTarget.termMonths - 1))
+          const cm = calcCompletedMonths(earlyTarget.startDate)
           const ei = earlyTarget.amount * 0.10 * cm
           const ep = earlyTarget.amount + ei
           return (
             <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-3">
-              <p className="font-bold text-orange-700 text-center">⚠️ פדיון מוקדם</p>
+              <p className="font-bold text-orange-700 text-center">💰 אישור פדיון</p>
               {cm > 0 ? (
-                <p className="text-sm text-gray-600 text-center">
-                  תקבל <strong>{formatNumber(ep)}₪</strong><br />
-                  קרן {formatNumber(earlyTarget.amount)}₪ + {cm} חודש{cm > 1 ? 'ים' : ''} ריבית ({formatNumber(ei)}₪)
+                <p className="text-sm text-gray-700 text-center">
+                  תקבל <strong className="text-teal-700 text-lg">{formatNumber(ep)}₪</strong><br />
+                  <span className="text-xs text-gray-500">
+                    קרן {formatNumber(earlyTarget.amount)}₪ + {cm} חודש{cm > 1 ? 'ים' : ''} ריבית (+{formatNumber(ei)}₪)
+                  </span>
                 </p>
               ) : (
                 <p className="text-sm text-gray-600 text-center">
-                  תקבל בחזרה {formatNumber(earlyTarget.amount)}₪ (הקרן בלבד)<br />
-                  <span className="text-orange-500">עוד לא עבר חודש מלא — ריבית לא הצטברה</span>
+                  תקבל {formatNumber(earlyTarget.amount)}₪ (קרן בלבד — פחות מחודש)
                 </p>
               )}
               <div className="flex gap-2">
@@ -204,7 +171,7 @@ export default function SavingsModal() {
           <div className="space-y-3">
             <h3 className="font-bold text-gray-700 text-sm">חסכונות פעילים</h3>
             {activeSavings.map((s) => (
-              <SavingCard key={s.id} saving={s} childId={childId} onEarlyWithdraw={handleEarlyWithdraw} />
+              <SavingCard key={s.id} saving={s} onWithdraw={setEarlyTarget} />
             ))}
           </div>
         )}
@@ -217,11 +184,10 @@ export default function SavingsModal() {
             </h3>
 
             <div className="bg-emerald-50 rounded-2xl py-2 text-center">
-              <span className="text-2xl font-black text-emerald-700" dir="ltr">{formatNumber(child.shekelBalance)}₪</span>
+              <span className="text-2xl font-black text-emerald-700">{formatNumber(child.shekelBalance)}₪</span>
               <p className="text-xs text-emerald-600">זמין לחסכון</p>
             </div>
 
-            {/* Amount input */}
             <div>
               <label className="text-sm font-semibold text-gray-600 block mb-1">כמה לחסוך?</label>
               <input
@@ -240,58 +206,40 @@ export default function SavingsModal() {
               )}
             </div>
 
-            {/* Term selector */}
-            <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-2">לכמה זמן?</label>
-              <div className="flex gap-2">
-                {MONTH_OPTIONS.map((m) => (
-                  <button
-                    key={m}
-                    type="button"
-                    onClick={() => { setTermMonths(m); setConfirmOpen(false) }}
-                    className={[
-                      'flex-1 py-2 rounded-xl text-sm font-bold transition-all active:scale-95',
-                      termMonths === m
-                        ? 'bg-indigo-500 text-white shadow-sm'
-                        : 'bg-gray-100 text-gray-600 hover:bg-gray-200',
-                    ].join(' ')}
-                  >
-                    {m === 12 ? 'שנה' : `${m}חד׳`}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Preview */}
+            {/* Monthly exit point preview chips */}
             {parsedAmount >= 1 && parsedAmount <= child.shekelBalance && (
-              <div className="bg-gradient-to-br from-blue-50 to-teal-50 rounded-2xl p-4 text-center border border-blue-100">
-                <p className="text-xs text-gray-500 mb-1">בסיום תקבל</p>
-                <p className="text-3xl font-black text-teal-700" dir="ltr">{formatNumber(total)}₪</p>
-                <p className="text-xs text-gray-500 mt-1">
-                  קרן {formatNumber(parsedAmount)}₪ + ריבית {formatNumber(interest)}₪
-                  {' '}(10% × {termMonths} חודש{termMonths > 1 ? 'ים' : ''})
-                </p>
+              <div>
+                <p className="text-xs text-gray-400 text-center mb-2">נקודות יציאה חודשיות (10% ריבית לחודש)</p>
+                <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  {[1, 2, 3, 4, 5, 6].map((m) => (
+                    <div key={m} className="flex-shrink-0 bg-gradient-to-b from-blue-50 to-teal-50 border border-blue-100 rounded-xl p-2 text-center min-w-[56px]">
+                      <p className="text-[10px] text-gray-400 font-semibold">חד׳ {m}</p>
+                      <p className="text-sm font-black text-teal-700">{formatNumber(parsedAmount * (1 + 0.10 * m))}₪</p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 
             {confirmOpen ? (
               <div className="space-y-2">
-                <p className="text-sm text-indigo-700 font-semibold text-center bg-indigo-50 rounded-xl py-2">
-                  הכסף ינעל ל-{termMonths} חודש{termMonths > 1 ? 'ים' : ''}.<br />
-                  פדיון מוקדם — ריבית עד נקודת יציאה חודשית.
+                <p className="text-sm text-indigo-700 font-semibold text-center bg-indigo-50 rounded-xl py-2 px-3">
+                  הכסף ינעל ויצבור 10% ריבית לחודש.<br />
+                  ניתן לפדות בכל נקודת יציאה חודשית.
                 </p>
                 <div className="flex gap-2">
-                  <Button variant="primary" fullWidth onClick={handleOpen}>✅ פתח חסכון</Button>
+                  <Button variant="primary" fullWidth onClick={handleOpen}>✅ נעל ובחסוך</Button>
                   <Button variant="secondary" fullWidth onClick={() => setConfirmOpen(false)}>ביטול</Button>
                 </div>
               </div>
             ) : (
               <Button variant="primary" fullWidth size="lg" onClick={handleOpen} disabled={!canOpen}>
-                🏦 פתח חסכון
+                🔒 נעל ובחסוך
               </Button>
             )}
           </div>
         )}
+
       </div>
     </Modal>
   )
