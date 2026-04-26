@@ -25,10 +25,10 @@ const CRACK_PATHS = [
 ]
 
 const PIG_SPEECHES = [
-  'הי... מה קורה? 🤔',
-  'תפסיק! 😤',
-  'אני מזהיר אותך... 😠',
-  'זה הסוף שלי 😱',
+  'אחשלי לא 🙅',
+  'אחשלי די! 😤',
+  'אחשלי לילי 😠',
+  'אחשלי איייי 😱',
 ]
 
 const BURST_COINS = Array.from({ length: 26 }, (_, i) => {
@@ -310,6 +310,46 @@ function GameOverScreen({ visible }) {
   )
 }
 
+function Yad2Screen({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[240] bg-white flex flex-col pointer-events-none"
+         style={{ animation: 'loading-fade 2.5s ease forwards', direction: 'rtl' }}>
+      <div className="bg-[#c0392b] px-4 py-3 flex items-center gap-2 shadow">
+        <span className="text-white font-black text-2xl tracking-tight">יד2</span>
+        <span className="text-white/60 text-xs">נדל״ן • רכבים • כללי</span>
+      </div>
+      <div className="flex-1 p-4 bg-gray-50">
+        <p className="text-xs text-gray-400 mb-2">נמצאו 1 תוצאות עבור "חזיר פוצץ"</p>
+        <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+          <div className="flex gap-3 mb-2">
+            <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center text-4xl flex-shrink-0">🐷</div>
+            <div className="flex-1">
+              <p className="font-bold text-gray-800 text-sm mb-0.5">חזיר קופה — כמעט כחדש</p>
+              <p className="text-[#c0392b] font-black text-xl leading-none">₪0</p>
+              <p className="text-gray-400 text-xs mt-0.5">תל אביב • פורסם לפני שנייה</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 border-t border-gray-100 pt-2 mb-2">
+            <span>מצב: פוצץ לאחרונה</span>
+            <span>👁 צפיות: 1</span>
+            <span>🔄 בעלים קודמים: 1</span>
+            <span>✅ מאומת ע״י ילד</span>
+          </div>
+          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-xs">
+            <p className="font-bold text-orange-700 mb-0.5">💬 הערות המוכר:</p>
+            <p className="text-gray-600">"חזיר שקט ונעים. פוצץ פעם אחת בלבד. לא נושך."</p>
+          </div>
+          <div className="mt-2 flex gap-2">
+            <div className="flex-1 bg-[#c0392b] text-white text-xs font-bold rounded-lg py-1.5 text-center">📞 התקשר</div>
+            <div className="flex-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg py-1.5 text-center">💬 שלח הודעה</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function PigReturnFloat({ visible }) {
   if (!visible) return null
   return (
@@ -385,12 +425,13 @@ export default function HomeScreen() {
   const [showPhoneCall,    setShowPhoneCall]    = useState(false)
   const [showGameOver,     setShowGameOver]     = useState(false)
   const [showLoading,      setShowLoading]      = useState(false)
+  const [showYad2,         setShowYad2]         = useState(false)
   const [showOrbit,        setShowOrbit]        = useState(false)
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
   const speechTimer = useRef(null)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showPigFloat
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat
 
   function handlePigClick() {
     if (isBursting) return
@@ -452,31 +493,34 @@ export default function HomeScreen() {
     // t=14.7s — ⚙️ מחפש חזיר (2.8s)
     setTimeout(() => setShowLoading(true),  14700)
     setTimeout(() => setShowLoading(false), 17500)
-    // t=17.9s — countdown 3
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 17900)
-    // t=18.9s — countdown 2
-    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 18900)
-    // t=19.9s — countdown 1
-    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 19900)
-    // t=20.9s — countdown disappears; pig floats home; rainbow border
+    // t=17.8s — 🛒 יד2 — חזיר כמעט כחדש (2.5s)
+    setTimeout(() => setShowYad2(true),  17800)
+    setTimeout(() => setShowYad2(false), 20300)
+    // t=20.6s — countdown 3
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 20600)
+    // t=21.6s — countdown 2
+    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 21600)
+    // t=22.6s — countdown 1
+    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 22600)
+    // t=23.6s — pig רחף הביתה; rainbow border מתחיל
     setTimeout(() => {
       setCountdown(null)
       setShowPigFloat(true)
       setShowRainbow(true)
       sounds.coin()
-    }, 20900)
-    // t=21.5s — cards unflip as pig arrives
-    setTimeout(() => setPigPrank(false), 21500)
-    // t=23.7s — orbit starts as pig settles
-    setTimeout(() => { setShowPigFloat(false); setShowOrbit(true) }, 23700)
-    // t=24.5s — rainbow fades; full reset
+    }, 23600)
+    // t=24.3s — כרטיסיות מתיישרות כשהחזיר מגיע
+    setTimeout(() => setPigPrank(false), 24300)
+    // t=26.6s — החזיר נגע בעיגול; orbit מתחיל
+    setTimeout(() => { setShowPigFloat(false); setShowOrbit(true) }, 26600)
+    // t=27.5s — rainbow נעלם; איפוס מלא
     setTimeout(() => {
       setShowRainbow(false)
       setShowAchiev(false)
       setIsMega(false)
       setShowOrbit(false)
       setPigClicks(0)
-    }, 24500)
+    }, 27500)
   }
 
   // Heat-sensitive values based on crack level
@@ -527,6 +571,7 @@ export default function HomeScreen() {
       <PhoneCallScreen visible={showPhoneCall} />
       <GameOverScreen visible={showGameOver} />
       <LoadingPig visible={showLoading} />
+      <Yad2Screen visible={showYad2} />
       <PigReturnFloat visible={showPigFloat} />
       <RainbowBorder visible={showRainbow} />
 
@@ -611,7 +656,7 @@ export default function HomeScreen() {
                 className={`text-2xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
                 style={pigClicks >= 3 && !isBursting ? { animation: 'pig-shake 0.35s ease-in-out' } : {}}
               >
-                {showPigFloat ? '🐷' : isBursting && countdown === null ? '💥' : isBursting && countdown !== null ? '' : '🐷'}
+                {showPigFloat ? '' : isBursting && countdown === null ? '💥' : isBursting && countdown !== null ? '' : '🐷'}
               </span>
               <PigCracks level={isBursting ? 0 : pigClicks} />
             </div>
