@@ -35,7 +35,7 @@ function AppInner() {
   const { screen, activeChildId } = useApp()
 
   return (
-    <div className="min-h-screen bg-slate-100">
+    <div className="min-h-screen">
       {screen === 'home' && <HomeScreen />}
       {screen === 'dashboard' && activeChildId && (
         <ChildDashboard childId={activeChildId} />
