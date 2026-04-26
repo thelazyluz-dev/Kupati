@@ -99,6 +99,23 @@ export function calculateStreak(transactions) {
   return streak
 }
 
+export const STAR_LEVELS = [
+  { min: 0,    emoji: '🌱', name: 'מתחיל'   },
+  { min: 20,   emoji: '⭐', name: 'כוכב'    },
+  { min: 50,   emoji: '🌟', name: 'מוכשר'  },
+  { min: 100,  emoji: '🔥', name: 'לוהט'   },
+  { min: 200,  emoji: '💎', name: 'יהלום'  },
+  { min: 400,  emoji: '👑', name: 'מלך'    },
+  { min: 750,  emoji: '🦁', name: 'אריה'   },
+  { min: 1200, emoji: '🚀', name: 'מקצוען' },
+]
+export function getLevel(totalStarsEarned) {
+  for (let i = STAR_LEVELS.length - 1; i >= 0; i--) {
+    if (totalStarsEarned >= STAR_LEVELS[i].min) return STAR_LEVELS[i]
+  }
+  return STAR_LEVELS[0]
+}
+
 // Returns days until next birthday, 0 if today, null if no birthday set
 export function daysUntilBirthday(birthdayMMDD) {
   if (!birthdayMMDD) return null

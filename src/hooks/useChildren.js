@@ -202,6 +202,37 @@ export function useChildren() {
     )
   }
 
+  // ── Loans ───────────────────────────────────────────────
+  function addLoan(childId, { amount, description }) {
+    const loan = { id: generateId(), amount, description, timestamp: Date.now(), repaid: false }
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== childId ? c : {
+          ...c,
+          shekelBalance: c.shekelBalance + amount,
+          shekelBalancePeak: Math.max(c.shekelBalancePeak || 0, c.shekelBalance + amount),
+          loans: [...(c.loans || []), loan],
+        }
+      )
+    )
+    return loan
+  }
+
+  function repayLoan(childId, loanId) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        const loan = (c.loans || []).find((l) => l.id === loanId)
+        if (!loan || loan.repaid) return c
+        return {
+          ...c,
+          shekelBalance: Math.max(0, c.shekelBalance - loan.amount),
+          loans: c.loans.map((l) => l.id === loanId ? { ...l, repaid: true } : l),
+        }
+      })
+    )
+  }
+
   // ── Memories ────────────────────────────────────────────
   function addMemory(childId, { text, date }) {
     const memory = { id: generateId(), text, date, timestamp: Date.now() }
@@ -240,6 +271,8 @@ export function useChildren() {
     closeSavings,
     grantFreeSpin,
     consumeFreeSpin,
+    addLoan,
+    repayLoan,
     addMemory,
     deleteMemory,
   }

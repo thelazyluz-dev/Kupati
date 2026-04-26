@@ -85,7 +85,7 @@ export function AppProvider({ children: reactChildren }) {
 
   // Wraps deleteTransaction to keep freeSpins in sync.
   // Reads directly from localStorage so it's correct even inside a synchronous loop.
-  const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin']
+  const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay']
   function deleteTransaction(childId, txId) {
     const allTx = get('all_transactions') || {}
     const txList = allTx[childId] || []
@@ -162,6 +162,30 @@ export function AppProvider({ children: reactChildren }) {
     }
   }
 
+  // ── Loan wrappers (update child + log transaction) ────────────────
+  function loanMoney(childId, { amount, description }) {
+    childrenApi.addLoan(childId, { amount, description })
+    addTransaction(childId, {
+      type: 'loan',
+      amount,
+      currency: 'shekels',
+      description: `💳 הלוואה${description ? `: ${description}` : ''}`,
+    })
+  }
+
+  function repayLoan(childId, loanId) {
+    const child = childrenApi.children.find((c) => c.id === childId)
+    const loan  = (child?.loans || []).find((l) => l.id === loanId)
+    if (!loan) return
+    childrenApi.repayLoan(childId, loanId)
+    addTransaction(childId, {
+      type: 'loan_repay',
+      amount: loan.amount,
+      currency: 'shekels',
+      description: `💳 פרעון${loan.description ? `: ${loan.description}` : ''}`,
+    })
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
@@ -171,6 +195,8 @@ export function AppProvider({ children: reactChildren }) {
     deleteTransaction, // override with balance + freeSpin sync
     startSavings,
     finishSavings,
+    loanMoney,
+    repayLoan,        // override childrenApi.repayLoan with tx-logging version
     requirePin,
     resetChildData,
     pendingBadge,

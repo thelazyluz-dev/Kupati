@@ -15,6 +15,9 @@ const TYPE_STYLE = {
   penalty:        { icon: '⚡', label: 'קנס',            bg: 'bg-red-50',     border: 'border-r-4 border-red-500',     amount: 'text-red-600'      },
   wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
+  loan:           { icon: '💳', label: 'הלוואה',        bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
+  loan_repay:     { icon: '💳', label: 'פרעון הלוואה',  bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
+  allowance:      { icon: '💰', label: 'קצבה',           bg: 'bg-lime-50',    border: 'border-r-4 border-lime-400',    amount: 'text-lime-600'     },
 }
 
 const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-gray-50', border: 'border-r-4 border-gray-300', amount: 'text-gray-600' }
@@ -23,7 +26,7 @@ export default function TransactionItem({ transaction, childId, selectMode = fal
   const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const style = TYPE_STYLE[type] ?? FALLBACK
-  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty' || type === 'wheel_spin'
+  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty' || type === 'wheel_spin' || type === 'loan_repay'
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
   const sign = isDeduct ? '-' : '+'
 

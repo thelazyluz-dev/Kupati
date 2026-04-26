@@ -40,13 +40,28 @@ export default function HomeScreen() {
   const { children, navigate, showModal, getTransactions, coinInFlight } = useApp()
 
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
-  // pre-compute today's chore count per child
+  const weekStart  = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
+
+  // pre-compute today's chore count + this week's star earnings per child
   const todayChores = Object.fromEntries(
     children.map((c) => [
       c.id,
       getTransactions(c.id).filter((t) => t.type === 'chore' && t.timestamp >= todayStart).length,
     ])
   )
+  const weekStarsPerChild = Object.fromEntries(
+    children.map((c) => [
+      c.id,
+      getTransactions(c.id)
+        .filter((t) => t.type === 'chore' && t.currency === 'stars' && t.timestamp >= weekStart)
+        .reduce((s, t) => s + t.amount, 0),
+    ])
+  )
+
+  // Sort by this week's stars (desc) when there are 2+ children for leaderboard
+  const sortedChildren = children.length >= 2
+    ? [...children].sort((a, b) => (weekStarsPerChild[b.id] || 0) - (weekStarsPerChild[a.id] || 0))
+    : children
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -138,7 +153,7 @@ export default function HomeScreen() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
             </div>
             <div className="flex flex-col gap-2">
-              {children.map((child, i) => (
+              {sortedChildren.map((child, i) => (
                 <div
                   key={child.id}
                   className="animate-slide-up"
@@ -154,7 +169,7 @@ export default function HomeScreen() {
                   )}
 
                   {/* Child card */}
-                  <ChildCard child={child} index={i} />
+                  <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
 
                   {/* Quick action strip — framed tray */}
                   <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner space-y-1.5">

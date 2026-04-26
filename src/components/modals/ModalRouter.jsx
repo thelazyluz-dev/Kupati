@@ -13,6 +13,7 @@ import PenaltyModal from './PenaltyModal.jsx'
 import SpinWheelModal from './SpinWheelModal.jsx'
 import ParentNoteModal from './ParentNoteModal.jsx'
 import MemoriesModal from './MemoriesModal.jsx'
+import LoanModal from './LoanModal.jsx'
 
 export default function ModalRouter() {
   const { openModal } = useApp()
@@ -34,6 +35,7 @@ export default function ModalRouter() {
     spinWheel: SpinWheelModal,
     parentNote: ParentNoteModal,
     memories: MemoriesModal,
+    loan: LoanModal,
   }
 
   const ModalComponent = map[openModal]

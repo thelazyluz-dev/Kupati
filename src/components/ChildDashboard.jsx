@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -164,6 +164,7 @@ function ShekelIconCloud({ balance }) {
 export default function ChildDashboard({ childId }) {
   const { children, navigate, showModal, settings, getTransactions,
           adjustShekels, deleteGoal, addTransaction, finishSavings,
+          addMoney, updateChild,
           pendingBadge, clearPendingBadge,
           pendingFreeSpin, clearPendingFreeSpin } = useApp()
   const transactions = getTransactions(childId)
@@ -195,6 +196,27 @@ export default function ChildDashboard({ childId }) {
     const matured = (child.savings || []).filter((s) => s.status === 'active' && s.maturityDate <= now)
     matured.forEach((s) => finishSavings(childId, s.id, 'matured'))
     if (matured.length > 0) setHint(`🎉 ${matured.length > 1 ? 'חסכונות הבשילו' : 'חסכון הבשיל'}!`)
+  }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-pay allowance if it's due for this period
+  useEffect(() => {
+    if (!child?.allowance?.enabled || !child.allowance.amount) return
+    const { amount, period, lastPaid } = child.allowance
+    const now = new Date()
+    const periodStart = period === 'monthly'
+      ? new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+      : (() => { const d = new Date(now); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
+    if (!lastPaid || lastPaid < periodStart) {
+      addMoney(childId, amount)
+      addTransaction(childId, {
+        type: 'allowance',
+        amount,
+        currency: 'shekels',
+        description: `💰 קצבה ${period === 'monthly' ? 'חודשית' : 'שבועית'} — ${formatNumber(amount)}₪`,
+      })
+      updateChild(childId, { allowance: { ...child.allowance, lastPaid: Date.now() } })
+      setHint(`💰 קצבה ${period === 'monthly' ? 'חודשית' : 'שבועית'} שולמה!`)
+    }
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Long-press on ⭐ button: regular tap = chores only, long = parent mode (free entry)
@@ -250,6 +272,13 @@ export default function ChildDashboard({ childId }) {
     }, 0)
   })()
   const streak     = calculateStreak(transactions)
+  const totalStarsEarned = transactions
+    .filter((tx) => tx.type === 'chore' && tx.currency === 'stars')
+    .reduce((s, tx) => s + tx.amount, 0)
+  const level = getLevel(totalStarsEarned)
+
+  const outstandingLoans = (child.loans || []).filter((l) => !l.repaid)
+  const outstandingTotal = outstandingLoans.reduce((s, l) => s + l.amount, 0)
 
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
@@ -268,13 +297,36 @@ export default function ChildDashboard({ childId }) {
       {/* Header */}
       <header className={`bg-gradient-to-br ${gradient} px-5 pt-8 pb-6 text-white`}>
         <div className="flex items-center justify-between mb-4">
-          <button
-            onClick={() => showModal('editChild', child)}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
-            aria-label="ערוך"
-          >
-            ✏️
-          </button>
+          <div className="flex gap-1.5">
+            <button
+              onClick={() => showModal('editChild', child)}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
+              aria-label="ערוך"
+            >
+              ✏️
+            </button>
+            <button
+              onClick={() => {
+                const text = [
+                  `🐷 ${child.name}`,
+                  `⭐ כוכבים: ${formatNumber(child.starBalance)}`,
+                  `💵 שקלים: ${formatNumber(child.shekelBalance)}`,
+                  streak >= 2 ? `🔥 ${streak} ימים ברצף!` : null,
+                  `${level.emoji} דרגה: ${level.name}`,
+                ].filter(Boolean).join('\n')
+                if (navigator.share) {
+                  navigator.share({ title: 'הארנק שלי', text }).catch(() => {})
+                } else {
+                  navigator.clipboard?.writeText(text).catch(() => {})
+                  setHint('📋 הועתק ללוח!')
+                }
+              }}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
+              aria-label="שתף"
+            >
+              📤
+            </button>
+          </div>
 
           <div className="text-center">
             {child.avatarImage ? (
@@ -302,12 +354,17 @@ export default function ChildDashboard({ childId }) {
                 ))}
               </div>
             )}
-            {/* Streak chip */}
-            {streak >= 2 && (
-              <div className="inline-block mt-1.5 bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
-                🔥 {streak} ימים ברצף!
+            {/* Level + streak chips */}
+            <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
+              <div className="bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
+                {level.emoji} {level.name}
               </div>
-            )}
+              {streak >= 2 && (
+                <div className="bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
+                  🔥 {streak} ימים ברצף!
+                </div>
+              )}
+            </div>
           </div>
 
           <button
@@ -415,6 +472,22 @@ export default function ChildDashboard({ childId }) {
           </button>
         )}
 
+        {/* Outstanding loans card */}
+        {outstandingTotal > 0 && (
+          <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-3 flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-cyan-600 mb-0.5">💳 יתרת הלוואות</p>
+              <p className="text-2xl font-black text-cyan-700">{formatNumber(outstandingTotal)}₪</p>
+            </div>
+            <button
+              onClick={() => showModal('loan', { childId, child })}
+              className="bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white rounded-xl px-4 py-2.5 text-sm font-bold transition-all shadow-sm"
+            >
+              פרטים
+            </button>
+          </div>
+        )}
+
         {/* Onboarding tips — shown only when child has no transactions yet */}
         {transactions.length === 0 && (
           <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
@@ -499,6 +572,15 @@ export default function ChildDashboard({ childId }) {
           className="active:scale-95"
         >
           🏦 חסכון
+        </Button>
+
+        <Button
+          variant="ghost"
+          fullWidth
+          onClick={() => showModal('loan', { childId, child })}
+          className="active:scale-95 border-cyan-200 text-cyan-700 hover:bg-cyan-50"
+        >
+          💳 הלוואה{outstandingTotal > 0 ? ` — יתרה: ${formatNumber(outstandingTotal)}₪` : ''}
         </Button>
 
         <Button

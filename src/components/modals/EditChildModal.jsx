@@ -125,6 +125,11 @@ export default function EditChildModal() {
   const [confirmReset, setConfirmReset] = useState(false)
   // undefined = unchanged, null = remove, string = new dataURL
   const [avatarImage, setAvatarImage] = useState(undefined)
+  // Allowance
+  const initAllowance = child?.allowance || {}
+  const [allowanceEnabled, setAllowanceEnabled] = useState(!!initAllowance.enabled)
+  const [allowanceAmount, setAllowanceAmount]   = useState(String(initAllowance.amount || ''))
+  const [allowancePeriod, setAllowancePeriod]   = useState(initAllowance.period || 'weekly')
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0]
@@ -143,6 +148,12 @@ export default function EditChildModal() {
       avatar,
       colorKey: colorKey || null,
       birthday: birthday || null,
+      allowance: {
+        enabled: allowanceEnabled,
+        amount: parseFloat(allowanceAmount) || 0,
+        period: allowancePeriod,
+        lastPaid: child.allowance?.lastPaid || null,
+      },
     }
     if (avatarImage !== undefined) updates.avatarImage = avatarImage  // null removes it
     updateChild(child.id, updates)
@@ -225,6 +236,49 @@ export default function EditChildModal() {
           <p className="text-xs text-gray-400 mt-1 text-center">
             מציג ספירה לאחור על הכרטיס וה-Dashboard
           </p>
+        </div>
+
+        {/* Allowance */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-gray-600">💰 קצבה אוטומטית</label>
+            <button
+              type="button"
+              onClick={() => setAllowanceEnabled((v) => !v)}
+              className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${allowanceEnabled ? 'bg-green-500' : 'bg-gray-300'}`}
+              aria-label="הפעל/כבה קצבה"
+            >
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${allowanceEnabled ? 'left-6' : 'left-0.5'}`} />
+            </button>
+          </div>
+          {allowanceEnabled && (
+            <div className="space-y-2 bg-green-50 border border-green-100 rounded-2xl p-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">סכום (₪)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={allowanceAmount}
+                  onChange={(e) => setAllowanceAmount(e.target.value)}
+                  placeholder="20"
+                  className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-base focus:border-green-400 focus:outline-none"
+                  dir="ltr"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">תדירות</label>
+                <select
+                  value={allowancePeriod}
+                  onChange={(e) => setAllowancePeriod(e.target.value)}
+                  className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-green-400 focus:outline-none"
+                >
+                  <option value="weekly">שבועי (כל ראשון)</option>
+                  <option value="monthly">חודשי (ה-1 לחודש)</option>
+                </select>
+              </div>
+              <p className="text-xs text-gray-400 text-center">מופקד אוטומטית בפתיחת הדשבורד</p>
+            </div>
+          )}
         </div>
 
 <Button type="submit" fullWidth size="lg" disabled={!name.trim()}>

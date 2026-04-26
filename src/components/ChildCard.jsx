@@ -1,7 +1,9 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
-import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday } from '../lib/utils.js'
+import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday, calculateStreak, getLevel } from '../lib/utils.js'
+
+const MEDALS = ['🥇', '🥈', '🥉']
 
 function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
   if (!birthdayMMDD) return null
@@ -38,7 +40,7 @@ function BirthdayCountdown({ birthdayMMDD, birthdayDays, birthdayToday }) {
   )
 }
 
-export default function ChildCard({ child, index }) {
+export default function ChildCard({ child, index, rank, totalChildren }) {
   const { navigate, settings, getTransactions } = useApp()
 
   const weekStart = useMemo(() => {
@@ -48,13 +50,18 @@ export default function ChildCard({ child, index }) {
   }, [])
 
   const transactions = getTransactions(child.id)
-  // Stars earned from chores this week only (effort metric, always positive)
   const weekStars = transactions
     .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'stars' && tx.type === 'chore')
     .reduce((sum, tx) => sum + tx.amount, 0)
   const weekShekels = transactions
     .filter((tx) => tx.timestamp >= weekStart && tx.currency === 'shekels' && ['gift', 'other', 'convert_in', 'savings_close'].includes(tx.type))
     .reduce((sum, tx) => sum + tx.amount, 0)
+
+  const streak = useMemo(() => calculateStreak(transactions), [transactions])
+  const totalStarsEarned = useMemo(() =>
+    transactions.filter((tx) => tx.type === 'chore' && tx.currency === 'stars').reduce((s, tx) => s + tx.amount, 0),
+  [transactions])
+  const level = getLevel(totalStarsEarned)
 
   const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
@@ -66,6 +73,7 @@ export default function ChildCard({ child, index }) {
   const birthdayToday = birthdayDays === 0
   const hasActiveSavings = (child.savings || []).some((s) => s.status === 'active')
   const goalReached      = firstGoal != null && totalValue >= firstGoal.targetAmount
+  const showMedal        = totalChildren >= 2 && rank <= 3
   const stateRing = goalReached
     ? 'ring-2 ring-yellow-300 ring-offset-1'
     : birthdayToday ? 'ring-2 ring-pink-300 ring-offset-1 animate-pulse-ring' : ''
@@ -98,9 +106,10 @@ export default function ChildCard({ child, index }) {
         >{child.avatar}</span>
       )}
 
-      {/* Status badges */}
-      {(hasActiveSavings || goalReached || birthdayToday) && (
+      {/* Status badges — top-left corner */}
+      {(hasActiveSavings || goalReached || birthdayToday || showMedal) && (
         <div className="absolute top-3 left-3 flex gap-1">
+          {showMedal        && <span className="text-xl leading-none animate-pop" title={`מקום ${rank}`}>{MEDALS[rank - 1]}</span>}
           {birthdayToday    && <span className="text-base leading-none animate-bounce" title="יום הולדת!">🎂</span>}
           {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
           {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
@@ -125,9 +134,18 @@ export default function ChildCard({ child, index }) {
               <span className="text-sm">₪</span>
               <span className="font-bold text-sm">{formatNumber(child.shekelBalance)}</span>
             </div>
+            <div className="flex items-center gap-1.5 bg-white/20 ring-1 ring-white/40 rounded-xl px-2.5 py-1">
+              <span className="text-sm">{level.emoji}</span>
+              <span className="font-semibold text-xs">{level.name}</span>
+            </div>
+            {streak >= 2 && (
+              <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-bold">
+                🔥 {streak}
+              </div>
+            )}
             {(weekStars > 0 || weekShekels > 0) && (
               <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2.5 py-1 text-xs font-semibold">
-                <span className="opacity-75">נצברו השבוע:</span>
+                <span className="opacity-75">השבוע:</span>
                 {weekStars > 0 && <span>+{formatNumber(weekStars)}⭐</span>}
                 {weekShekels > 0 && <span>+{formatNumber(weekShekels)}₪</span>}
               </div>
