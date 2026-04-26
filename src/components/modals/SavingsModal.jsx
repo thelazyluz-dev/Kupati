@@ -92,20 +92,16 @@ function SavingCard({ saving, onWithdraw }) {
         </div>
       </div>
 
-      {/* Withdraw button */}
-      {cm >= 1 ? (
-        <button
-          type="button"
-          onClick={() => onWithdraw(saving)}
-          className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white font-bold text-sm transition-all shadow-sm"
-        >
-          💰 פדה עכשיו — {formatNumber(currentPayout)}₪
-        </button>
-      ) : (
-        <div className="w-full py-2 rounded-xl bg-gray-100 text-center text-xs text-gray-400 font-semibold">
-          🔒 נעול — עוד {daysUntilNext} ימים לנקודת יציאה ראשונה
-        </div>
-      )}
+      {/* Withdraw button — always available */}
+      <button
+        type="button"
+        onClick={() => onWithdraw(saving)}
+        className="w-full py-2.5 rounded-xl bg-teal-500 hover:bg-teal-600 active:scale-95 text-white font-bold text-sm transition-all shadow-sm"
+      >
+        {cm >= 1
+          ? `💰 פדה עכשיו — ${formatNumber(currentPayout)}₪`
+          : `💰 פדה ללא ריבית — ${formatNumber(saving.amount)}₪`}
+      </button>
     </div>
   )
 }
