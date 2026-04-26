@@ -1,5 +1,7 @@
+import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { registerCoinTarget } from '../lib/animations.js'
+import { sounds } from '../lib/sounds.js'
 
 function getTimeGradient() {
   const h = new Date().getHours()
@@ -12,6 +14,76 @@ function getTimeGradient() {
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
+
+// SVG crack paths drawn over the pig at each click level (viewBox 44x44)
+const CRACK_PATHS = [
+  'M20,3 L15,17 L9,24',
+  'M20,3 L15,17 L9,24  M27,4 L33,16 L38,27',
+  'M20,3 L15,17 L9,24  M27,4 L33,16 L38,27  M22,22 L6,38',
+  'M20,3 L15,17 L9,24  M27,4 L33,16 L38,27  M22,22 L6,38  M22,22 L38,38  M13,3 L7,13',
+]
+
+// Pre-computed coin burst positions (24 coins, evenly spread + size variance)
+const BURST_COINS = Array.from({ length: 26 }, (_, i) => {
+  const angle = (i / 26) * Math.PI * 2
+  const dist  = 120 + (i % 5) * 35
+  return {
+    cx:    `${Math.round(Math.cos(angle) * dist)}px`,
+    cy:    `${Math.round(Math.sin(angle) * dist)}px`,
+    cr:    `${i % 2 === 0 ? 540 : -540}deg`,
+    emoji: i % 4 === 0 ? '💰' : '🪙',
+    size:  16 + (i % 4) * 5,
+    delay: `${(i % 7) * 45}ms`,
+  }
+})
+
+function PigCracks({ level }) {
+  if (level < 1) return null
+  const path = CRACK_PATHS[Math.min(level - 1, 3)]
+  const opacity = 0.55 + level * 0.1
+  return (
+    <svg
+      viewBox="0 0 44 44"
+      className="absolute inset-0 w-full h-full pointer-events-none"
+      style={{ zIndex: 2 }}
+    >
+      {path.split('  ').map((d, i) => (
+        <path key={i} d={d} stroke="white" strokeWidth={1.8} strokeLinecap="round" fill="none" opacity={opacity} />
+      ))}
+      {level >= 3 && (
+        <circle cx="22" cy="22" r="18" stroke="rgba(255,100,100,0.25)" strokeWidth="3" fill="none" />
+      )}
+    </svg>
+  )
+}
+
+function CoinBurst() {
+  return (
+    <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
+      {/* White flash */}
+      <div
+        className="absolute inset-0 bg-white"
+        style={{ animation: 'pig-flash 0.7s ease-out forwards' }}
+      />
+      {/* Coins */}
+      {BURST_COINS.map((c, i) => (
+        <span
+          key={i}
+          className="absolute"
+          style={{
+            left: '50%', top: '40%',
+            fontSize: c.size,
+            lineHeight: 1,
+            '--cx': c.cx,
+            '--cy': c.cy,
+            '--cr': c.cr,
+            animation: `coin-explode 1.1s cubic-bezier(0.15, 0.8, 0.3, 1) ${c.delay} forwards`,
+          }}
+        >{c.emoji}</span>
+      ))}
+    </div>
+  )
+}
 
 // Particles spread around the dead-space of the header (avoiding center pig & corner buttons)
 const PARTICLES = [
@@ -39,6 +111,23 @@ const ONBOARDING_FEATURES = [
 export default function HomeScreen() {
   const { children, navigate, showModal, getTransactions, coinInFlight } = useApp()
 
+  const [pigClicks,  setPigClicks]  = useState(0)
+  const [pigBursting, setPigBursting] = useState(false)
+
+  function handlePigClick() {
+    if (pigBursting) return
+    const next = pigClicks + 1
+    if (next >= 5) {
+      setPigClicks(5)
+      setPigBursting(true)
+      sounds.pigExplode()
+      setTimeout(() => { setPigClicks(0); setPigBursting(false) }, 3200)
+    } else {
+      setPigClicks(next)
+      sounds.pigCrack(next)
+    }
+  }
+
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   const weekStart  = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
 
@@ -65,6 +154,7 @@ export default function HomeScreen() {
 
   return (
     <div className="min-h-screen flex flex-col">
+      {pigBursting && <CoinBurst />}
       {/* Header */}
       <header className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}>
         {/* Floating stars & coins */}
@@ -106,8 +196,18 @@ export default function HomeScreen() {
         <div className="text-center">
           <div className="relative inline-flex items-center justify-center mb-1.5">
             <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: '3s' }} />
-            <div className="relative w-11 h-11 rounded-full bg-white/20 ring-2 ring-white/35 flex items-center justify-center shadow-inner">
-              <span className="text-2xl animate-float">🐷</span>
+            <div
+              className="relative w-11 h-11 rounded-full bg-white/20 ring-2 ring-white/35 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
+              onClick={handlePigClick}
+              title="לחץ עלי 🐷"
+            >
+              <span
+                className={`text-2xl relative z-10 ${!pigBursting && pigClicks === 0 ? 'animate-float' : ''}`}
+                style={pigClicks >= 3 && !pigBursting ? { animation: 'pig-shake 0.35s ease-in-out' } : {}}
+              >
+                {pigBursting ? '💥' : '🐷'}
+              </span>
+              <PigCracks level={pigBursting ? 0 : pigClicks} />
             </div>
           </div>
           <h1 className="text-lg font-bold tracking-tight">הארנק שלי</h1>

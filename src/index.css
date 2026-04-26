@@ -111,6 +111,29 @@
     70%       { transform: translateY(-6px)  rotate(-8deg)  scale(0.95); }
   }
 
+  /* Pig crack — shake on heavy hits */
+  @keyframes pig-shake {
+    0%, 100% { transform: rotate(0deg)   scale(1);    }
+    20%       { transform: rotate(-10deg) scale(1.08); }
+    40%       { transform: rotate(10deg)  scale(1.08); }
+    60%       { transform: rotate(-7deg)  scale(1.04); }
+    80%       { transform: rotate(7deg)   scale(1.04); }
+  }
+
+  /* White flash on pig explosion */
+  @keyframes pig-flash {
+    0%   { opacity: 0.95; }
+    15%  { opacity: 0.85; }
+    100% { opacity: 0;    }
+  }
+
+  /* Coins burst outward from center (--cx --cy in px, --cr rotation) */
+  @keyframes coin-explode {
+    0%   { transform: translate(-50%, -50%) scale(0.15) rotate(0deg);                                     opacity: 1; }
+    65%  { opacity: 1; }
+    100% { transform: translate(calc(-50% + var(--cx)), calc(-50% + var(--cy))) scale(1.6) rotate(var(--cr)); opacity: 0; }
+  }
+
   /* Shimmer sweep on card hover */
   .card-shimmer {
     position: relative;

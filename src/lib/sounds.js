@@ -141,4 +141,26 @@ export const sounds = {
       beep({ freq: f, duration: 0.28 + i * 0.04, delay: i * 0.09, gain: 0.3 - i * 0.02 })
     )
   },
+
+  // Crunch per crack level (gets lower + louder each hit)
+  pigCrack: (level) => {
+    const freq = 280 - level * 28
+    const gain = 0.22 + level * 0.06
+    haptic([18 + level * 18])
+    beep({ freq, type: 'sawtooth', duration: 0.07, gain })
+    beep({ freq: freq * 0.55, type: 'triangle', duration: 0.16, gain: gain * 0.65, delay: 0.04 })
+  },
+
+  // Big boom + coin shower + victory chord
+  pigExplode: () => {
+    haptic([60, 30, 100, 40, 200, 50, 300])
+    beep({ freq: 90,  type: 'sawtooth', duration: 0.4,  gain: 0.55 })
+    beep({ freq: 55,  type: 'sawtooth', duration: 0.55, gain: 0.45, delay: 0.06 })
+    for (let i = 0; i < 14; i++) {
+      beep({ freq: 500 + Math.random() * 900, type: 'triangle', duration: 0.07, gain: 0.09, delay: 0.08 + i * 0.065 })
+    }
+    ;[523, 659, 784, 1047].forEach((f, i) =>
+      beep({ freq: f, duration: 0.32, delay: 0.7 + i * 0.09, gain: 0.22 })
+    )
+  },
 }
