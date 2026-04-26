@@ -246,6 +246,7 @@ export default function HomeScreen() {
   const [screenShake,   setScreenShake]   = useState(false)
   const [isMega,        setIsMega]        = useState(false)
   const [showMegaFlash, setShowMegaFlash] = useState(false)
+  const [pigPrank,      setPigPrank]      = useState(false)
   const speechTimer = useRef(null)
 
   const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash
@@ -291,15 +292,15 @@ export default function HomeScreen() {
     setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1200)
     // t=2.2s  — party fades
     setTimeout(() => setPartyMode(false), 2200)
-    // t=2.9s  — pig rain ends; countdown 3
+    // t=2.9s  — pig rain ends; countdown 3; PRANK starts
     setTimeout(() => setShowPigRain(false), 2900)
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 2900)
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1); setPigPrank(true) }, 2900)
     // t=3.65s — countdown 2
     setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 3650)
     // t=4.4s  — countdown 1
     setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 4400)
-    // t=5.15s — 🐷 back!
-    setTimeout(() => { setCountdown('🐷'); sounds.coin() }, 5150)
+    // t=5.15s — 🐷 back; prank ends
+    setTimeout(() => { setCountdown('🐷'); sounds.coin(); setPigPrank(false) }, 5150)
     // t=5.7s  — full reset
     setTimeout(() => {
       setCountdown(null)
@@ -309,11 +310,16 @@ export default function HomeScreen() {
     }, 5700)
   }
 
-  // Heat-sensitive ring/glow based on crack level
-  const heatLevel = isBursting ? 0 : pigClicks
-  const ringColor = ['rgba(255,255,255,0.35)','rgba(96,165,250,0.9)','rgba(74,222,128,0.9)','rgba(251,146,60,0.95)','rgba(239,68,68,1)'][heatLevel]
-  const ringGlow  = ['none','0 0 8px rgba(96,165,250,0.5)','0 0 10px rgba(74,222,128,0.6)','0 0 14px rgba(251,146,60,0.7)','0 0 18px rgba(239,68,68,0.85)'][heatLevel]
+  // Heat-sensitive values based on crack level
+  const heatLevel    = isBursting ? 0 : pigClicks
+  const ringColor    = ['rgba(255,255,255,0.35)','rgba(96,165,250,0.9)','rgba(74,222,128,0.9)','rgba(251,146,60,0.95)','rgba(239,68,68,1)'][heatLevel]
+  const ringGlow     = ['none','0 0 8px rgba(96,165,250,0.5)','0 0 10px rgba(74,222,128,0.6)','0 0 14px rgba(251,146,60,0.7)','0 0 18px rgba(239,68,68,0.85)'][heatLevel]
   const pigRingStyle = { boxShadow: `0 0 0 2px ${ringColor}, ${ringGlow}`, transition: 'box-shadow 0.3s ease' }
+  const pigScale     = [1, 1.07, 1.14, 1.22, 1.30][heatLevel]
+  const pingDuration = ['3s', '2.5s', '2s', '1.2s', '0.5s'][heatLevel]
+  const headerDark   = [0, 0, 0.06, 0.14, 0.26][heatLevel]
+  const redPulseOn   = heatLevel >= 3
+  const redPulseSpeed = heatLevel >= 4 ? '0.4s' : '0.9s'
 
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   const weekStart  = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
@@ -350,6 +356,14 @@ export default function HomeScreen() {
 
       {/* Header */}
       <header className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}>
+        {/* Feature 9 — progressive darkness overlay */}
+        <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
+             style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
+        {/* Feature 6 — red pulse overlay */}
+        {redPulseOn && !isBursting && (
+          <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
+               style={{ background: 'rgba(239,68,68,0.18)', animation: `red-pulse ${redPulseSpeed} ease-in-out infinite` }} />
+        )}
         {PARTICLES.map((p, i) => (
           <span key={i} className="absolute pointer-events-none select-none" style={{
             left: p.l, top: p.t, fontSize: p.s,
@@ -369,8 +383,22 @@ export default function HomeScreen() {
 
         {/* Hero — interactive pig */}
         <div className="text-center">
-          <div className="relative inline-flex items-center justify-center mb-1.5">
-            <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: '3s' }} />
+          {/* Feature 2 — pig inflates; feature 7 — heartbeat speeds up */}
+          <div className="relative inline-flex items-center justify-center mb-1.5"
+               style={{ transform: `scale(${pigScale})`, transition: 'transform 0.25s ease-out' }}>
+            <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: pingDuration }} />
+
+            {/* Feature 8 — steam clouds when pig is angry */}
+            {pigClicks >= 3 && !isBursting && (
+              <div className="absolute inset-x-0 -top-7 flex justify-around pointer-events-none">
+                {[0, 1, 2].map(i => (
+                  <span key={i} className="text-sm" style={{
+                    display: 'inline-block',
+                    animation: `steam-rise 1.1s ease-out ${i * 0.36}s infinite`,
+                  }}>💨</span>
+                ))}
+              </div>
+            )}
 
             {/* Speech bubble */}
             {pigSpeech && !isBursting && (
@@ -406,7 +434,11 @@ export default function HomeScreen() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 px-4 py-5 dot-grid -mt-4">
+      <main className="flex-1 px-4 py-5 dot-grid -mt-4"
+            style={pigPrank
+              ? { animation: 'prank-in 0.55s cubic-bezier(0.68,-0.55,0.27,1.55) forwards' }
+              : { transform: 'rotate(0deg) scale(1)', transition: 'transform 0.7s ease-out' }
+            }>
         {children.length === 0 ? (
           <div className="flex flex-col items-center gap-5 text-center animate-fade-in pt-4">
             <div className="text-8xl animate-float">🐷</div>
