@@ -146,14 +146,17 @@ function PigRainLayer({ active, mega }) {
 
 function CountdownDisplay({ value }) {
   if (value === null) return null
+  const isPig = value === '🐷'
   return (
     <div className="fixed inset-0 z-[210] flex items-center justify-center pointer-events-none">
       <span
         key={value}
         className="font-black drop-shadow-2xl select-none"
         style={{
-          fontSize: typeof value === 'number' ? 130 : 80,
-          animation: 'countdown-pop 0.7s ease-out forwards',
+          fontSize: isPig ? 90 : 130,
+          animation: isPig
+            ? 'pig-return-pop 0.9s cubic-bezier(0.34,1.56,0.64,1) forwards'
+            : 'countdown-pop 0.7s ease-out forwards',
           textShadow: '0 4px 20px rgba(0,0,0,0.3)',
         }}
       >{value}</span>
@@ -206,7 +209,7 @@ function FakeErrorScreen({ visible }) {
   if (!visible) return null
   return (
     <div className="fixed inset-0 z-[245] bg-red-600 flex items-center justify-center pointer-events-none"
-         style={{ animation: 'error-screen-in 0.85s ease forwards' }}>
+         style={{ animation: 'error-screen-in 1.8s ease forwards' }}>
       <div className="text-center px-8">
         <div className="text-6xl mb-3">⚠️</div>
         <h2 className="text-white font-black text-2xl mb-1">שגיאה קריטית!</h2>
@@ -214,8 +217,53 @@ function FakeErrorScreen({ visible }) {
         <p className="text-white/70 text-sm mb-4">הארנק קרס. מאתחל מחדש...</p>
         <div className="h-2 bg-white/25 rounded-full overflow-hidden w-52 mx-auto">
           <div className="h-full bg-white rounded-full"
-               style={{ animation: 'error-bar 0.82s linear forwards' }} />
+               style={{ animation: 'error-bar 1.65s linear forwards' }} />
         </div>
+      </div>
+    </div>
+  )
+}
+
+function BreakingNews({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[243] bg-black flex flex-col items-center justify-center pointer-events-none"
+         style={{ animation: 'breaking-news-slide 2.5s ease forwards' }}>
+      <div className="w-full">
+        <div className="bg-red-600 text-white text-center py-2.5 font-black text-lg tracking-widest">
+          🔴 חדשות דחופות
+        </div>
+        <div className="bg-black text-white text-center py-10 px-6">
+          <p className="text-3xl font-black mb-3">חזיר פוצץ בארנק המשפחתי</p>
+          <p className="text-gray-400 text-sm leading-relaxed">
+            מקורות הקרובים לחזיר מסרו כי<br />הנסיבות עדיין לא ברורות
+          </p>
+        </div>
+        <div className="bg-red-600 py-1 overflow-hidden">
+          <span className="text-white text-xs font-bold px-2 inline-block whitespace-nowrap"
+                style={{ animation: 'ticker-scroll 3s linear forwards' }}>
+            💥 החזיר התפוצץ &nbsp;•&nbsp; ניתוח מומחים &nbsp;•&nbsp; הארנק בשוק &nbsp;•&nbsp; ₪0 נחשפו לאוויר &nbsp;•&nbsp; עדכונים בהמשך
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function LoadingPig({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[241] bg-gray-950 flex items-center justify-center pointer-events-none"
+         style={{ animation: 'loading-fade 2.2s ease forwards' }}>
+      <div className="text-center px-8">
+        <div className="text-5xl mb-4" style={{ animation: 'spin 1s linear infinite' }}>⚙️</div>
+        <p className="text-white font-black text-xl mb-1">מחפש חזיר חילוף...</p>
+        <p className="text-gray-500 text-sm mb-5 font-mono">pig_replacement_v2.exe</p>
+        <div className="h-2 bg-gray-800 rounded-full overflow-hidden w-56 mx-auto">
+          <div className="h-full bg-green-400 rounded-full"
+               style={{ animation: 'error-bar 2s ease-in-out forwards' }} />
+        </div>
+        <p className="text-green-400 text-xs mt-3 font-mono">חזיר נמצא! ✓</p>
       </div>
     </div>
   )
@@ -267,10 +315,12 @@ export default function HomeScreen() {
   const [showMegaFlash, setShowMegaFlash] = useState(false)
   const [pigPrank,      setPigPrank]      = useState(false)
   const [showError,     setShowError]     = useState(false)
+  const [showNews,      setShowNews]      = useState(false)
+  const [showLoading,   setShowLoading]   = useState(false)
   const [showOrbit,     setShowOrbit]     = useState(false)
   const speechTimer = useRef(null)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showLoading
 
   function handlePigClick() {
     if (isBursting) return
@@ -305,36 +355,42 @@ export default function HomeScreen() {
 
     // Screen shake
     setScreenShake(true)
-    setTimeout(() => setScreenShake(false), 650)
+    setTimeout(() => setScreenShake(false), 700)
 
-    // t=0.7s  — achievement banner
-    setTimeout(() => setShowAchiev(true), 700)
-    // t=1.1s  — pig rain; coins/stars end
-    setTimeout(() => setShowPigRain(true), 1100)
-    setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1200)
-    // t=1.9s  — שגיאה מזויפת מופיעה
-    setTimeout(() => setShowError(true), 1900)
-    // t=2.2s  — party fades
-    setTimeout(() => setPartyMode(false), 2200)
-    // t=2.75s — שגיאה נעלמת
-    setTimeout(() => setShowError(false), 2750)
-    // t=2.9s  — pig rain ends; countdown 3
-    setTimeout(() => setShowPigRain(false), 2900)
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 2900)
-    // t=3.65s — countdown 2
-    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 3650)
-    // t=4.4s  — countdown 1
-    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 4400)
-    // t=5.15s — 🐷 חוזר; כרטיסיות מתיישרות; כוכבי orbit מתחילים
-    setTimeout(() => { setCountdown('🐷'); sounds.coin(); setPigPrank(false); setShowOrbit(true) }, 5150)
-    // t=6.3s  — full reset
+    // t=1.0s  — achievement banner
+    setTimeout(() => setShowAchiev(true), 1000)
+    // t=1.3s  — pig rain starts
+    setTimeout(() => setShowPigRain(true), 1300)
+    // t=1.8s  — coins/stars end
+    setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1800)
+    // t=2.5s  — party fades; pig rain ends
+    setTimeout(() => setPartyMode(false), 2500)
+    setTimeout(() => setShowPigRain(false), 2800)
+    // t=3.0s  — שגיאה מזויפת (1.8s)
+    setTimeout(() => setShowError(true), 3000)
+    setTimeout(() => setShowError(false), 4800)
+    // t=4.9s  — חדשות דחופות (2.5s)
+    setTimeout(() => setShowNews(true), 4900)
+    setTimeout(() => setShowNews(false), 7400)
+    // t=7.5s  — מחפש חזיר חילוף (2.2s)
+    setTimeout(() => setShowLoading(true), 7500)
+    setTimeout(() => setShowLoading(false), 9700)
+    // t=9.9s  — countdown 3
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 9900)
+    // t=10.8s — countdown 2
+    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 10800)
+    // t=11.7s — countdown 1
+    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 11700)
+    // t=12.6s — 🐷 חוזר בחלקות; כרטיסיות מתיישרות; orbit מתחיל
+    setTimeout(() => { setCountdown('🐷'); sounds.coin(); setPigPrank(false); setShowOrbit(true) }, 12600)
+    // t=14.0s — full reset
     setTimeout(() => {
       setCountdown(null)
       setShowAchiev(false)
       setIsMega(false)
       setShowOrbit(false)
       setPigClicks(0)
-    }, 6300)
+    }, 14000)
   }
 
   // Heat-sensitive values based on crack level
@@ -381,6 +437,8 @@ export default function HomeScreen() {
       <AchievementBanner count={explCount} visible={showAchiev} isMega={isMega} />
       <MegaFlash visible={showMegaFlash} />
       <FakeErrorScreen visible={showError} />
+      <BreakingNews visible={showNews} />
+      <LoadingPig visible={showLoading} />
 
       {/* Header */}
       <header
