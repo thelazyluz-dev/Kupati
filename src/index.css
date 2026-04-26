@@ -134,6 +134,49 @@
     100% { transform: translate(calc(-50% + var(--cx)), calc(-50% + var(--cy))) scale(1.6) rotate(var(--cr)); opacity: 0; }
   }
 
+  /* Stars rising upward (--sx = horizontal spread in px) */
+  @keyframes star-rise {
+    0%   { transform: translate(-50%, 0)         scale(0.5) rotate(0deg);   opacity: 1;   }
+    60%  { transform: translate(calc(-50% + var(--sx, 0px)), -52vh) scale(1.2) rotate(25deg);  opacity: 0.9; }
+    100% { transform: translate(calc(-50% + var(--sx, 0px)), -85vh) scale(0.4) rotate(-15deg); opacity: 0;   }
+  }
+
+  /* Pigs raining down (--pr = rotation angle per drop) */
+  @keyframes pig-fall {
+    0%   { transform: translateY(-60px) rotate(0deg)         scale(0.7); opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translateY(110vh) rotate(var(--pr, 360deg)) scale(1);   opacity: 0; }
+  }
+
+  /* Rainbow party overlay — cycles through HSL hues */
+  @keyframes party-cycle {
+    0%   { background: hsla(0,   90%, 65%, 0.22); }
+    17%  { background: hsla(60,  90%, 60%, 0.22); }
+    33%  { background: hsla(120, 90%, 55%, 0.22); }
+    50%  { background: hsla(200, 90%, 60%, 0.22); }
+    67%  { background: hsla(270, 90%, 65%, 0.22); }
+    83%  { background: hsla(330, 90%, 65%, 0.22); }
+    100% { background: hsla(0,   90%, 65%, 0.22); }
+  }
+
+  /* Countdown number — pops in large then fades */
+  @keyframes countdown-pop {
+    0%   { transform: scale(0.3); opacity: 0;   }
+    25%  { transform: scale(1.1); opacity: 1;   }
+    45%  { transform: scale(1);   opacity: 1;   }
+    80%  { transform: scale(1);   opacity: 0.9; }
+    100% { transform: scale(1.6); opacity: 0;   }
+  }
+
+  /* Achievement banner — slides up from bottom, lingers, then fades */
+  @keyframes achievement-slide {
+    0%   { transform: translateY(120px); opacity: 0;   }
+    12%  { transform: translateY(-6px);  opacity: 1;   }
+    18%  { transform: translateY(0);     opacity: 1;   }
+    75%  { transform: translateY(0);     opacity: 1;   }
+    100% { transform: translateY(20px);  opacity: 0;   }
+  }
+
   /* Shimmer sweep on card hover */
   .card-shimmer {
     position: relative;
