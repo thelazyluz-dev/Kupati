@@ -365,6 +365,24 @@ function PigReturnFloat({ visible }) {
   )
 }
 
+function PigSuccessToast({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[285] pointer-events-none flex items-center justify-center">
+      <div style={{ animation: 'success-toast 2.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
+        <div className="bg-green-500 rounded-3xl px-8 py-5 shadow-2xl text-center min-w-[220px]">
+          <div className="text-5xl mb-2">✅</div>
+          <p className="text-white font-black text-xl leading-snug">חזיר חדש נמצא!</p>
+          <p className="text-white font-black text-xl leading-snug">הוסף בהצלחה</p>
+          <div className="mt-2 flex items-center justify-center gap-1.5">
+            <span className="text-white/70 text-sm">🐷 מוכן לפעולה</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function RainbowBorder({ visible }) {
   if (!visible) return null
   return (
@@ -429,9 +447,10 @@ export default function HomeScreen() {
   const [showOrbit,        setShowOrbit]        = useState(false)
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
+  const [showSuccess,      setShowSuccess]      = useState(false)
   const speechTimer = useRef(null)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat || showSuccess
 
   function handlePigClick() {
     if (isBursting) return
@@ -511,16 +530,22 @@ export default function HomeScreen() {
     }, 22100)
     // t=22.9s — כרטיסיות מתיישרות כשהחזיר מגיע
     setTimeout(() => setPigPrank(false), 22900)
-    // t=25.0s — החזיר נגע בעיגול; orbit מתחיל
-    setTimeout(() => { setShowPigFloat(false); setShowOrbit(true) }, 25000)
-    // t=25.9s — rainbow נעלם; איפוס מלא
+    // t=25.0s — החזיר נגע בעיגול; orbit + toast הצלחה
+    setTimeout(() => {
+      setShowPigFloat(false)
+      setShowOrbit(true)
+      setShowSuccess(true)
+      sounds.pigFound()
+    }, 25000)
+    // t=27.8s — rainbow + toast נעלמים; איפוס מלא
     setTimeout(() => {
       setShowRainbow(false)
+      setShowSuccess(false)
       setShowAchiev(false)
       setIsMega(false)
       setShowOrbit(false)
       setPigClicks(0)
-    }, 25900)
+    }, 27800)
   }
 
   // Heat-sensitive values based on crack level
@@ -577,6 +602,7 @@ export default function HomeScreen() {
       <Yad2Screen visible={showYad2} />
       <PigReturnFloat visible={showPigFloat} />
       <RainbowBorder visible={showRainbow} />
+      <PigSuccessToast visible={showSuccess} />
 
       {/* Header */}
       <header

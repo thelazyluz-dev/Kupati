@@ -183,6 +183,16 @@ export const sounds = {
       beep({ freq: 880, type: 'sine', duration: 0.07, gain: 0.12, delay: i * 0.52 })
   },
 
+  // Pig found / installed successfully — warm ascending ding
+  pigFound: () => {
+    haptic([20, 10, 30, 10, 60])
+    beep({ freq: 523,  type: 'triangle', duration: 0.18, gain: 0.28 })
+    beep({ freq: 659,  type: 'triangle', duration: 0.18, delay: 0.17, gain: 0.28 })
+    beep({ freq: 784,  type: 'triangle', duration: 0.18, delay: 0.34, gain: 0.30 })
+    beep({ freq: 1047, type: 'triangle', duration: 0.38, delay: 0.52, gain: 0.32 })
+    beep({ freq: 1319, type: 'sine',     duration: 0.28, delay: 0.90, gain: 0.18 })
+  },
+
   // Yad2 — cash-register ding
   yad2Sound: () => {
     haptic([15, 10, 25])
