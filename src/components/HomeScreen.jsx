@@ -202,6 +202,25 @@ function MegaFlash({ visible }) {
   )
 }
 
+function FakeErrorScreen({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[245] bg-red-600 flex items-center justify-center pointer-events-none"
+         style={{ animation: 'error-screen-in 0.85s ease forwards' }}>
+      <div className="text-center px-8">
+        <div className="text-6xl mb-3">⚠️</div>
+        <h2 className="text-white font-black text-2xl mb-1">שגיאה קריטית!</h2>
+        <p className="text-white/80 text-sm font-mono mb-1 tracking-wider">ERR_PIG_EXPLODED</p>
+        <p className="text-white/70 text-sm mb-4">הארנק קרס. מאתחל מחדש...</p>
+        <div className="h-2 bg-white/25 rounded-full overflow-hidden w-52 mx-auto">
+          <div className="h-full bg-white rounded-full"
+               style={{ animation: 'error-bar 0.82s linear forwards' }} />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── Header particles ──────────────────────────────────────────────────────────
 
 const PARTICLES = [
@@ -247,9 +266,11 @@ export default function HomeScreen() {
   const [isMega,        setIsMega]        = useState(false)
   const [showMegaFlash, setShowMegaFlash] = useState(false)
   const [pigPrank,      setPigPrank]      = useState(false)
+  const [showError,     setShowError]     = useState(false)
+  const [showOrbit,     setShowOrbit]     = useState(false)
   const speechTimer = useRef(null)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError
 
   function handlePigClick() {
     if (isBursting) return
@@ -278,6 +299,7 @@ export default function HomeScreen() {
     setShowCoins(true)
     setShowStars(true)
     setPartyMode(true)
+    setPigPrank(true)                                                    // t=0 — כרטיסיות מתהפכות מיד
     sounds.pigExplode()
     if (mega) { setShowMegaFlash(true); setTimeout(() => setShowMegaFlash(false), 950) }
 
@@ -290,24 +312,29 @@ export default function HomeScreen() {
     // t=1.1s  — pig rain; coins/stars end
     setTimeout(() => setShowPigRain(true), 1100)
     setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1200)
+    // t=1.9s  — שגיאה מזויפת מופיעה
+    setTimeout(() => setShowError(true), 1900)
     // t=2.2s  — party fades
     setTimeout(() => setPartyMode(false), 2200)
-    // t=2.9s  — pig rain ends; countdown 3; PRANK starts
+    // t=2.75s — שגיאה נעלמת
+    setTimeout(() => setShowError(false), 2750)
+    // t=2.9s  — pig rain ends; countdown 3
     setTimeout(() => setShowPigRain(false), 2900)
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1); setPigPrank(true) }, 2900)
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 2900)
     // t=3.65s — countdown 2
     setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 3650)
     // t=4.4s  — countdown 1
     setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 4400)
-    // t=5.15s — 🐷 back; prank ends
-    setTimeout(() => { setCountdown('🐷'); sounds.coin(); setPigPrank(false) }, 5150)
-    // t=5.7s  — full reset
+    // t=5.15s — 🐷 חוזר; כרטיסיות מתיישרות; כוכבי orbit מתחילים
+    setTimeout(() => { setCountdown('🐷'); sounds.coin(); setPigPrank(false); setShowOrbit(true) }, 5150)
+    // t=6.3s  — full reset
     setTimeout(() => {
       setCountdown(null)
       setShowAchiev(false)
       setIsMega(false)
+      setShowOrbit(false)
       setPigClicks(0)
-    }, 5700)
+    }, 6300)
   }
 
   // Heat-sensitive values based on crack level
@@ -353,9 +380,13 @@ export default function HomeScreen() {
       <CountdownDisplay value={countdown} />
       <AchievementBanner count={explCount} visible={showAchiev} isMega={isMega} />
       <MegaFlash visible={showMegaFlash} />
+      <FakeErrorScreen visible={showError} />
 
       {/* Header */}
-      <header className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}>
+      <header
+        className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}
+        style={pigClicks >= 3 && !isBursting ? { animation: `header-tremble ${pigClicks >= 4 ? '0.07s' : '0.15s'} ease-in-out infinite` } : {}}
+      >
         {/* Feature 9 — progressive darkness overlay */}
         <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
              style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
@@ -387,6 +418,15 @@ export default function HomeScreen() {
           <div className="relative inline-flex items-center justify-center mb-1.5"
                style={{ transform: `scale(${pigScale})`, transition: 'transform 0.25s ease-out' }}>
             <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: pingDuration }} />
+
+            {/* Feature 4 — orbit stars when pig returns */}
+            {showOrbit && [0, 1, 2].map(i => (
+              <span key={i} className="absolute pointer-events-none text-base leading-none"
+                    style={{
+                      top: '50%', left: '50%', marginTop: '-0.5em', marginLeft: '-0.5em',
+                      animation: `orbit 0.9s linear ${-(i / 3).toFixed(2)}s infinite`,
+                    }}>⭐</span>
+            ))}
 
             {/* Feature 8 — steam clouds when pig is angry */}
             {pigClicks >= 3 && !isBursting && (
