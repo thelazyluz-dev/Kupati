@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -275,7 +275,6 @@ export default function ChildDashboard({ childId }) {
   const totalStarsEarned = transactions
     .filter((tx) => tx.type === 'chore' && tx.currency === 'stars')
     .reduce((s, tx) => s + tx.amount, 0)
-  const level = getLevel(totalStarsEarned)
 
   const outstandingLoans = (child.loans || []).filter((l) => !l.repaid)
   const outstandingTotal = outstandingLoans.reduce((s, l) => s + l.amount, 0)
@@ -312,7 +311,6 @@ export default function ChildDashboard({ childId }) {
                   `⭐ כוכבים: ${formatNumber(child.starBalance)}`,
                   `💵 שקלים: ${formatNumber(child.shekelBalance)}`,
                   streak >= 2 ? `🔥 ${streak} ימים ברצף!` : null,
-                  `${level.emoji} דרגה: ${level.name}`,
                 ].filter(Boolean).join('\n')
                 if (navigator.share) {
                   navigator.share({ title: 'הארנק שלי', text }).catch(() => {})
@@ -344,27 +342,14 @@ export default function ChildDashboard({ childId }) {
                 {birthdayDays === 0 ? '🎂 יום הולדת שמח! 🎉' : `🎂 עוד ${birthdayDays} ימים!`}
               </div>
             )}
-            {/* Earned badges row */}
-            {(child.badges || []).length > 0 && (
-              <div className="flex items-center justify-center gap-1 mt-1.5 flex-wrap">
-                {child.badges.map((b) => (
-                  <span key={b.id} title={b.label} className="text-xl leading-none animate-pop">
-                    {b.emoji}
-                  </span>
-                ))}
-              </div>
-            )}
-            {/* Level + streak chips */}
-            <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
-              <div className="bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
-                {level.emoji} {level.name}
-              </div>
-              {streak >= 2 && (
+            {/* Streak chip only */}
+            {streak >= 2 && (
+              <div className="flex items-center justify-center mt-1.5">
                 <div className="bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
                   🔥 {streak} ימים ברצף!
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
 
           <button
