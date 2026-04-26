@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { registerCoinTarget } from '../lib/animations.js'
 import { sounds } from '../lib/sounds.js'
@@ -24,6 +24,13 @@ const CRACK_PATHS = [
   'M20,3 L15,17 L9,24  M27,4 L33,16 L38,27  M22,22 L6,38  M22,22 L38,38  M13,3 L7,13',
 ]
 
+const PIG_SPEECHES = [
+  'הי... מה קורה? 🤔',
+  'תפסיק! 😤',
+  'אני מזהיר אותך... 😠',
+  'זה הסוף שלי 😱',
+]
+
 const BURST_COINS = Array.from({ length: 26 }, (_, i) => {
   const angle = (i / 26) * Math.PI * 2
   const dist  = 120 + (i % 5) * 35
@@ -37,11 +44,32 @@ const BURST_COINS = Array.from({ length: 26 }, (_, i) => {
   }
 })
 
+const BURST_COINS_MEGA = Array.from({ length: 52 }, (_, i) => {
+  const angle = (i / 52) * Math.PI * 2
+  const dist  = 100 + (i % 7) * 32
+  return {
+    cx:    `${Math.round(Math.cos(angle) * dist)}px`,
+    cy:    `${Math.round(Math.sin(angle) * dist)}px`,
+    cr:    `${i % 2 === 0 ? 720 : -720}deg`,
+    emoji: i % 3 === 0 ? '💰' : i % 3 === 1 ? '🪙' : '💎',
+    size:  14 + (i % 5) * 6,
+    delay: `${(i % 9) * 35}ms`,
+  }
+})
+
 const RISING_STARS = Array.from({ length: 20 }, (_, i) => ({
   sx:    `${Math.round((i / 19) * 260 - 130)}px`,
   delay: `${(i % 6) * 55}ms`,
   size:  13 + (i % 4) * 6,
   emoji: i % 4 === 0 ? '✨' : '⭐',
+}))
+
+const PIG_RAIN_DROPS_MEGA = Array.from({ length: 48 }, (_, i) => ({
+  left:  `${Math.round((i / 48) * 98 + 1)}%`,
+  delay: `${(i % 11) * 55}ms`,
+  size:  18 + (i % 5) * 10,
+  pr:    `${(i % 2 === 0 ? 1 : -1) * (20 + (i % 6) * 30)}deg`,
+  dur:   `${0.6 + (i % 4) * 0.2}s`,
 }))
 
 const PIG_RAIN_DROPS = Array.from({ length: 24 }, (_, i) => ({
@@ -68,12 +96,13 @@ function PigCracks({ level }) {
   )
 }
 
-function BurstLayer({ coins, stars }) {
+function BurstLayer({ coins, stars, mega }) {
   if (!coins && !stars) return null
+  const burstCoins = mega ? BURST_COINS_MEGA : BURST_COINS
   return (
     <div className="fixed inset-0 z-[200] pointer-events-none overflow-hidden">
       {coins && <div className="absolute inset-0 bg-white" style={{ animation: 'pig-flash 0.7s ease-out forwards' }} />}
-      {coins && BURST_COINS.map((c, i) => (
+      {coins && burstCoins.map((c, i) => (
         <span key={`c${i}`} className="absolute" style={{
           left: '50%', top: '40%', fontSize: c.size, lineHeight: 1,
           '--cx': c.cx, '--cy': c.cy, '--cr': c.cr,
@@ -99,11 +128,12 @@ function PartyOverlay({ active }) {
   )
 }
 
-function PigRainLayer({ active }) {
+function PigRainLayer({ active, mega }) {
   if (!active) return null
+  const drops = mega ? PIG_RAIN_DROPS_MEGA : PIG_RAIN_DROPS
   return (
     <div className="fixed inset-0 z-[195] pointer-events-none overflow-hidden">
-      {PIG_RAIN_DROPS.map((p, i) => (
+      {drops.map((p, i) => (
         <span key={i} className="absolute top-0 leading-none select-none" style={{
           left: p.left, fontSize: p.size,
           '--pr': p.pr,
@@ -131,20 +161,42 @@ function CountdownDisplay({ value }) {
   )
 }
 
-function AchievementBanner({ count, visible }) {
+function AchievementBanner({ count, visible, isMega }) {
   if (!visible) return null
   return (
     <div className="fixed bottom-6 inset-x-4 z-[220] pointer-events-none flex justify-center"
          style={{ animation: 'achievement-slide 4s ease forwards' }}>
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-2xl px-5 py-3 shadow-2xl flex items-center gap-3 max-w-sm w-full">
-        <span className="text-3xl">🏆</span>
+      <div className={`rounded-2xl px-5 py-3 shadow-2xl flex items-center gap-3 max-w-sm w-full ${
+        isMega ? 'bg-gradient-to-r from-yellow-300 via-orange-400 to-red-500'
+               : 'bg-gradient-to-r from-yellow-400 to-orange-500'
+      }`}>
+        <span className="text-3xl">{isMega ? '👑' : '🏆'}</span>
         <div className="flex-1">
-          <p className="font-black text-white text-sm leading-tight">פיצוץ חזיר!</p>
+          <p className="font-black text-white text-sm leading-tight">
+            {isMega ? '💥 פיצוץ מגה! 💥' : 'פיצוץ חזיר!'}
+          </p>
           <p className="text-white/85 text-xs font-semibold leading-tight mt-0.5">
-            {count === 1 ? 'פיצצת בפעם הראשונה 🎉' : `הרסת חזיר ${count} פעמים 😈`}
+            {isMega
+              ? `פיצוץ מספר ${count} — מגה מוד 🔥`
+              : count === 1 ? 'פיצצת בפעם הראשונה 🎉' : `הרסת חזיר ${count} פעמים 😈`}
           </p>
         </div>
         <span className="text-xl font-black text-white bg-white/20 rounded-full w-9 h-9 flex items-center justify-center">×{count}</span>
+      </div>
+    </div>
+  )
+}
+
+function MegaFlash({ visible }) {
+  if (!visible) return null
+  return (
+    <div className="fixed inset-0 z-[250] flex items-center justify-center pointer-events-none">
+      <div className="text-center" style={{ animation: 'mega-flash 1s ease-out forwards' }}>
+        <div className="text-8xl leading-none">💥</div>
+        <div className="text-4xl font-black tracking-widest mt-2"
+             style={{ color: '#FFD700', textShadow: '0 0 40px rgba(255,180,0,0.9), 0 4px 20px rgba(0,0,0,0.5)' }}>
+          MEGA
+        </div>
       </div>
     </div>
   )
@@ -180,60 +232,88 @@ export default function HomeScreen() {
   const { children, navigate, showModal, getTransactions, coinInFlight } = useApp()
 
   // Pig Easter Egg state
-  const [pigClicks,   setPigClicks]   = useState(0)
-  const [showCoins,   setShowCoins]   = useState(false)
-  const [showStars,   setShowStars]   = useState(false)
-  const [partyMode,   setPartyMode]   = useState(false)
-  const [showPigRain, setShowPigRain] = useState(false)
-  const [countdown,   setCountdown]   = useState(null)
-  const [showAchiev,  setShowAchiev]  = useState(false)
-  const [explCount,   setExplCount]   = useState(
+  const [pigClicks,     setPigClicks]     = useState(0)
+  const [showCoins,     setShowCoins]     = useState(false)
+  const [showStars,     setShowStars]     = useState(false)
+  const [partyMode,     setPartyMode]     = useState(false)
+  const [showPigRain,   setShowPigRain]   = useState(false)
+  const [countdown,     setCountdown]     = useState(null)
+  const [showAchiev,    setShowAchiev]    = useState(false)
+  const [explCount,     setExplCount]     = useState(
     () => parseInt(localStorage.getItem('pig_explosions') || '0')
   )
+  const [pigSpeech,     setPigSpeech]     = useState(null)
+  const [screenShake,   setScreenShake]   = useState(false)
+  const [isMega,        setIsMega]        = useState(false)
+  const [showMegaFlash, setShowMegaFlash] = useState(false)
+  const speechTimer = useRef(null)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash
 
   function handlePigClick() {
     if (isBursting) return
     const next = pigClicks + 1
-    if (next >= 5) {
-      const newCount = explCount + 1
-      setExplCount(newCount)
-      try { localStorage.setItem('pig_explosions', String(newCount)) } catch {}
 
-      setPigClicks(5)
-      setShowCoins(true)
-      setShowStars(true)
-      setPartyMode(true)
-      sounds.pigExplode()
-
-      // t=0.7s  — achievement banner
-      setTimeout(() => setShowAchiev(true), 700)
-      // t=1.1s  — pig rain starts; coins/stars phase ends
-      setTimeout(() => setShowPigRain(true), 1100)
-      setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1200)
-      // t=2.2s  — party mode fades
-      setTimeout(() => setPartyMode(false), 2200)
-      // t=2.9s  — pig rain ends; countdown 3
-      setTimeout(() => setShowPigRain(false), 2900)
-      setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 2900)
-      // t=3.6s  — countdown 2
-      setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 3650)
-      // t=4.35s — countdown 1
-      setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 4400)
-      // t=5.1s  — 🐷 back!
-      setTimeout(() => { setCountdown('🐷'); sounds.coin() }, 5150)
-      // t=5.6s  — full reset
-      setTimeout(() => {
-        setCountdown(null)
-        setShowAchiev(false)
-        setPigClicks(0)
-      }, 5700)
-    } else {
+    if (next < 5) {
+      // Crack — show speech bubble
+      clearTimeout(speechTimer.current)
+      setPigSpeech(PIG_SPEECHES[next - 1])
+      speechTimer.current = setTimeout(() => setPigSpeech(null), 1800)
       setPigClicks(next)
       sounds.pigCrack(next)
+      return
     }
+
+    // EXPLOSION
+    const newCount = explCount + 1
+    const mega     = newCount % 5 === 0
+    setExplCount(newCount)
+    setIsMega(mega)
+    try { localStorage.setItem('pig_explosions', String(newCount)) } catch {}
+
+    clearTimeout(speechTimer.current)
+    setPigSpeech(null)
+    setPigClicks(5)
+    setShowCoins(true)
+    setShowStars(true)
+    setPartyMode(true)
+    sounds.pigExplode()
+    if (mega) { setShowMegaFlash(true); setTimeout(() => setShowMegaFlash(false), 950) }
+
+    // Screen shake
+    setScreenShake(true)
+    setTimeout(() => setScreenShake(false), 650)
+
+    // t=0.7s  — achievement banner
+    setTimeout(() => setShowAchiev(true), 700)
+    // t=1.1s  — pig rain; coins/stars end
+    setTimeout(() => setShowPigRain(true), 1100)
+    setTimeout(() => { setShowCoins(false); setShowStars(false) }, 1200)
+    // t=2.2s  — party fades
+    setTimeout(() => setPartyMode(false), 2200)
+    // t=2.9s  — pig rain ends; countdown 3
+    setTimeout(() => setShowPigRain(false), 2900)
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 2900)
+    // t=3.65s — countdown 2
+    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 3650)
+    // t=4.4s  — countdown 1
+    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 4400)
+    // t=5.15s — 🐷 back!
+    setTimeout(() => { setCountdown('🐷'); sounds.coin() }, 5150)
+    // t=5.7s  — full reset
+    setTimeout(() => {
+      setCountdown(null)
+      setShowAchiev(false)
+      setIsMega(false)
+      setPigClicks(0)
+    }, 5700)
   }
+
+  // Heat-sensitive ring/glow based on crack level
+  const heatLevel = isBursting ? 0 : pigClicks
+  const ringColor = ['rgba(255,255,255,0.35)','rgba(96,165,250,0.9)','rgba(74,222,128,0.9)','rgba(251,146,60,0.95)','rgba(239,68,68,1)'][heatLevel]
+  const ringGlow  = ['none','0 0 8px rgba(96,165,250,0.5)','0 0 10px rgba(74,222,128,0.6)','0 0 14px rgba(251,146,60,0.7)','0 0 18px rgba(239,68,68,0.85)'][heatLevel]
+  const pigRingStyle = { boxShadow: `0 0 0 2px ${ringColor}, ${ringGlow}`, transition: 'box-shadow 0.3s ease' }
 
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   const weekStart  = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
@@ -258,13 +338,15 @@ export default function HomeScreen() {
     : children
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col"
+         style={screenShake ? { animation: 'screen-shake 0.6s ease-out forwards' } : {}}>
       {/* Explosion overlays */}
-      <BurstLayer coins={showCoins} stars={showStars} />
+      <BurstLayer coins={showCoins} stars={showStars} mega={isMega} />
       <PartyOverlay active={partyMode} />
-      <PigRainLayer active={showPigRain} />
+      <PigRainLayer active={showPigRain} mega={isMega} />
       <CountdownDisplay value={countdown} />
-      <AchievementBanner count={explCount} visible={showAchiev} />
+      <AchievementBanner count={explCount} visible={showAchiev} isMega={isMega} />
+      <MegaFlash visible={showMegaFlash} />
 
       {/* Header */}
       <header className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}>
@@ -289,8 +371,23 @@ export default function HomeScreen() {
         <div className="text-center">
           <div className="relative inline-flex items-center justify-center mb-1.5">
             <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: '3s' }} />
+
+            {/* Speech bubble */}
+            {pigSpeech && !isBursting && (
+              <div className="absolute -top-10 left-0 right-0 flex justify-center z-20 pointer-events-none"
+                   style={{ animation: 'speech-pop 1.8s ease forwards' }}>
+                <div className="relative">
+                  <div className="bg-white rounded-xl px-2.5 py-1 shadow-lg text-xs font-bold text-gray-700 whitespace-nowrap">
+                    {pigSpeech}
+                  </div>
+                  <div className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rotate-45" />
+                </div>
+              </div>
+            )}
+
             <div
-              className="relative w-11 h-11 rounded-full bg-white/20 ring-2 ring-white/35 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
+              className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
+              style={pigRingStyle}
               onClick={handlePigClick}
               title="לחץ עלי 🐷"
             >
