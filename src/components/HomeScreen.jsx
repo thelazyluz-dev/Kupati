@@ -173,23 +173,14 @@ export default function HomeScreen() {
 
                   {/* Quick action strip — framed tray */}
                   <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner space-y-1.5">
-                    {/* Row 1 — child actions */}
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                        className="flex-1 bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
-                      >
-                        <span className="text-lg leading-none">⭐</span>
-                        <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
-                      </button>
-                      <button
-                        onClick={() => showModal('addMoney', { childId: child.id })}
-                        className="flex-1 bg-gradient-to-b from-emerald-400 to-emerald-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
-                      >
-                        <span className="text-lg leading-none">💵</span>
-                        <span className="text-xs font-bold leading-tight">הפקדה מהירה</span>
-                      </button>
-                    </div>
+                    {/* Row 1 — chore button */}
+                    <button
+                      onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
+                      className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                    >
+                      <span className="text-lg leading-none">⭐</span>
+                      <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
+                    </button>
                     {/* Row 2 — spin wheel */}
                     {(() => {
                       const freeSpins = child.freeSpins || 0

@@ -532,7 +532,7 @@ export default function ChildDashboard({ childId }) {
             className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 active:scale-90 transition-all text-white shadow-md font-bold"
           >
             <span className="text-2xl">💝</span>
-            <span className="text-sm">קיבלתי כסף</span>
+            <span className="text-sm">הפקדה</span>
           </button>
 
           <button
