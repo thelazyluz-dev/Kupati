@@ -382,14 +382,14 @@ function PigSuccessToast({ visible }) {
   )
 }
 
-function CelebrationRipple({ visible }) {
+function CelebrationRipple({ visible, cx, cy }) {
   if (!visible) return null
   const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#c77dff', '#ff9f43']
   return (
     <div className="fixed inset-0 z-[280] pointer-events-none overflow-hidden">
       {colors.map((color, i) => (
         <div key={i} className="absolute rounded-full" style={{
-          top: '13%', left: '50%',
+          top: cy, left: cx,
           width: '44px', height: '44px',
           border: `4px solid ${color}`,
           boxShadow: `0 0 22px ${color}, inset 0 0 10px ${color}55`,
@@ -455,7 +455,9 @@ export default function HomeScreen() {
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
   const [showSuccess,      setShowSuccess]      = useState(false)
-  const speechTimer = useRef(null)
+  const speechTimer  = useRef(null)
+  const pigWrapperRef = useRef(null)
+  const pigCenterRef  = useRef({ x: '50%', y: '13%' })
 
   const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat || showSuccess
 
@@ -479,6 +481,12 @@ export default function HomeScreen() {
     setExplCount(newCount)
     setIsMega(mega)
     try { localStorage.setItem('pig_explosions', String(newCount)) } catch {}
+
+    // Capture pig center for ripple origin
+    if (pigWrapperRef.current) {
+      const r = pigWrapperRef.current.getBoundingClientRect()
+      pigCenterRef.current = { x: `${r.left + r.width / 2}px`, y: `${r.top + r.height / 2}px` }
+    }
 
     clearTimeout(speechTimer.current)
     setPigSpeech(null)
@@ -608,7 +616,7 @@ export default function HomeScreen() {
       <LoadingPig visible={showLoading} />
       <Yad2Screen visible={showYad2} />
       <PigReturnFloat visible={showPigFloat} />
-      <CelebrationRipple visible={showRainbow} />
+      <CelebrationRipple visible={showRainbow} cx={pigCenterRef.current.x} cy={pigCenterRef.current.y} />
       <PigSuccessToast visible={showSuccess} />
 
       {/* Header */}
@@ -644,7 +652,7 @@ export default function HomeScreen() {
         {/* Hero — interactive pig */}
         <div className="text-center">
           {/* Feature 2 — pig inflates; feature 7 — heartbeat speeds up */}
-          <div className="relative inline-flex items-center justify-center mb-1.5"
+          <div ref={pigWrapperRef} className="relative inline-flex items-center justify-center mb-1.5"
                style={{ transform: `scale(${pigScale})`, transition: 'transform 0.25s ease-out' }}>
             <div className="absolute w-14 h-14 rounded-full bg-white/10 animate-ping" style={{ animationDuration: pingDuration }} />
 
