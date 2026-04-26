@@ -142,6 +142,56 @@ export const sounds = {
     )
   },
 
+  // Error screen — alarm siren (alternating high/low beeps)
+  errorAlarm: () => {
+    haptic([80, 40, 80, 40, 80])
+    for (let i = 0; i < 5; i++) {
+      beep({ freq: 960, type: 'sawtooth', duration: 0.11, gain: 0.28, delay: i * 0.26 })
+      beep({ freq: 640, type: 'sawtooth', duration: 0.11, gain: 0.22, delay: i * 0.26 + 0.13 })
+    }
+  },
+
+  // Breaking news jingle — 5-note sting
+  newsJingle: () => {
+    haptic([20, 10, 20])
+    ;[784, 784, 784, 659, 784].forEach((f, i) =>
+      beep({ freq: f, duration: 0.13, delay: i * 0.12, gain: 0.28 })
+    )
+  },
+
+  // Phone ring — two-ring cycle repeating twice
+  phoneRing: () => {
+    haptic([300, 200, 300, 200, 300])
+    const ring = (offset) => {
+      beep({ freq: 1320, type: 'sine', duration: 0.38, gain: 0.32, delay: offset })
+      beep({ freq: 1320, type: 'sine', duration: 0.38, gain: 0.32, delay: offset + 0.45 })
+    }
+    ring(0); ring(1.3); ring(2.6)
+  },
+
+  // Game over — descending square-wave scale
+  gameOverSound: () => {
+    haptic([60, 30, 60, 30, 200])
+    ;[392, 370, 349, 311, 294, 262, 220].forEach((f, i) =>
+      beep({ freq: f, type: 'square', duration: 0.22, delay: i * 0.11, gain: 0.22 })
+    )
+  },
+
+  // Loading — repeating soft ping
+  loadingPing: () => {
+    for (let i = 0; i < 5; i++)
+      beep({ freq: 880, type: 'sine', duration: 0.07, gain: 0.12, delay: i * 0.52 })
+  },
+
+  // Yad2 — cash-register ding
+  yad2Sound: () => {
+    haptic([15, 10, 25])
+    beep({ freq: 1760, type: 'triangle', duration: 0.07, gain: 0.32 })
+    beep({ freq: 2093, type: 'triangle', duration: 0.09, delay: 0.08, gain: 0.26 })
+    beep({ freq: 1568, type: 'triangle', duration: 0.14, delay: 0.16, gain: 0.20 })
+    beep({ freq: 2093, type: 'triangle', duration: 0.09, delay: 0.30, gain: 0.15 })
+  },
+
   // Crunch per crack level (gets lower + louder each hit)
   pigCrack: (level) => {
     const freq = 280 - level * 28

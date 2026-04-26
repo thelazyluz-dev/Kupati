@@ -479,48 +479,48 @@ export default function HomeScreen() {
     // t=3.2s  — pig rain ends
     setTimeout(() => setShowPigRain(false), 3200)
     // t=3.5s  — 🔴 שגיאה קריטית (2.5s)
-    setTimeout(() => setShowError(true),  3500)
-    setTimeout(() => setShowError(false), 6000)
-    // t=6.3s  — 📺 חדשות דחופות (2.8s)
-    setTimeout(() => setShowNews(true),  6300)
-    setTimeout(() => setShowNews(false), 9100)
-    // t=9.4s  — 📞 שיחה נכנסת (2.5s)
-    setTimeout(() => setShowPhoneCall(true),  9400)
-    setTimeout(() => setShowPhoneCall(false), 11900)
-    // t=12.2s — 🎮 GAME OVER (2.2s)
-    setTimeout(() => setShowGameOver(true),  12200)
-    setTimeout(() => setShowGameOver(false), 14400)
-    // t=14.7s — ⚙️ מחפש חזיר (2.8s)
-    setTimeout(() => setShowLoading(true),  14700)
-    setTimeout(() => setShowLoading(false), 17500)
-    // t=17.8s — 🛒 יד2 — חזיר כמעט כחדש (2.5s)
-    setTimeout(() => setShowYad2(true),  17800)
-    setTimeout(() => setShowYad2(false), 20300)
-    // t=20.6s — countdown 3
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 20600)
-    // t=21.6s — countdown 2
-    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 21600)
-    // t=22.6s — countdown 1
-    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 22600)
-    // t=23.6s — pig רחף הביתה; rainbow border מתחיל
+    setTimeout(() => { setShowError(true);     sounds.errorAlarm()   }, 3500)
+    setTimeout(() =>   setShowError(false),                            6000)
+    // t=6.1s  — 📺 חדשות דחופות (2.6s)
+    setTimeout(() => { setShowNews(true);      sounds.newsJingle()   }, 6100)
+    setTimeout(() =>   setShowNews(false),                             8700)
+    // t=8.8s  — 📞 שיחה נכנסת (2.6s)
+    setTimeout(() => { setShowPhoneCall(true); sounds.phoneRing()    }, 8800)
+    setTimeout(() =>   setShowPhoneCall(false),                       11400)
+    // t=11.5s — 🎮 GAME OVER (2.3s)
+    setTimeout(() => { setShowGameOver(true);  sounds.gameOverSound()}, 11500)
+    setTimeout(() =>   setShowGameOver(false),                        13800)
+    // t=13.9s — ⚙️ מחפש חזיר (2.6s)
+    setTimeout(() => { setShowLoading(true);   sounds.loadingPing()  }, 13900)
+    setTimeout(() =>   setShowLoading(false),                         16500)
+    // t=16.6s — 🛒 יד2 (2.5s)
+    setTimeout(() => { setShowYad2(true);      sounds.yad2Sound()    }, 16600)
+    setTimeout(() =>   setShowYad2(false),                            19100)
+    // t=19.4s — countdown 3
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 19400)
+    // t=20.3s — countdown 2
+    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 20300)
+    // t=21.2s — countdown 1
+    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 21200)
+    // t=22.1s — pig רחף הביתה; rainbow border מתחיל
     setTimeout(() => {
       setCountdown(null)
       setShowPigFloat(true)
       setShowRainbow(true)
-      sounds.coin()
-    }, 23600)
-    // t=24.3s — כרטיסיות מתיישרות כשהחזיר מגיע
-    setTimeout(() => setPigPrank(false), 24300)
-    // t=26.6s — החזיר נגע בעיגול; orbit מתחיל
-    setTimeout(() => { setShowPigFloat(false); setShowOrbit(true) }, 26600)
-    // t=27.5s — rainbow נעלם; איפוס מלא
+      sounds.goal()
+    }, 22100)
+    // t=22.9s — כרטיסיות מתיישרות כשהחזיר מגיע
+    setTimeout(() => setPigPrank(false), 22900)
+    // t=25.0s — החזיר נגע בעיגול; orbit מתחיל
+    setTimeout(() => { setShowPigFloat(false); setShowOrbit(true) }, 25000)
+    // t=25.9s — rainbow נעלם; איפוס מלא
     setTimeout(() => {
       setShowRainbow(false)
       setShowAchiev(false)
       setIsMega(false)
       setShowOrbit(false)
       setPigClicks(0)
-    }, 27500)
+    }, 25900)
   }
 
   // Heat-sensitive values based on crack level
@@ -559,6 +559,9 @@ export default function HomeScreen() {
   return (
     <div className="min-h-screen flex flex-col"
          style={screenShake ? { animation: 'screen-shake 0.6s ease-out forwards' } : {}}>
+      {/* Blocking overlay — prevents ANY touch reaching the UI during explosion */}
+      {isBursting && <div className="fixed inset-0 z-[99] pointer-events-auto cursor-default" />}
+
       {/* Explosion overlays */}
       <BurstLayer coins={showCoins} stars={showStars} mega={isMega} />
       <PartyOverlay active={partyMode} />
