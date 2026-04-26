@@ -368,28 +368,35 @@ function PigReturnFloat({ visible }) {
 function PigSuccessToast({ visible }) {
   if (!visible) return null
   return (
-    <div className="fixed inset-0 z-[285] pointer-events-none flex items-center justify-center">
-      <div style={{ animation: 'success-toast 2.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}>
-        <div className="bg-green-500 rounded-3xl px-8 py-5 shadow-2xl text-center min-w-[220px]">
+    <div className="fixed inset-0 z-[285] pointer-events-none flex items-center justify-center px-8">
+      <div style={{ animation: 'success-toast 2.8s cubic-bezier(0.34,1.56,0.64,1) forwards' }}
+           className="w-full max-w-[260px]">
+        <div className="bg-green-500 rounded-3xl px-6 py-5 shadow-2xl text-center">
           <div className="text-5xl mb-2">✅</div>
           <p className="text-white font-black text-xl leading-snug">חזיר חדש נמצא!</p>
           <p className="text-white font-black text-xl leading-snug">הוסף בהצלחה</p>
-          <div className="mt-2 flex items-center justify-center gap-1.5">
-            <span className="text-white/70 text-sm">🐷 מוכן לפעולה</span>
-          </div>
+          <p className="text-white/70 text-sm mt-2">🐷 מוכן לפעולה</p>
         </div>
       </div>
     </div>
   )
 }
 
-function RainbowBorder({ visible }) {
+function CelebrationRipple({ visible }) {
   if (!visible) return null
+  const colors = ['#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff', '#c77dff', '#ff9f43']
   return (
-    <div
-      className="fixed inset-0 z-[280] pointer-events-none rounded-none"
-      style={{ animation: 'rainbow-border 0.32s linear infinite, border-glow-fade 3s ease forwards' }}
-    />
+    <div className="fixed inset-0 z-[280] pointer-events-none overflow-hidden">
+      {colors.map((color, i) => (
+        <div key={i} className="absolute rounded-full" style={{
+          top: '13%', left: '50%',
+          width: '44px', height: '44px',
+          border: `4px solid ${color}`,
+          boxShadow: `0 0 22px ${color}, inset 0 0 10px ${color}55`,
+          animation: `ripple-expand 2.4s ease-out ${i * 0.22}s forwards`,
+        }} />
+      ))}
+    </div>
   )
 }
 
@@ -601,7 +608,7 @@ export default function HomeScreen() {
       <LoadingPig visible={showLoading} />
       <Yad2Screen visible={showYad2} />
       <PigReturnFloat visible={showPigFloat} />
-      <RainbowBorder visible={showRainbow} />
+      <CelebrationRipple visible={showRainbow} />
       <PigSuccessToast visible={showSuccess} />
 
       {/* Header */}
