@@ -393,7 +393,7 @@ function CelebrationRipple({ visible, cx, cy }) {
           width: '44px', height: '44px',
           border: `4px solid ${color}`,
           boxShadow: `0 0 22px ${color}, inset 0 0 10px ${color}55`,
-          animation: `ripple-expand 2.4s ease-out ${i * 0.22}s forwards`,
+          animation: `ripple-expand 2.4s ease-out ${i * 0.22}s both`,
         }} />
       ))}
     </div>
