@@ -711,7 +711,7 @@ export default function HomeScreen() {
       </header>
 
       {/* Content */}
-      <main className="flex-1 px-4 py-5 dot-grid -mt-4"
+      <main className="flex-1 px-4 py-5 -mt-4"
             style={pigPrank
               ? { animation: 'prank-in 0.55s cubic-bezier(0.68,-0.55,0.27,1.55) forwards' }
               : { transform: 'rotate(0deg) scale(1)', transition: 'transform 0.7s ease-out' }
