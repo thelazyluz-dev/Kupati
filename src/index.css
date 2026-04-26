@@ -193,13 +193,40 @@
     to   { transform: rotate(360deg) translateX(28px) rotate(-360deg); }
   }
 
-  /* Pig bounces back smoothly with spring */
+  /* Pig bounces back smoothly with spring (used for numbers) */
   @keyframes pig-return-pop {
     0%   { transform: scale(0)    rotate(-20deg); opacity: 0; }
     45%  { transform: scale(1.35) rotate(6deg);  opacity: 1; }
     65%  { transform: scale(0.88) rotate(-3deg); opacity: 1; }
     82%  { transform: scale(1.12) rotate(2deg);  opacity: 1; }
     100% { transform: scale(1)    rotate(0deg);  opacity: 1; }
+  }
+
+  /* Pig drifts from center-screen up to header button, shrinking */
+  @keyframes pig-float-home {
+    0%   { transform: translate(-50%, -50%) scale(0.2) rotate(-10deg); opacity: 0; }
+    12%  { transform: translate(-50%, -50%) scale(1.15) rotate(4deg);  opacity: 1; }
+    40%  { transform: translate(-50%, -50%) scale(1.0)  rotate(0deg);  opacity: 1; }
+    100% { transform: translate(-50%, calc(-50% - 36vh)) scale(0.27) rotate(0deg); opacity: 0.15; }
+  }
+
+  /* Rainbow border cycles hues */
+  @keyframes rainbow-border {
+    0%   { box-shadow: inset 0 0 0 7px hsl(0,100%,55%),   0 0 18px 4px hsl(0,100%,55%); }
+    17%  { box-shadow: inset 0 0 0 7px hsl(40,100%,55%),  0 0 18px 4px hsl(40,100%,55%); }
+    33%  { box-shadow: inset 0 0 0 7px hsl(120,95%,42%),  0 0 18px 4px hsl(120,95%,42%); }
+    50%  { box-shadow: inset 0 0 0 7px hsl(200,100%,55%), 0 0 18px 4px hsl(200,100%,55%); }
+    67%  { box-shadow: inset 0 0 0 7px hsl(270,100%,62%), 0 0 18px 4px hsl(270,100%,62%); }
+    83%  { box-shadow: inset 0 0 0 7px hsl(330,100%,60%), 0 0 18px 4px hsl(330,100%,60%); }
+    100% { box-shadow: inset 0 0 0 7px hsl(0,100%,55%),   0 0 18px 4px hsl(0,100%,55%); }
+  }
+
+  /* Rainbow border fade in → hold → fade out */
+  @keyframes border-glow-fade {
+    0%   { opacity: 0; }
+    7%   { opacity: 1; }
+    78%  { opacity: 1; }
+    100% { opacity: 0; }
   }
 
   /* Breaking news slides in from right, holds, slides out left */
