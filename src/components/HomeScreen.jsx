@@ -751,10 +751,13 @@ export default function HomeScreen() {
                 <div key={child.id} className="animate-slide-up"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
                   {i > 0 && (
-                    <div className="flex items-center gap-3 my-3 px-1">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
-                      <span className="text-sm opacity-40">🐷</span>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
+                    <div className="flex items-center gap-3 my-6 px-2">
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
+                      <div className="flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm ring-1 ring-gray-200/70">
+                        <span className="text-sm">🐷</span>
+                        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">הילד הבא</span>
+                      </div>
+                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
                     </div>
                   )}
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
