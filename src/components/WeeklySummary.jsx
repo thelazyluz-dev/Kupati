@@ -42,12 +42,10 @@ export default function WeeklySummary({ transactions }) {
         return s + tx.amount
       }, 0)
   })
-  const shekelsByDay   = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
-  const penaltiesByDay = days.map((d) => sumTx(d, (tx) => tx.type === 'penalty'))
+  const shekelsByDay = days.map((d) => sumTx(d, (tx) => tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in')))
 
-  const totalStars     = starsByDay.reduce((a, b) => a + b, 0)
-  const totalShekels   = shekelsByDay.reduce((a, b) => a + b, 0)
-  const totalPenalties = penaltiesByDay.reduce((a, b) => a + b, 0)
+  const totalStars   = starsByDay.reduce((a, b) => a + b, 0)
+  const totalShekels = shekelsByDay.reduce((a, b) => a + b, 0)
   const todayIndex     = sundayOffset
 
   // Last week totals (for trend chip)
@@ -69,8 +67,6 @@ export default function WeeklySummary({ transactions }) {
   const maxVal = mode === 'stars'
     ? Math.max(...starsByDay, 1)
     : Math.max(...shekelsByDay, 0.01)
-  const maxPenalties = Math.max(...penaltiesByDay, 0.01)
-
   // Colors per mode
   const todayGrad   = mode === 'stars' ? 'linear-gradient(to top,#f97316,#fbbf24)' : 'linear-gradient(to top,#059669,#34d399)'
   const normalGrad  = mode === 'stars' ? 'linear-gradient(to top,#f59e0b,#fcd34d)' : 'linear-gradient(to top,#10b981,#6ee7b7)'
@@ -133,35 +129,6 @@ export default function WeeklySummary({ transactions }) {
           )
         })}
       </div>
-
-      {/* Penalties mini-chart */}
-      {totalPenalties > 0 && (
-        <div className="mt-3">
-          <p className="text-xs text-red-400 mb-1 text-right">⚡ קנסות</p>
-          <div className="flex items-end gap-1.5" style={{ height: 34 }}>
-            {days.map((day, i) => {
-              const val  = penaltiesByDay[i]
-              const barH = val > 0 ? Math.max(6, (val / maxPenalties) * 28) : 0
-              return (
-                <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: 34 }}>
-                  {val > 0 && (
-                    <span className="text-[9px] font-bold mb-0.5 text-red-500 leading-none">{val}</span>
-                  )}
-                  <div
-                    style={{
-                      height: barH || 2,
-                      background: barH === 0 ? '#f1f5f9' : 'linear-gradient(to top,#ef4444,#fca5a5)',
-                      boxShadow: barH > 0 ? '0 2px 6px rgba(239,68,68,0.3)' : 'none',
-                      transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1)',
-                    }}
-                    className="w-full rounded-t-md"
-                  />
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      )}
 
       {/* Trend chip */}
       {(totalStars > 0 || hadLastWeek) && (

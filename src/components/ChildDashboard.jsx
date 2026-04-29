@@ -121,16 +121,11 @@ function MonthlySummary({ transactions }) {
   const shekelOut = monthTx
     .filter((tx) => tx.type === 'expense')
     .reduce((s, tx) => s + tx.amount, 0)
-  const penalties = monthTx
-    .filter((tx) => tx.type === 'penalty')
-    .reduce((s, tx) => s + tx.amount, 0)
-
   const tiles = [
     starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-600',   bg: 'bg-amber-50'   },
     prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-600',  bg: 'bg-purple-50'  },
     shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-600', bg: 'bg-emerald-50' },
     shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-600',    bg: 'bg-rose-50'    },
-    penalties > 0    && { icon: '⚡', label: 'קנסות',           value: `-${formatNumber(penalties)}⭐`,      color: 'text-red-600',     bg: 'bg-red-50'     },
   ].filter(Boolean)
 
   if (tiles.length === 0) return null
@@ -532,15 +527,6 @@ export default function ChildDashboard({ childId }) {
             <span className="text-sm">קניתי משהו</span>
           </button>
         </div>
-
-        {/* Penalty button — full width, subtle red, for parents only */}
-        <button
-          onClick={() => showModal('penalty', { childId })}
-          className="w-full h-12 flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-red-500 to-rose-600 active:scale-95 transition-all text-white shadow-md font-bold text-sm"
-        >
-          <span className="text-lg">⚡</span>
-          <span>קנס — הורד כוכב</span>
-        </button>
 
         <Button
           variant="ghost"

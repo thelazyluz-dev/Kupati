@@ -31,8 +31,7 @@ export default function PrizeManager() {
   // Count total redemptions per prize across all children
   const allTx = (children || []).flatMap((c) => getTransactions(c.id))
   function redemptionCount(prize) {
-    const desc = `${prize.emoji} ${prize.name}`
-    return allTx.filter((tx) => tx.type === 'prize_redeem' && tx.description === desc).length
+    return allTx.filter((tx) => tx.type === 'prize_redeem' && tx.description?.includes(prize.name)).length
   }
 
   const [editId, setEditId] = useState(null)   // null = not editing, 'new' = new prize
