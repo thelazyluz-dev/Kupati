@@ -98,7 +98,10 @@ export default function PrizeManager() {
               {(() => {
                 const count = redemptionCount(prize)
                 return count > 0 ? (
-                  <span className="text-xs font-black bg-purple-200 text-purple-700 rounded-full px-2 py-0.5 leading-none flex-shrink-0" title="פעמים שמומש">
+                  <span
+                    className="text-xs font-black bg-purple-200 text-purple-700 rounded-full px-2 py-0.5 leading-none flex-shrink-0"
+                    title="פעמים שמומש"
+                  >
                     ×{count}
                   </span>
                 ) : null

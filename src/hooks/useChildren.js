@@ -259,15 +259,6 @@ export function useChildren() {
     }))
   }
 
-  function applyPenalties(penaltiesMap) {
-    // penaltiesMap: { [childId]: { deductStars: number, newStreak: number } }
-    setChildren(prev => prev.map(c => {
-      const p = penaltiesMap[c.id]
-      if (!p) return c
-      return { ...c, starBalance: Math.max(0, c.starBalance - p.deductStars), missedDayStreak: p.newStreak }
-    }))
-  }
-
   return {
     children,
     addChild,
@@ -293,6 +284,5 @@ export function useChildren() {
     addMemory,
     deleteMemory,
     transferStars,
-    applyPenalties,
   }
 }

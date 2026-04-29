@@ -310,50 +310,97 @@ function GameOverScreen({ visible }) {
   )
 }
 
-function Yad2Screen({ visible }) {
+function Yad2Screen({ visible, onBuy }) {
   if (!visible) return null
-  const dur = '2.5s ease both'
+  const fingerDur = '3s ease both'
   return (
-    <div className="fixed inset-0 z-[240] bg-white flex flex-col pointer-events-none"
-         style={{ animation: 'loading-fade 2.5s ease forwards', direction: 'rtl' }}>
-      <div className="bg-[#c0392b] px-4 py-3 flex items-center gap-2 shadow">
-        <span className="text-white font-black text-2xl tracking-tight">יד2</span>
-        <span className="text-white/60 text-xs">נדל״ן • רכבים • כללי</span>
+    <div className="fixed inset-0 z-[240] bg-[#f5f5f5] flex flex-col"
+         style={{ direction: 'rtl' }}>
+
+      {/* Yad2 header */}
+      <div className="bg-[#c0392b] px-4 py-2.5 flex items-center gap-3 shadow-md flex-shrink-0">
+        <div className="flex items-center gap-1.5">
+          <span className="text-white font-black text-3xl tracking-tighter leading-none">יד2</span>
+          <span className="bg-white/20 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none">PRO</span>
+        </div>
+        <div className="flex-1 bg-white/15 rounded-lg px-3 py-1.5 flex items-center gap-2">
+          <span className="text-white/60 text-xs">🔍</span>
+          <span className="text-white/70 text-xs">חזיר פוצץ...</span>
+        </div>
+        <span className="text-white/60 text-xl">☰</span>
       </div>
-      <div className="flex-1 p-4 bg-gray-50">
-        <p className="text-xs text-gray-400 mb-2">נמצאו 1 תוצאות עבור "חזיר פוצץ"</p>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"
-             style={{ animation: `yad2-card-tap ${dur}` }}>
-          <div className="flex gap-3 mb-2">
-            <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center text-4xl flex-shrink-0">🐷</div>
-            <div className="flex-1">
-              <p className="font-bold text-gray-800 text-sm mb-0.5">חזיר קופה — כמעט כחדש</p>
-              <p className="text-[#c0392b] font-black text-xl leading-none">₪0</p>
-              <p className="text-gray-400 text-xs mt-0.5">תל אביב • פורסם לפני שנייה</p>
+
+      {/* Results bar */}
+      <div className="bg-white border-b border-gray-200 px-4 py-2 flex items-center justify-between flex-shrink-0">
+        <span className="text-xs text-gray-500">נמצא <span className="font-bold text-gray-800">1</span> מוצר</span>
+        <span className="text-xs text-[#c0392b] font-semibold">🔥 מחיר נמוך בלעדי!</span>
+      </div>
+
+      {/* Listing card */}
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden"
+             style={{ animation: 'yad2-card-tap 3s ease both' }}>
+          {/* Card top — image + info */}
+          <div className="flex gap-3 p-3 pb-2">
+            <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-rose-100 rounded-xl flex items-center justify-center text-5xl flex-shrink-0 border border-pink-200">🐷</div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-start justify-between gap-1 mb-1">
+                <p className="font-bold text-gray-900 text-sm leading-snug">חזיר קופה — כמעט כחדש</p>
+                <span className="bg-amber-100 text-amber-700 text-[10px] font-black px-1.5 py-0.5 rounded-md flex-shrink-0 leading-none">HOT</span>
+              </div>
+              <p className="text-[#c0392b] font-black text-2xl leading-none mb-1">₪0</p>
+              <p className="text-gray-400 text-xs">📍 תל אביב • לפני שנייה</p>
             </div>
           </div>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs text-gray-500 border-t border-gray-100 pt-2 mb-2">
-            <span>מצב: פוצץ לאחרונה</span>
+
+          {/* Details grid */}
+          <div className="grid grid-cols-2 gap-1 text-xs text-gray-500 border-t border-b border-gray-100 px-3 py-2 mx-0 bg-gray-50">
+            <span>💥 מצב: פוצץ לאחרונה</span>
             <span>👁 צפיות: 1</span>
             <span>🔄 בעלים קודמים: 1</span>
             <span>✅ מאומת ע״י ילד</span>
           </div>
-          <div className="bg-orange-50 border border-orange-200 rounded-lg p-2 text-xs">
+
+          {/* Seller note */}
+          <div className="mx-3 mt-2.5 bg-orange-50 border border-orange-200 rounded-xl p-2.5 text-xs mb-3">
             <p className="font-bold text-orange-700 mb-0.5">💬 הערות המוכר:</p>
-            <p className="text-gray-600">"חזיר שקט ונעים. פוצץ פעם אחת בלבד. לא נושך."</p>
+            <p className="text-gray-600 leading-relaxed">"חזיר שקט ונעים. פוצץ פעם אחת בלבד. לא נושך. מוכר עקב מעבר דירה."</p>
           </div>
-          <div className="mt-2 flex gap-2">
-            <div className="flex-1 bg-[#c0392b] text-white text-xs font-bold rounded-lg py-1.5 text-center"
-                 style={{ animation: `yad2-btn-press ${dur}` }}>📞 התקשר</div>
-            <div className="flex-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg py-1.5 text-center">💬 שלח הודעה</div>
+
+          {/* Contact buttons */}
+          <div className="flex gap-2 px-3 pb-3">
+            <div className="flex-1 bg-[#c0392b] text-white text-xs font-bold rounded-xl py-2 text-center"
+                 style={{ animation: 'yad2-btn-press 3s ease both' }}>📞 התקשר</div>
+            <div className="flex-1 bg-gray-100 text-gray-500 text-xs font-bold rounded-xl py-2 text-center">💬 הודעה</div>
           </div>
         </div>
       </div>
 
-      {/* Animated finger cursor */}
+      {/* ── BUY BUTTON SECTION ── */}
+      <div className="flex-shrink-0 px-4 pb-6 pt-2 bg-[#f5f5f5]">
+        {/* Arrows */}
+        <div className="flex justify-center gap-3 mb-2" style={{ animation: 'bounce-arrows 0.7s ease-in-out infinite alternate' }}>
+          <span className="text-green-500 text-2xl font-black">↓</span>
+          <span className="text-green-500 text-2xl font-black">↓</span>
+          <span className="text-green-500 text-2xl font-black">↓</span>
+        </div>
+        <button
+          type="button"
+          onClick={onBuy}
+          className="w-full py-4 rounded-2xl text-white font-black text-xl shadow-lg active:scale-95 transition-transform"
+          style={{
+            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+            animation: 'buy-btn-glow 1s ease-in-out infinite alternate',
+          }}
+        >
+          🛒 קנה את החזיר!
+        </button>
+      </div>
+
+      {/* Animated finger cursor — visual hint */}
       <span
-        className="absolute select-none leading-none"
-        style={{ fontSize: 30, animation: `finger-yad2 ${dur}`, zIndex: 10 }}
+        className="absolute select-none leading-none pointer-events-none"
+        style={{ fontSize: 30, animation: `finger-yad2 ${fingerDur}`, zIndex: 10 }}
       >👆</span>
     </div>
   )
@@ -464,9 +511,10 @@ export default function HomeScreen() {
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
   const [showSuccess,      setShowSuccess]      = useState(false)
-  const speechTimer  = useRef(null)
+  const speechTimer   = useRef(null)
   const pigWrapperRef = useRef(null)
   const pigCenterRef  = useRef({ x: '50%', y: '13%' })
+  const yad2BoughtRef = useRef(false)
 
   const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat || showSuccess
 
@@ -536,32 +584,31 @@ export default function HomeScreen() {
     // t=13.9s — ⚙️ מחפש חזיר (2.6s)
     setTimeout(() => { setShowLoading(true);   sounds.loadingPing()  }, 13900)
     setTimeout(() =>   setShowLoading(false),                         16500)
-    // t=16.6s — 🛒 יד2 (2.5s)
-    setTimeout(() => { setShowYad2(true);      sounds.yad2Sound()    }, 16600)
-    setTimeout(() =>   setShowYad2(false),                            19100)
-    // t=19.4s — countdown 3
-    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 19400)
-    // t=20.3s — countdown 2
-    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 20300)
-    // t=21.2s — countdown 1
-    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 21200)
-    // t=22.1s — pig רחף הביתה; rainbow border מתחיל
+    // t=16.6s — 🛒 יד2 — stays until user taps the buy button
+    setTimeout(() => {
+      yad2BoughtRef.current = false
+      setShowYad2(true)
+      sounds.yad2Sound()
+    }, 16600)
+  }
+
+  function startCountdownSequence() {
+    setTimeout(() => { setCountdown(3); sounds.pigCrack(1) }, 300)
+    setTimeout(() => { setCountdown(2); sounds.pigCrack(1) }, 1200)
+    setTimeout(() => { setCountdown(1); sounds.pigCrack(1) }, 2100)
     setTimeout(() => {
       setCountdown(null)
       setShowPigFloat(true)
       setShowRainbow(true)
       sounds.goal()
-    }, 22100)
-    // t=22.9s — כרטיסיות מתיישרות כשהחזיר מגיע
-    setTimeout(() => setPigPrank(false), 22900)
-    // t=25.0s — החזיר נגע בעיגול; orbit + toast הצלחה
+    }, 3000)
+    setTimeout(() => setPigPrank(false), 3800)
     setTimeout(() => {
       setShowPigFloat(false)
       setShowOrbit(true)
       setShowSuccess(true)
       sounds.pigFound()
-    }, 25000)
-    // t=27.8s — rainbow + toast נעלמים; איפוס מלא
+    }, 5900)
     setTimeout(() => {
       setShowRainbow(false)
       setShowSuccess(false)
@@ -569,7 +616,15 @@ export default function HomeScreen() {
       setIsMega(false)
       setShowOrbit(false)
       setPigClicks(0)
-    }, 27800)
+    }, 8700)
+  }
+
+  function handleYad2Buy() {
+    if (yad2BoughtRef.current) return
+    yad2BoughtRef.current = true
+    setShowYad2(false)
+    sounds.goal()
+    startCountdownSequence()
   }
 
   // Heat-sensitive values based on crack level
@@ -623,7 +678,7 @@ export default function HomeScreen() {
       <PhoneCallScreen visible={showPhoneCall} />
       <GameOverScreen visible={showGameOver} />
       <LoadingPig visible={showLoading} />
-      <Yad2Screen visible={showYad2} />
+      <Yad2Screen visible={showYad2} onBuy={handleYad2Buy} />
       <PigReturnFloat visible={showPigFloat} />
       <CelebrationRipple visible={showRainbow} cx={pigCenterRef.current.x} cy={pigCenterRef.current.y} />
       <PigSuccessToast visible={showSuccess} />
