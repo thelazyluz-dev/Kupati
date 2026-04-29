@@ -30,8 +30,8 @@ export function useChildren() {
   }
 
   // ── Goals ──────────────────────────────────────────────
-  function addGoal(childId, { name, emoji, targetAmount }) {
-    const goal = { id: generateId(), name, emoji, targetAmount }
+  function addGoal(childId, { name, emoji, targetAmount, goalImage }) {
+    const goal = { id: generateId(), name, emoji, targetAmount, goalImage: goalImage || null }
     setChildren((prev) =>
       prev.map((c) => {
         if (c.id !== childId) return c
