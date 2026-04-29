@@ -10,12 +10,17 @@ import { sounds } from '../../lib/sounds.js'
 const COMPLIMENTS = ['כל הכבוד!', 'מגיע לך!', 'אתה הכי טוב!', 'יפה מאוד!', 'ממש סבבה!']
 
 export default function RedeemPrizeModal() {
-  const { closeModal, modalData, settings, adjustStars, addTransaction } = useApp()
+  const { closeModal, modalData, settings, adjustStars, addTransaction, children, getTransactions } = useApp()
   const { childId, child } = modalData || {}
   const [confirming, setConfirming] = useState(null)
   const [success, setSuccess] = useState(null)
 
   const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
+
+  const allTx = (children || []).flatMap((c) => getTransactions(c.id))
+  function redemptionCount(prize) {
+    return allTx.filter((tx) => tx.type === 'prize_redeem' && tx.description?.includes(prize.name)).length
+  }
 
   // Auto-dismiss after 3 s
   useEffect(() => {
@@ -130,12 +135,17 @@ export default function RedeemPrizeModal() {
                       type="button"
                       onClick={() => handleSelect(prize)}
                       className={[
-                        'flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all',
+                        'relative flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all',
                         canAfford
                           ? 'bg-gradient-to-b from-purple-50 to-white border-purple-200 hover:border-purple-400 hover:shadow-md active:scale-95'
                           : 'bg-gray-50 border-gray-200 opacity-70',
                       ].join(' ')}
                     >
+                      {redemptionCount(prize) > 0 && (
+                        <span className="absolute top-2 left-2 text-[10px] font-black bg-purple-500 text-white rounded-full px-1.5 py-0.5 leading-none">
+                          ×{redemptionCount(prize)}
+                        </span>
+                      )}
                       <span className="text-4xl">{prize.emoji}</span>
                       <p className="font-bold text-gray-800 text-xs leading-tight">{prize.name}</p>
                       <div className={`text-xs font-bold px-2.5 py-1 rounded-full ${canAfford ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
