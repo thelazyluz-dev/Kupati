@@ -114,6 +114,16 @@ export default function SettingsPanel() {
   const { navigate, resetAllData, requirePin } = useApp()
   const [confirmReset, setConfirmReset] = useState(false)
 
+  async function handleForceUpdate() {
+    try {
+      const keys = await caches.keys()
+      await Promise.all(keys.map(k => caches.delete(k)))
+      const regs = await navigator.serviceWorker.getRegistrations()
+      await Promise.all(regs.map(r => r.unregister()))
+    } catch {}
+    window.location.reload(true)
+  }
+
   function handleExport() {
     const data = exportAll()
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
@@ -178,7 +188,7 @@ export default function SettingsPanel() {
           <SyncSettings />
         </SettingsSection>
 
-        <SettingsSection icon="💾" label="גיבוי נתונים" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
+        <SettingsSection icon="💾" label="גיבוי ועדכון" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
           <div className="space-y-3">
             <Button variant="secondary" fullWidth onClick={handleExport}>
               📥 ייצא JSON
@@ -186,6 +196,14 @@ export default function SettingsPanel() {
             <p className="text-xs text-gray-400 text-center">
               כל הנתונים יורדו כקובץ JSON לגיבוי
             </p>
+            <div className="border-t border-gray-100 pt-3">
+              <Button variant="ghost" fullWidth onClick={handleForceUpdate} className="border-blue-200 text-blue-600 hover:bg-blue-50">
+                🔄 נקה cache ועדכן אפליקציה
+              </Button>
+              <p className="text-xs text-gray-400 text-center mt-1.5">
+                אם האפליקציה לא מתעדכנת — לחץ כאן
+              </p>
+            </div>
           </div>
         </SettingsSection>
 
@@ -225,7 +243,7 @@ export default function SettingsPanel() {
         </section>
 
         <div className="text-center text-xs text-gray-400 pb-8">
-          <p>הארנק שלי 🐷</p>
+          <p>הארנק שלי 🐷 · גרסה 1.4</p>
           <p>נתונים מסונכרנים דרך Firebase</p>
         </div>
       </main>
