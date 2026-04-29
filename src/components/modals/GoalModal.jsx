@@ -7,21 +7,58 @@ import Button from '../ui/Button.jsx'
 import EmojiPicker from '../ui/EmojiPicker.jsx'
 
 function GoalForm({ initial, onSave, onCancel }) {
-  const [emoji, setEmoji] = useState(initial?.emoji || '🎯')
-  const [name, setName] = useState(initial?.name || '')
+  const [emoji,        setEmoji]        = useState(initial?.emoji || '🎯')
+  const [name,         setName]         = useState(initial?.name || '')
   const [targetAmount, setTargetAmount] = useState(
     initial?.targetAmount ? String(initial.targetAmount) : ''
   )
+  const [goalImage, setGoalImage] = useState(initial?.goalImage || null)
+
   const target = parseFloat(targetAmount) || 0
+
+  function handleImageChange(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => setGoalImage(ev.target.result)
+    reader.readAsDataURL(file)
+  }
 
   function handleSubmit(e) {
     e.preventDefault()
     if (!name.trim() || target <= 0) return
-    onSave({ emoji, name: name.trim(), targetAmount: target })
+    onSave({ emoji, name: name.trim(), targetAmount: target, goalImage: goalImage || null })
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4 border border-indigo-100 rounded-2xl p-4 bg-indigo-50">
+
+      {/* Image upload */}
+      <div>
+        <label className="text-sm font-semibold text-gray-600 block mb-1.5">תמונה (אופציונלי)</label>
+        <label className="flex items-center gap-3 cursor-pointer group">
+          <div className={`w-16 h-16 rounded-2xl overflow-hidden flex-shrink-0 border-2 border-dashed transition-colors ${goalImage ? 'border-indigo-300' : 'border-gray-300 group-hover:border-indigo-400 bg-gray-50'}`}>
+            {goalImage
+              ? <img src={goalImage} alt="" className="w-full h-full object-cover" />
+              : <div className="w-full h-full flex items-center justify-center text-2xl text-gray-300 group-hover:text-indigo-400 transition-colors">📷</div>
+            }
+          </div>
+          <div className="flex-1">
+            <p className="text-sm text-indigo-600 font-semibold group-hover:text-indigo-700">
+              {goalImage ? 'החלף תמונה' : 'הוסף תמונה של המטרה'}
+            </p>
+            <p className="text-xs text-gray-400 mt-0.5">מהגלריה או מצלמה</p>
+          </div>
+          <input type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
+        </label>
+        {goalImage && (
+          <button type="button" onClick={() => setGoalImage(null)}
+            className="mt-1.5 text-xs text-red-400 hover:text-red-600">
+            ✕ הסר תמונה
+          </button>
+        )}
+      </div>
+
       <EmojiPicker label="אימוג׳י" options={GOAL_EMOJIS} value={emoji} onChange={setEmoji} />
       <div>
         <label className="text-sm font-semibold text-gray-600 block mb-1">שם המטרה</label>
@@ -121,7 +158,10 @@ export default function GoalModal() {
               className={`rounded-2xl p-3 border-2 ${reached ? 'border-amber-300 bg-amber-50' : 'border-gray-100 bg-white'}`}
             >
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xl">{goal.emoji}</span>
+                {goal.goalImage
+                  ? <img src={goal.goalImage} alt={goal.name} className="w-10 h-10 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+                  : <span className="text-xl">{goal.emoji}</span>
+                }
                 <span className="font-bold text-gray-800 flex-1">{goal.name}</span>
                 <span className="text-sm text-gray-500" dir="ltr">{formatNumber(goal.targetAmount)}₪</span>
               </div>

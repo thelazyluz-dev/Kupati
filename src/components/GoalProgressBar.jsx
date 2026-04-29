@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { formatNumber } from '../lib/utils.js'
 
-export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, totalValue, choresNeeded, onRedeem }) {
+export default function GoalProgressBar({ progress, goalName, targetAmount, goalEmoji, goalImage, totalValue, choresNeeded, onRedeem }) {
   const pct     = Math.min(1, progress) * 100
   const reached = progress >= 1
   const [confirm, setConfirm] = useState(false)
@@ -27,8 +27,11 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
           {' / '}
           <span>{formatNumber(targetAmount)}₪</span>
         </div>
-        <div className="flex items-center gap-1">
-          {goalEmoji && <span className="text-xl">{goalEmoji}</span>}
+        <div className="flex items-center gap-2">
+          {goalImage
+            ? <img src={goalImage} alt={goalName} className="w-9 h-9 rounded-xl object-cover flex-shrink-0 shadow-sm" />
+            : goalEmoji && <span className="text-xl">{goalEmoji}</span>
+          }
           <span className="font-bold text-gray-700 text-sm">{goalName}</span>
         </div>
       </div>

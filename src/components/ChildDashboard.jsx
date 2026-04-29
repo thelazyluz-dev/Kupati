@@ -424,6 +424,7 @@ export default function ChildDashboard({ childId }) {
                 goalName={goal.name}
                 targetAmount={goal.targetAmount}
                 goalEmoji={goal.emoji}
+                goalImage={goal.goalImage}
                 totalValue={totalValue}
                 onRedeem={() => handleRedeem(goal)}
               />
