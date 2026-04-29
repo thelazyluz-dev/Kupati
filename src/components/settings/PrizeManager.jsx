@@ -25,8 +25,15 @@ const PRIZE_EMOJIS = [
 ]
 
 export default function PrizeManager() {
-  const { settings, updateSettings } = useApp()
+  const { settings, updateSettings, children, getTransactions } = useApp()
   const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
+
+  // Count total redemptions per prize across all children
+  const allTx = (children || []).flatMap((c) => getTransactions(c.id))
+  function redemptionCount(prize) {
+    const desc = `${prize.emoji} ${prize.name}`
+    return allTx.filter((tx) => tx.type === 'prize_redeem' && tx.description === desc).length
+  }
 
   const [editId, setEditId] = useState(null)   // null = not editing, 'new' = new prize
   const [form, setForm] = useState({ emoji: '🎁', name: '', starCost: '' })
@@ -88,6 +95,14 @@ export default function PrizeManager() {
                 <p className="font-semibold text-gray-800 text-sm truncate">{prize.name}</p>
                 <p className="text-xs text-purple-600 font-bold">{prize.starCost}⭐</p>
               </div>
+              {(() => {
+                const count = redemptionCount(prize)
+                return count > 0 ? (
+                  <span className="text-xs font-black bg-purple-200 text-purple-700 rounded-full px-2 py-0.5 leading-none flex-shrink-0" title="פעמים שמומש">
+                    ×{count}
+                  </span>
+                ) : null
+              })()}
               <button type="button" onClick={() => startEdit(prize)}
                 className="text-gray-400 hover:text-gray-600 text-sm px-2 py-1 active:scale-90">✏️</button>
               <button type="button" onClick={() => deletePrize(prize.id)}
