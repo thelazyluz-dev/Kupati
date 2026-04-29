@@ -338,6 +338,35 @@
     100% { transform: translateY(20px);  opacity: 0;   }
   }
 
+  @keyframes finger-yad2 {
+    0%   { left: 50%; top: 82%; transform: translateX(-50%) scale(1);    opacity: 0; }
+    8%   { left: 50%; top: 82%; transform: translateX(-50%) scale(1);    opacity: 1; }
+    30%  { left: 84%; top: 17%; transform: translateX(-50%) scale(1);    opacity: 1; }
+    40%  { left: 84%; top: 17%; transform: translateX(-50%) scale(0.7);  opacity: 1; }
+    50%  { left: 84%; top: 17%; transform: translateX(-50%) scale(1);    opacity: 1; }
+    62%  { left: 72%; top: 57%; transform: translateX(-50%) scale(1);    opacity: 1; }
+    72%  { left: 72%; top: 57%; transform: translateX(-50%) scale(0.7);  opacity: 1; }
+    80%  { left: 72%; top: 57%; transform: translateX(-50%) scale(1);    opacity: 1; }
+    90%  { left: 72%; top: 57%; transform: translateX(-50%) scale(1);    opacity: 0.4; }
+    100% { left: 72%; top: 57%; transform: translateX(-50%) scale(1);    opacity: 0; }
+  }
+
+  @keyframes yad2-card-tap {
+    0%   { box-shadow: 0 1px 3px rgba(0,0,0,0.10); border-color: #e5e7eb; }
+    35%  { box-shadow: 0 1px 3px rgba(0,0,0,0.10); border-color: #e5e7eb; }
+    42%  { box-shadow: 0 0 0 3px rgba(192,57,43,0.28); border-color: #c0392b; }
+    52%  { box-shadow: 0 1px 3px rgba(0,0,0,0.10); border-color: #e5e7eb; }
+    100% { box-shadow: 0 1px 3px rgba(0,0,0,0.10); border-color: #e5e7eb; }
+  }
+
+  @keyframes yad2-btn-press {
+    0%   { transform: scale(1); filter: brightness(1); }
+    68%  { transform: scale(1); filter: brightness(1); }
+    74%  { transform: scale(0.92); filter: brightness(1.35); }
+    82%  { transform: scale(1);    filter: brightness(1); }
+    100% { transform: scale(1);    filter: brightness(1); }
+  }
+
   /* Shimmer sweep on card hover */
   .card-shimmer {
     position: relative;

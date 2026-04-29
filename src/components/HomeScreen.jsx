@@ -312,6 +312,7 @@ function GameOverScreen({ visible }) {
 
 function Yad2Screen({ visible }) {
   if (!visible) return null
+  const dur = '2.5s ease both'
   return (
     <div className="fixed inset-0 z-[240] bg-white flex flex-col pointer-events-none"
          style={{ animation: 'loading-fade 2.5s ease forwards', direction: 'rtl' }}>
@@ -321,7 +322,8 @@ function Yad2Screen({ visible }) {
       </div>
       <div className="flex-1 p-4 bg-gray-50">
         <p className="text-xs text-gray-400 mb-2">נמצאו 1 תוצאות עבור "חזיר פוצץ"</p>
-        <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-3 shadow-sm"
+             style={{ animation: `yad2-card-tap ${dur}` }}>
           <div className="flex gap-3 mb-2">
             <div className="w-16 h-16 bg-pink-100 rounded-lg flex items-center justify-center text-4xl flex-shrink-0">🐷</div>
             <div className="flex-1">
@@ -341,11 +343,18 @@ function Yad2Screen({ visible }) {
             <p className="text-gray-600">"חזיר שקט ונעים. פוצץ פעם אחת בלבד. לא נושך."</p>
           </div>
           <div className="mt-2 flex gap-2">
-            <div className="flex-1 bg-[#c0392b] text-white text-xs font-bold rounded-lg py-1.5 text-center">📞 התקשר</div>
+            <div className="flex-1 bg-[#c0392b] text-white text-xs font-bold rounded-lg py-1.5 text-center"
+                 style={{ animation: `yad2-btn-press ${dur}` }}>📞 התקשר</div>
             <div className="flex-1 bg-gray-100 text-gray-600 text-xs font-bold rounded-lg py-1.5 text-center">💬 שלח הודעה</div>
           </div>
         </div>
       </div>
+
+      {/* Animated finger cursor */}
+      <span
+        className="absolute select-none leading-none"
+        style={{ fontSize: 30, animation: `finger-yad2 ${dur}`, zIndex: 10 }}
+      >👆</span>
     </div>
   )
 }
