@@ -251,6 +251,23 @@ export function useChildren() {
     )
   }
 
+  function transferStars(fromId, toId, stars, price) {
+    setChildren(prev => prev.map(c => {
+      if (c.id === fromId) return { ...c, starBalance: Math.max(0, c.starBalance - stars), shekelBalance: c.shekelBalance + price }
+      if (c.id === toId)   return { ...c, starBalance: c.starBalance + stars, shekelBalance: Math.max(0, c.shekelBalance - price) }
+      return c
+    }))
+  }
+
+  function applyPenalties(penaltiesMap) {
+    // penaltiesMap: { [childId]: { deductStars: number, newStreak: number } }
+    setChildren(prev => prev.map(c => {
+      const p = penaltiesMap[c.id]
+      if (!p) return c
+      return { ...c, starBalance: Math.max(0, c.starBalance - p.deductStars), missedDayStreak: p.newStreak }
+    }))
+  }
+
   return {
     children,
     addChild,
@@ -275,5 +292,7 @@ export function useChildren() {
     repayLoan,
     addMemory,
     deleteMemory,
+    transferStars,
+    applyPenalties,
   }
 }

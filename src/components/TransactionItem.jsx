@@ -13,6 +13,10 @@ const TYPE_STYLE = {
   savings_close:  { icon: '💰', label: 'חסכון הבשיל',  bg: 'bg-teal-50',    border: 'border-r-4 border-teal-400',    amount: 'text-teal-600'     },
   savings_early:  { icon: '⚠️', label: 'פדיון מוקדם',  bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'   },
   penalty:        { icon: '⚡', label: 'קנס',            bg: 'bg-red-50',     border: 'border-r-4 border-red-500',     amount: 'text-red-600'      },
+  stars_transfer_out: { icon: '↗️', label: 'כוכבים נשלחו',   bg: 'bg-indigo-50',  border: 'border-r-4 border-indigo-400',  amount: 'text-indigo-600'  },
+  stars_transfer_in:  { icon: '↙️', label: 'כוכבים התקבלו',  bg: 'bg-indigo-50',  border: 'border-r-4 border-indigo-400',  amount: 'text-indigo-600'  },
+  stars_sold_out:     { icon: '🤝', label: 'מכירת כוכבים',   bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'  },
+  stars_bought_in:    { icon: '🤝', label: 'קניית כוכבים',   bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'  },
   wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   loan:           { icon: '💳', label: 'הלוואה',        bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
@@ -26,7 +30,7 @@ export default function TransactionItem({ transaction, childId, selectMode = fal
   const { showModal } = useApp()
   const { type, amount, currency, description, note, timestamp } = transaction
   const style = TYPE_STYLE[type] ?? FALLBACK
-  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty' || type === 'wheel_spin' || type === 'loan_repay'
+  const isDeduct = type === 'expense' || type === 'convert_out' || type === 'prize_redeem' || type === 'savings_open' || type === 'penalty' || type === 'wheel_spin' || type === 'loan_repay' || type === 'stars_transfer_out' || type === 'stars_sold_out'
   const currencySymbol = currency === 'stars' ? '⭐' : '₪'
   const sign = isDeduct ? '-' : '+'
 

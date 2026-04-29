@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { useChildren } from '../hooks/useChildren.js'
 import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
@@ -23,6 +23,8 @@ export function AppProvider({ children: reactChildren }) {
   const [pendingBadge,    setPendingBadge]    = useState(null)
   const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
   const [coinInFlight,    setCoinInFlight]    = useState(null) // childId while coin is animating
+
+  const penaltyDoneRef = useRef(false)
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -162,6 +164,84 @@ export function AppProvider({ children: reactChildren }) {
     }
   }
 
+  function doTransferStars(fromId, toId, stars, price) {
+    const fromChild = childrenApi.children.find(c => c.id === fromId)
+    const toChild   = childrenApi.children.find(c => c.id === toId)
+    if (!fromChild || !toChild) return
+    childrenApi.transferStars(fromId, toId, stars, price)
+    if (price > 0) {
+      addTransaction(fromId, { type: 'stars_sold_out',   amount: stars, currency: 'stars', description: `🤝 מכרת ${stars}⭐ ל${toChild.name} ← +${price}₪` })
+      addTransaction(toId,   { type: 'stars_bought_in',  amount: stars, currency: 'stars', description: `🤝 קנית ${stars}⭐ מ${fromChild.name} ← -${price}₪` })
+    } else {
+      addTransaction(fromId, { type: 'stars_transfer_out', amount: stars, currency: 'stars', description: `🎁 שלחת ${stars}⭐ ל${toChild.name}` })
+      addTransaction(toId,   { type: 'stars_transfer_in',  amount: stars, currency: 'stars', description: `🎁 קיבלת ${stars}⭐ מ${fromChild.name}` })
+    }
+  }
+
+  useEffect(() => {
+    if (penaltyDoneRef.current) return
+    penaltyDoneRef.current = true
+    const KEY = 'kupati_penalty_date'
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const lastStr  = localStorage.getItem(KEY)
+    if (!lastStr) { localStorage.setItem(KEY, todayStr); return }
+    if (lastStr >= todayStr) return
+
+    // Collect missed days (day after lastStr .. yesterday)
+    const days = []
+    const cursor = new Date(lastStr + 'T00:00:00.000')
+    cursor.setDate(cursor.getDate() + 1)
+    const todayDate = new Date(todayStr + 'T00:00:00.000')
+    while (cursor < todayDate) {
+      days.push(new Date(cursor))
+      cursor.setDate(cursor.getDate() + 1)
+    }
+    if (days.length === 0) { localStorage.setItem(KEY, todayStr); return }
+
+    // Accumulate penalties locally to avoid stale-closure issues
+    const acc = {}
+    childrenApi.children.forEach(c => {
+      acc[c.id] = { streak: c.missedDayStreak || 0, deductStars: 0, txs: [], remaining: c.starBalance }
+    })
+
+    days.forEach(dayDate => {
+      const dayStart = dayDate.getTime()
+      const dayEnd   = dayStart + 86400000
+      Object.entries(acc).forEach(([childId, a]) => {
+        const txs = transactionsApi.getTransactions(childId)
+        const didChore = txs.some(tx => tx.type === 'chore' && tx.timestamp >= dayStart && tx.timestamp < dayEnd)
+        if (didChore) {
+          a.streak = 0
+        } else {
+          a.streak++
+          const penalty = a.streak * 5
+          const actual  = Math.min(penalty, a.remaining)
+          if (actual > 0) {
+            a.deductStars += actual
+            a.remaining   -= actual
+            a.txs.push({ type: 'penalty', amount: actual, currency: 'stars', description: `⚡ קנס — יום ${a.streak} ללא מטלה` })
+          }
+        }
+      })
+    })
+
+    // Apply star deductions + streak updates
+    const penaltiesMap = {}
+    Object.entries(acc).forEach(([childId, a]) => {
+      const child     = childrenApi.children.find(c => c.id === childId)
+      const prevStreak = child?.missedDayStreak || 0
+      if (a.deductStars > 0 || a.streak !== prevStreak) {
+        penaltiesMap[childId] = { deductStars: a.deductStars, newStreak: a.streak }
+      }
+      a.txs.forEach(tx => addTransaction(childId, tx))
+    })
+    if (Object.keys(penaltiesMap).length > 0) {
+      childrenApi.applyPenalties(penaltiesMap)
+    }
+    localStorage.setItem(KEY, todayStr)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
   // ── Loan wrappers (update child + log transaction) ────────────────
   function loanMoney(childId, { amount, description }) {
     childrenApi.addLoan(childId, { amount, description })
@@ -195,6 +275,7 @@ export function AppProvider({ children: reactChildren }) {
     deleteTransaction, // override with balance + freeSpin sync
     startSavings,
     finishSavings,
+    doTransferStars,
     loanMoney,
     repayLoan,        // override childrenApi.repayLoan with tx-logging version
     requirePin,

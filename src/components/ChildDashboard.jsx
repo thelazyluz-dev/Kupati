@@ -559,6 +559,17 @@ export default function ChildDashboard({ childId }) {
           🏦 חסכון
         </Button>
 
+        {children.length > 1 && (
+          <Button
+            variant="ghost"
+            fullWidth
+            onClick={() => showModal('transferStars', { childId, child })}
+            className="active:scale-95 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+          >
+            🔄 העבר/מכור כוכבים לאח
+          </Button>
+        )}
+
         <Button
           variant="ghost"
           fullWidth
