@@ -158,7 +158,7 @@ function ShekelIconCloud({ balance }) {
 
 export default function ChildDashboard({ childId }) {
   const { children, navigate, showModal, settings, getTransactions,
-          adjustShekels, deleteGoal, addTransaction, finishSavings,
+          adjustShekels, adjustStars, deleteGoal, addTransaction, finishSavings,
           addMoney, updateChild,
           pendingBadge, clearPendingBadge,
           pendingFreeSpin, clearPendingFreeSpin } = useApp()
@@ -211,6 +211,58 @@ export default function ChildDashboard({ childId }) {
       })
       updateChild(childId, { allowance: { ...child.allowance, lastPaid: Date.now() } })
       setHint(`💰 קצבה ${period === 'monthly' ? 'חודשית' : 'שבועית'} שולמה!`)
+    }
+  }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto daily-penalty: -5⭐ first missed day, -10⭐ each subsequent consecutive day
+  useEffect(() => {
+    if (!child) return
+
+    const todayStr = new Date().toISOString().slice(0, 10)
+    const pc = child.penaltyCheck || { lastDate: todayStr, streak: 0 }
+
+    // Already checked today — nothing to do
+    if (pc.lastDate >= todayStr) return
+
+    // Build list of unchecked days: from lastDate (exclusive) to yesterday (inclusive)
+    const txList = getTransactions(childId)
+    const days = []
+    const cursor = new Date(pc.lastDate + 'T00:00:00')
+    cursor.setDate(cursor.getDate() + 1)
+    const todayMidnight = new Date(todayStr + 'T00:00:00')
+    while (cursor < todayMidnight) {
+      days.push(new Date(cursor))
+      cursor.setDate(cursor.getDate() + 1)
+    }
+
+    let streak = pc.streak || 0
+    let penaltiesApplied = 0
+
+    days.forEach(dayDate => {
+      const dayStart = dayDate.getTime()
+      const dayEnd   = dayStart + 86400000
+      const hadChore = txList.some(t => t.type === 'chore' && t.timestamp >= dayStart && t.timestamp < dayEnd)
+
+      if (hadChore) {
+        streak = 0
+      } else {
+        streak++
+        const amount = streak === 1 ? 5 : 10
+        adjustStars(childId, -amount)
+        addTransaction(childId, {
+          type: 'penalty',
+          amount,
+          currency: 'stars',
+          description: `⚡ קנס יומי — לא בוצעה מטלה (${dayDate.toISOString().slice(0, 10)})`,
+          timestamp: dayEnd - 1000, // end of that day
+        })
+        penaltiesApplied++
+      }
+    })
+
+    updateChild(childId, { penaltyCheck: { lastDate: todayStr, streak } })
+    if (penaltiesApplied > 0) {
+      setHint(`⚡ ${penaltiesApplied > 1 ? `${penaltiesApplied} קנסות` : 'קנס'} יומי הופחת!`)
     }
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
