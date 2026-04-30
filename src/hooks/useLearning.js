@@ -31,7 +31,10 @@ function load() {
 
 function resolveChild(all, childId) {
   const cs = all[childId]
-  return (!cs || cs.date !== todayStr()) ? freshChildState() : cs
+  const fresh = freshChildState()
+  if (!cs || cs.date !== todayStr()) return fresh
+  // Merge so cached data missing new subjects gets emptySession() defaults
+  return { ...fresh, ...cs }
 }
 
 export function useLearning() {
