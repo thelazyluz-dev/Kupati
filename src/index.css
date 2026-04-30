@@ -377,6 +377,19 @@
     100% { transform: scale(1);    filter: brightness(1); }
   }
 
+  @keyframes jumpscare-flash {
+    0%   { background: #dc2626; }
+    25%  { background: #1c1c1c; }
+    100% { background: #000000; }
+  }
+
+  @keyframes jumpscare-zoom {
+    0%   { transform: scale(0.1) rotate(-15deg); opacity: 0; }
+    18%  { transform: scale(1.4) rotate(5deg);  opacity: 1; }
+    35%  { transform: scale(0.95) rotate(-2deg); }
+    100% { transform: scale(1) rotate(0deg); }
+  }
+
   /* Shimmer sweep on card hover */
   .card-shimmer {
     position: relative;

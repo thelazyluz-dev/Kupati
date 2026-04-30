@@ -37,7 +37,7 @@ function Dots({ total, current, wrong = [] }) {
 
 // ── Answer button ──────────────────────────────────────────────
 function AnswerBtn({ text, state, onClick, isHebrew }) {
-  const base = 'w-full py-4 px-3 rounded-2xl font-bold text-base transition-all duration-200 active:scale-95 border-2 text-center leading-snug'
+  const base = 'w-full py-5 px-3 rounded-2xl font-bold text-xl transition-all duration-200 active:scale-95 border-2 text-center leading-snug'
   const styles = {
     idle:    'bg-white border-gray-200 text-gray-800 hover:border-gray-300 hover:shadow-sm',
     correct: 'bg-green-100 border-green-400 text-green-800 scale-100',
@@ -49,7 +49,8 @@ function AnswerBtn({ text, state, onClick, isHebrew }) {
       type="button"
       onClick={state === 'idle' ? onClick : undefined}
       className={`${base} ${styles[state] || styles.idle}`}
-      style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif", fontSize: '1rem' } : {}}
+      dir={isHebrew ? 'rtl' : 'ltr'}
+      style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif", fontSize: '1.2rem' } : { fontSize: '1.35rem' }}
     >
       {text}
     </button>
@@ -129,7 +130,8 @@ function Session({ subject, session, onAnswer, onBack }) {
     if (reveal) return
     const correct = idx === currentQ.correctIndex
     setReveal({ chosen: idx, correct })
-    if (correct) sounds.star?.() ?? sounds.coin?.()
+    if (correct) sounds.correctAnswer?.()
+    else sounds.wrongAnswer?.()
     timerRef.current = setTimeout(() => {
       setReveal(null)
       onAnswer(correct)
@@ -165,8 +167,9 @@ function Session({ subject, session, onAnswer, onBack }) {
       <div className="flex-1 bg-white rounded-t-[2rem] px-5 pt-6 pb-4 flex flex-col gap-4 overflow-y-auto">
         <div className="text-center mb-2">
           <p
-            className="text-2xl font-black text-gray-800 leading-snug whitespace-pre-line"
-            style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif" } : {}}
+            className="text-3xl font-black text-gray-800 leading-snug whitespace-pre-line"
+            dir={isHebrew ? 'rtl' : 'ltr'}
+            style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif" } : { fontSize: '2rem' }}
           >
             {currentQ.question}
           </p>

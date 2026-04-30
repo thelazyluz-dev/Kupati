@@ -202,6 +202,30 @@ export const sounds = {
     beep({ freq: 2093, type: 'triangle', duration: 0.09, delay: 0.30, gain: 0.15 })
   },
 
+  // Correct answer — gentle ascending chime (pleasant, not startling)
+  correctAnswer: () => {
+    haptic([20, 10, 30])
+    beep({ freq: 880,  type: 'triangle', duration: 0.14, gain: 0.22 })
+    beep({ freq: 1108, type: 'triangle', duration: 0.18, delay: 0.11, gain: 0.20 })
+    beep({ freq: 1320, type: 'triangle', duration: 0.32, delay: 0.24, gain: 0.18 })
+  },
+
+  // Wrong answer — soft low tone
+  wrongAnswer: () => {
+    haptic([40])
+    beep({ freq: 260, type: 'sine', duration: 0.30, gain: 0.16 })
+    beep({ freq: 220, type: 'sine', duration: 0.22, delay: 0.18, gain: 0.12 })
+  },
+
+  // Jumpscare — boom + screech
+  jumpscare: () => {
+    haptic([200, 50, 200])
+    beep({ freq: 80,   type: 'sawtooth', duration: 0.5,  gain: 0.55 })
+    beep({ freq: 2000, type: 'sawtooth', duration: 0.25, gain: 0.38, delay: 0.04 })
+    beep({ freq: 1600, type: 'sawtooth', duration: 0.28, gain: 0.30, delay: 0.10 })
+    beep({ freq: 440,  type: 'triangle', duration: 0.5,  gain: 0.18, delay: 0.30 })
+  },
+
   // Crunch per crack level (gets lower + louder each hit)
   pigCrack: (level) => {
     const freq = 280 - level * 28

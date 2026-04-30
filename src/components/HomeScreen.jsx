@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { registerCoinTarget } from '../lib/animations.js'
 import { sounds } from '../lib/sounds.js'
@@ -266,46 +266,101 @@ function LoadingPig({ visible }) {
   )
 }
 
-function PhoneCallScreen({ visible }) {
+function PhoneCallScreen({ visible, onAnswer, onHangup }) {
   if (!visible) return null
   return (
-    <div className="fixed inset-0 z-[244] bg-gray-900 flex flex-col items-center justify-center pointer-events-none"
-         style={{ animation: 'loading-fade 2.5s ease forwards' }}>
+    <div className="fixed inset-0 z-[244] bg-gray-900 flex flex-col items-center justify-center">
       <div className="text-center">
         <div className="text-7xl mb-4" style={{ animation: 'pig-shake 0.6s ease-in-out infinite' }}>🐷</div>
         <p className="text-gray-400 text-sm mb-1 tracking-widest">שיחה נכנסת</p>
         <p className="text-white font-black text-2xl mb-1">החזיר</p>
         <p className="text-gray-500 text-xs mb-8 font-mono">+972-PIG-OINK</p>
         <div className="flex gap-10 justify-center">
-          <div className="flex flex-col items-center gap-2">
+          <button type="button" onClick={onHangup} className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
             <div className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center text-3xl shadow-lg">📵</div>
-            <span className="text-red-400 text-xs font-semibold">דחה</span>
-          </div>
-          <div className="flex flex-col items-center gap-2">
+            <span className="text-red-400 text-xs font-semibold">ניתוק</span>
+          </button>
+          <button type="button" onClick={onAnswer} className="flex flex-col items-center gap-2 active:scale-90 transition-transform">
             <div className="w-16 h-16 rounded-full bg-green-500 flex items-center justify-center text-3xl shadow-lg" style={{ animation: 'pig-shake 0.8s ease-in-out infinite' }}>📞</div>
             <span className="text-green-400 text-xs font-semibold">ענה</span>
-          </div>
+          </button>
         </div>
       </div>
     </div>
   )
 }
 
-function GameOverScreen({ visible }) {
+function JumpscareScreen({ visible }) {
   if (!visible) return null
   return (
-    <div className="fixed inset-0 z-[242] bg-black flex items-center justify-center pointer-events-none"
-         style={{ animation: 'loading-fade 2.2s ease forwards' }}>
-      <div className="text-center font-mono">
-        <p className="text-red-500 font-black tracking-[0.3em] text-xl mb-4 animate-pulse">GAME OVER</p>
-        <div className="text-7xl mb-4">💀</div>
-        <p className="text-white text-5xl font-black mb-2">0</p>
-        <p className="text-gray-600 text-sm mb-2">SCORE: 0000 &nbsp;|&nbsp; LIVES: ♡♡♡</p>
-        <p className="text-gray-700 text-xs mb-6">HIGH SCORE: הילד שלך</p>
-        <p className="text-yellow-400 text-sm font-bold" style={{ animation: 'pig-flash 0.9s ease-in-out infinite' }}>
-          ✦ INSERT COIN TO CONTINUE ✦
-        </p>
+    <div className="fixed inset-0 z-[246] flex items-center justify-center pointer-events-none"
+         style={{ animation: 'jumpscare-flash 1.5s ease forwards' }}>
+      <div className="text-center" style={{ animation: 'jumpscare-zoom 0.35s ease-out forwards' }}>
+        <div className="text-[9rem] leading-none select-none">🐷</div>
+        <p className="text-white font-black text-5xl tracking-widest mt-2"
+           style={{ textShadow: '0 0 30px #dc2626, 0 0 60px #dc2626' }}>BOO!</p>
       </div>
+    </div>
+  )
+}
+
+function GameOverScreen({ visible, onDone }) {
+  const [phase, setPhase] = useState('game')
+  const [countdown, setCountdown] = useState(3)
+
+  useEffect(() => {
+    if (!visible) { setPhase('game'); setCountdown(3); return }
+    if (phase !== 'game') return
+    const t1 = setTimeout(() => setCountdown(2), 750)
+    const t2 = setTimeout(() => setCountdown(1), 1500)
+    const t3 = setTimeout(() => { setPhase('dead'); sounds.gameOverSound() }, 2250)
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
+  }, [visible, phase])
+
+  useEffect(() => {
+    if (!visible || phase !== 'dead') return
+    const t = setTimeout(onDone, 2400)
+    return () => clearTimeout(t)
+  }, [visible, phase, onDone])
+
+  if (!visible) return null
+
+  if (phase === 'dead') {
+    return (
+      <div className="fixed inset-0 z-[242] bg-black flex items-center justify-center">
+        <div className="text-center font-mono">
+          <p className="text-red-500 font-black tracking-[0.3em] text-2xl mb-4 animate-pulse">GAME OVER</p>
+          <div className="text-7xl mb-4">💀</div>
+          <p className="text-white text-5xl font-black mb-2">0</p>
+          <p className="text-gray-600 text-sm mb-2">SCORE: 0000 &nbsp;|&nbsp; LIVES: ♡♡♡</p>
+          <p className="text-gray-700 text-xs mb-6">HIGH SCORE: הילד שלך</p>
+          <p className="text-yellow-400 text-sm font-bold" style={{ animation: 'pig-flash 0.9s ease-in-out infinite' }}>
+            ✦ INSERT COIN TO CONTINUE ✦
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-[242] bg-gray-950 flex flex-col items-center justify-center gap-5">
+      <p className="text-yellow-300 font-black text-2xl">🎮 מיני-גיים!</p>
+      <p className="text-gray-400 text-sm">לחץ לנצח לפני שנגמר הזמן!</p>
+      <button
+        type="button"
+        onClick={() => { setPhase('dead'); sounds.gameOverSound() }}
+        className="w-40 h-40 rounded-full text-white font-black text-5xl shadow-2xl active:scale-90 transition-transform border-4 border-white/20"
+        style={{
+          background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+          animation: 'buy-btn-glow 0.45s ease-in-out infinite alternate',
+        }}
+      >
+        🏆
+      </button>
+      <div className={`text-6xl font-black transition-colors duration-300 ${
+        countdown === 3 ? 'text-green-400' : countdown === 2 ? 'text-amber-400' : 'text-red-500'
+      }`}>{countdown}</div>
+      <p className="text-gray-600 text-xs font-mono">לחץ על הכפתור!</p>
     </div>
   )
 }
@@ -507,6 +562,7 @@ export default function HomeScreen() {
   const [showGameOver,     setShowGameOver]     = useState(false)
   const [showLoading,      setShowLoading]      = useState(false)
   const [showYad2,         setShowYad2]         = useState(false)
+  const [showJumpscare,    setShowJumpscare]    = useState(false)
   const [showOrbit,        setShowOrbit]        = useState(false)
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
@@ -516,7 +572,7 @@ export default function HomeScreen() {
   const pigCenterRef  = useRef({ x: '50%', y: '13%' })
   const yad2BoughtRef = useRef(false)
 
-  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showGameOver || showLoading || showYad2 || showPigFloat || showSuccess
+  const isBursting = showCoins || showStars || partyMode || showPigRain || countdown !== null || showAchiev || showMegaFlash || showError || showNews || showPhoneCall || showJumpscare || showGameOver || showLoading || showYad2 || showPigFloat || showSuccess
 
   function handlePigClick() {
     if (isBursting) return
@@ -570,26 +626,43 @@ export default function HomeScreen() {
     // t=3.2s  — pig rain ends
     setTimeout(() => setShowPigRain(false), 3200)
     // t=3.5s  — 🔴 שגיאה קריטית (2.5s)
-    setTimeout(() => { setShowError(true);     sounds.errorAlarm()   }, 3500)
-    setTimeout(() =>   setShowError(false),                            6000)
-    // t=6.1s  — 📺 חדשות דחופות (2.6s)
-    setTimeout(() => { setShowNews(true);      sounds.newsJingle()   }, 6100)
-    setTimeout(() =>   setShowNews(false),                             8700)
-    // t=8.8s  — 📞 שיחה נכנסת (2.6s)
-    setTimeout(() => { setShowPhoneCall(true); sounds.phoneRing()    }, 8800)
-    setTimeout(() =>   setShowPhoneCall(false),                       11400)
-    // t=11.5s — 🎮 GAME OVER (2.3s)
-    setTimeout(() => { setShowGameOver(true);  sounds.gameOverSound()}, 11500)
-    setTimeout(() =>   setShowGameOver(false),                        13800)
-    // t=13.9s — ⚙️ מחפש חזיר (2.6s)
-    setTimeout(() => { setShowLoading(true);   sounds.loadingPing()  }, 13900)
-    setTimeout(() =>   setShowLoading(false),                         16500)
-    // t=16.6s — 🛒 יד2 — stays until user taps the buy button
+    setTimeout(() => { setShowError(true);  sounds.errorAlarm()  }, 3500)
+    setTimeout(() =>   setShowError(false),                        6000)
+    // t=6.0s  — 📺 חדשות דחופות (3.6s) — seamless handoff, +1s
+    setTimeout(() => { setShowNews(true);   sounds.newsJingle()  }, 6000)
+    setTimeout(() =>   setShowNews(false),                         9600)
+    // t=9.6s  — 📞 שיחה נכנסת — interactive, no end timeout
+    setTimeout(() => { setShowPhoneCall(true); sounds.phoneRing() }, 9600)
+  }
+
+  function startLoadingSequence() {
+    setTimeout(() => { setShowLoading(true);  sounds.loadingPing() }, 100)
+    setTimeout(() =>   setShowLoading(false),                        2700)
     setTimeout(() => {
       yad2BoughtRef.current = false
       setShowYad2(true)
       sounds.yad2Sound()
-    }, 16600)
+    }, 2900)
+  }
+
+  function handlePhoneAnswer() {
+    setShowPhoneCall(false)
+    setShowGameOver(true)
+  }
+
+  function handlePhoneHangup() {
+    setShowPhoneCall(false)
+    setShowJumpscare(true)
+    sounds.jumpscare()
+    setTimeout(() => {
+      setShowJumpscare(false)
+      setShowGameOver(true)
+    }, 1500)
+  }
+
+  function handleGameOverDone() {
+    setShowGameOver(false)
+    startLoadingSequence()
   }
 
   function startCountdownSequence() {
@@ -675,8 +748,9 @@ export default function HomeScreen() {
       <MegaFlash visible={showMegaFlash} />
       <FakeErrorScreen visible={showError} />
       <BreakingNews visible={showNews} />
-      <PhoneCallScreen visible={showPhoneCall} />
-      <GameOverScreen visible={showGameOver} />
+      <PhoneCallScreen visible={showPhoneCall} onAnswer={handlePhoneAnswer} onHangup={handlePhoneHangup} />
+      <JumpscareScreen visible={showJumpscare} />
+      <GameOverScreen visible={showGameOver} onDone={handleGameOverDone} />
       <LoadingPig visible={showLoading} />
       <Yad2Screen visible={showYad2} onBuy={handleYad2Buy} />
       <PigReturnFloat visible={showPigFloat} />
