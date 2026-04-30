@@ -1,73 +1,121 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 
-// Sunday–Saturday Israeli week
-function getWeekBounds(offsetWeeks = 0) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  const sun = new Date(today)
-  sun.setDate(today.getDate() - today.getDay() + offsetWeeks * 7)
-  const sat = new Date(sun)
-  sat.setDate(sun.getDate() + 7)
-  return { start: sun.getTime(), end: sat.getTime() }
-}
-
-function weekLabel(offset) {
-  if (offset === 0) return 'השבוע'
-  if (offset === -1) return 'שבוע שעבר'
-  const { start } = getWeekBounds(offset)
-  const d = new Date(start)
-  return `${d.getDate()}/${d.getMonth() + 1}`
-}
-
 const STAR_EXCLUDE = new Set(['convert_out', 'penalty', 'prize_redeem', 'savings_open'])
+const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
-function buildReport(txList, weekStart, weekEnd) {
-  const tx = txList.filter(t => t.timestamp >= weekStart && t.timestamp < weekEnd)
+function getWeekBounds(offset = 0) {
+  const d = new Date()
+  d.setHours(0, 0, 0, 0)
+  d.setDate(d.getDate() - d.getDay() + offset * 7)
+  return { start: d.getTime(), end: d.getTime() + 7 * 86400000 }
+}
 
-  const chores      = tx.filter(t => t.type === 'chore').length
-  const learning    = tx.filter(t => t.type === 'learning').length
+function getMonthBounds(offset = 0) {
+  const d = new Date()
+  d.setDate(1); d.setHours(0, 0, 0, 0)
+  d.setMonth(d.getMonth() + offset)
+  return { start: d.getTime(), end: new Date(d.getFullYear(), d.getMonth() + 1, 1).getTime() }
+}
 
-  const starsIn  = tx.filter(t => t.currency === 'stars' && t.amount > 0 && !STAR_EXCLUDE.has(t.type))
-                     .reduce((s, t) => s + t.amount, 0)
-  const starsOut = tx.filter(t => t.currency === 'stars' && STAR_EXCLUDE.has(t.type))
-                     .reduce((s, t) => s + t.amount, 0)
+function getBounds(period, offset) {
+  if (period === 'all')   return { start: 0, end: Date.now() + 86400000 }
+  if (period === 'month') return getMonthBounds(offset)
+  return getWeekBounds(offset)
+}
 
-  const shekelsIn  = tx.filter(t => t.currency === 'shekels' && t.amount > 0 && t.type !== 'expense')
-                       .reduce((s, t) => s + t.amount, 0)
-  const shekelsOut = tx.filter(t => t.currency === 'shekels' && (t.type === 'expense' || t.amount < 0))
-                       .reduce((s, t) => s + Math.abs(t.amount), 0)
+function periodLabel(period, offset) {
+  if (period === 'all') return 'מההתחלה'
+  if (period === 'week') {
+    if (offset === 0)  return 'השבוע'
+    if (offset === -1) return 'שבוע שעבר'
+    const { start } = getWeekBounds(offset)
+    const d = new Date(start)
+    return `${d.getDate()}/${d.getMonth() + 1}`
+  }
+  if (offset === 0)  return 'החודש'
+  if (offset === -1) return 'חודש שעבר'
+  const d = new Date()
+  d.setDate(1); d.setMonth(d.getMonth() + offset)
+  return `${HE_MONTHS[d.getMonth()]} ${d.getFullYear()}`
+}
 
+function buildReport(txList, start, end) {
+  const tx = txList.filter(t => t.timestamp >= start && t.timestamp < end)
+  const chores   = tx.filter(t => t.type === 'chore').length
+  const learning = tx.filter(t => t.type === 'learning').length
+  const starsIn  = tx.filter(t => t.currency === 'stars'   && t.amount > 0 && !STAR_EXCLUDE.has(t.type)).reduce((s, t) => s + t.amount, 0)
+  const starsOut = tx.filter(t => t.currency === 'stars'   && STAR_EXCLUDE.has(t.type)).reduce((s, t) => s + t.amount, 0)
+  const shekelsIn  = tx.filter(t => t.currency === 'shekels' && t.amount > 0 && t.type !== 'expense').reduce((s, t) => s + t.amount, 0)
+  const shekelsOut = tx.filter(t => t.currency === 'shekels' && (t.type === 'expense' || t.amount < 0)).reduce((s, t) => s + Math.abs(t.amount), 0)
   return { chores, learning, starsIn, starsOut, shekelsIn, shekelsOut }
 }
 
-function Cell({ children, className = '' }) {
+function StatBox({ emoji, label, value, color }) {
   return (
-    <td className={`px-2 py-3 text-center text-sm ${className}`}>{children}</td>
+    <div className={`rounded-2xl p-3 text-center ${color}`}>
+      <p className="text-2xl font-black">{value || <span className="text-gray-300 text-base">—</span>}</p>
+      <p className="text-xs font-semibold opacity-75 mt-0.5">{emoji} {label}</p>
+    </div>
   )
 }
 
-function Delta({ value, unit = '' }) {
-  if (value === 0) return <span className="text-gray-400 text-xs">—</span>
-  const pos = value > 0
+function ChildCard({ child, r }) {
+  const shekelNet = r.shekelsIn - r.shekelsOut
   return (
-    <span className={`font-bold text-sm ${pos ? 'text-green-600' : 'text-red-500'}`}>
-      {pos ? '+' : ''}{value}{unit}
-    </span>
+    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
+      {/* Child header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-indigo-50 border-b border-indigo-100">
+        <div className="flex items-center gap-2">
+          <span className="text-2xl">{child.avatar || '🦁'}</span>
+          <span className="font-black text-gray-800">{child.name}</span>
+        </div>
+        <div className="flex gap-3 text-sm font-bold">
+          <span className="text-amber-600">{child.starBalance}⭐</span>
+          <span className="text-green-700">{child.shekelBalance}₪</span>
+        </div>
+      </div>
+
+      {/* Stats grid */}
+      <div className="p-3 grid grid-cols-4 gap-2">
+        <StatBox emoji="✅" label="מטלות"  value={r.chores || 0}   color="bg-emerald-50 text-emerald-700" />
+        <StatBox emoji="📚" label="לימוד"  value={r.learning || 0} color="bg-sky-50 text-sky-700" />
+        <StatBox emoji="⭐" label="הרוויח" value={r.starsIn > 0 ? `+${r.starsIn}` : 0}  color="bg-amber-50 text-amber-600" />
+        <StatBox emoji="⭐" label="הוציא"  value={r.starsOut > 0 ? `-${r.starsOut}` : 0} color="bg-red-50 text-red-500" />
+      </div>
+
+      {/* Shekel row */}
+      <div className="px-4 pb-3 flex items-center justify-between text-sm">
+        <span className="text-gray-500 font-semibold">שינוי בכסף</span>
+        {shekelNet === 0
+          ? <span className="text-gray-400">ללא שינוי</span>
+          : <span className={`font-black text-base ${shekelNet > 0 ? 'text-green-600' : 'text-red-500'}`}>
+              {shekelNet > 0 ? '+' : ''}{shekelNet}₪
+            </span>
+        }
+      </div>
+    </div>
   )
 }
+
+const PERIODS = [
+  { id: 'week',  label: 'שבוע' },
+  { id: 'month', label: 'חודש' },
+  { id: 'all',   label: 'הכל'  },
+]
 
 export default function WeeklyReportModal() {
   const { closeModal, children, getTransactions } = useApp()
-  const [weekOffset, setWeekOffset] = useState(0)
+  const [period, setPeriod] = useState('week')
+  const [offset, setOffset] = useState(0)
 
-  const { start, end } = getWeekBounds(weekOffset)
+  const { start, end } = getBounds(period, offset)
+  const canGoForward = period !== 'all' && offset < 0
 
-  const rows = children.map(child => {
-    const tx = getTransactions(child.id)
-    const r = buildReport(tx, start, end)
-    return { child, ...r }
-  })
+  const rows = children.map(child => ({
+    child,
+    ...buildReport(getTransactions(child.id), start, end),
+  }))
 
   const totals = rows.reduce((acc, r) => ({
     chores:     acc.chores     + r.chores,
@@ -78,121 +126,77 @@ export default function WeeklyReportModal() {
     shekelsOut: acc.shekelsOut + r.shekelsOut,
   }), { chores: 0, learning: 0, starsIn: 0, starsOut: 0, shekelsIn: 0, shekelsOut: 0 })
 
+  function changePeriod(p) {
+    setPeriod(p)
+    setOffset(0)
+  }
+
   return (
     <div className="fixed inset-0 z-[60] bg-gray-50 flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-10 pb-6 text-white text-center rounded-b-[2rem] shrink-0">
+      <div className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-10 pb-5 text-white text-center rounded-b-[2rem] shrink-0">
         <button
           onClick={closeModal}
           className="absolute top-4 right-4 w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-white font-bold text-lg"
         >×</button>
-        <div className="text-4xl mb-2">📊</div>
-        <h1 className="text-xl font-black">דוח שבועי</h1>
+        <div className="text-3xl mb-1">📊</div>
+        <h1 className="text-lg font-black">דוח פעילות</h1>
 
-        {/* Week selector */}
-        <div className="flex items-center justify-center gap-3 mt-3">
-          <button
-            onClick={() => setWeekOffset(w => w - 1)}
-            className="w-8 h-8 bg-white/20 rounded-full font-bold text-lg active:scale-90"
-          >‹</button>
-          <span className="font-bold text-white/90 min-w-[90px] text-center">{weekLabel(weekOffset)}</span>
-          <button
-            onClick={() => setWeekOffset(w => Math.min(0, w + 1))}
-            className={`w-8 h-8 bg-white/20 rounded-full font-bold text-lg active:scale-90 ${weekOffset === 0 ? 'opacity-30 pointer-events-none' : ''}`}
-          >›</button>
+        {/* Period tabs */}
+        <div className="flex justify-center gap-1 mt-3">
+          {PERIODS.map(p => (
+            <button
+              key={p.id}
+              onClick={() => changePeriod(p.id)}
+              className={`px-4 py-1.5 rounded-full text-sm font-bold transition-all ${
+                period === p.id ? 'bg-white text-indigo-700 shadow' : 'bg-white/20 text-white'
+              }`}
+            >{p.label}</button>
+          ))}
         </div>
+
+        {/* Navigation (not shown for "all") */}
+        {period !== 'all' && (
+          <div className="flex items-center justify-center gap-3 mt-3">
+            <button
+              onClick={() => setOffset(o => o - 1)}
+              className="w-8 h-8 bg-white/20 rounded-full font-bold text-lg active:scale-90"
+            >‹</button>
+            <span className="font-bold text-white/90 min-w-[110px] text-center text-sm">
+              {periodLabel(period, offset)}
+            </span>
+            <button
+              onClick={() => setOffset(o => o + 1)}
+              className={`w-8 h-8 bg-white/20 rounded-full font-bold text-lg active:scale-90 transition-opacity ${!canGoForward ? 'opacity-30 pointer-events-none' : ''}`}
+            >›</button>
+          </div>
+        )}
+        {period === 'all' && (
+          <p className="text-white/70 text-sm mt-2">כל הזמנים</p>
+        )}
       </div>
 
-      {/* Summary chips */}
-      <div className="px-4 pt-4 pb-2 flex gap-2 overflow-x-auto no-scrollbar shrink-0">
+      {/* Summary bar */}
+      <div className="px-4 pt-3 pb-1 grid grid-cols-4 gap-2 shrink-0">
         {[
-          { label: 'מטלות', value: totals.chores,   emoji: '✅', color: 'bg-emerald-100 text-emerald-700' },
-          { label: 'לימוד',  value: totals.learning,  emoji: '📚', color: 'bg-sky-100 text-sky-700' },
-          { label: 'כוכבים הרוויחו', value: `+${totals.starsIn}⭐`, emoji: '', color: 'bg-amber-100 text-amber-700' },
-          { label: 'כוכבים הוציאו', value: `-${totals.starsOut}⭐`, emoji: '', color: 'bg-red-100 text-red-600' },
+          { v: totals.chores,   label: 'מטלות', color: 'bg-emerald-100 text-emerald-700' },
+          { v: totals.learning, label: 'לימוד',  color: 'bg-sky-100 text-sky-700' },
+          { v: totals.starsIn > 0 ? `+${totals.starsIn}⭐` : '—', label: 'הרוויחו', color: 'bg-amber-100 text-amber-600' },
+          { v: totals.starsOut > 0 ? `-${totals.starsOut}⭐` : '—', label: 'הוציאו', color: 'bg-red-100 text-red-500' },
         ].map(c => (
-          <div key={c.label} className={`shrink-0 rounded-2xl px-3 py-2 text-center ${c.color}`}>
-            <p className="text-lg font-black">{c.emoji} {c.value}</p>
-            <p className="text-xs font-semibold opacity-70">{c.label}</p>
+          <div key={c.label} className={`rounded-2xl py-2 text-center ${c.color}`}>
+            <p className="font-black text-sm">{c.v || '—'}</p>
+            <p className="text-xs opacity-70">{c.label}</p>
           </div>
         ))}
       </div>
 
-      {/* Table */}
-      <div className="flex-1 overflow-y-auto px-3 pb-6">
-        {rows.length === 0 ? (
-          <p className="text-center text-gray-400 mt-12">אין ילדים</p>
-        ) : (
-          <div className="bg-white rounded-3xl shadow-sm overflow-hidden border border-gray-100">
-            <table className="w-full border-collapse">
-              <thead>
-                <tr className="bg-indigo-50 text-indigo-700 text-xs font-bold">
-                  <th className="px-3 py-3 text-right">ילד</th>
-                  <th className="px-2 py-3 text-center">✅<br/>מטלות</th>
-                  <th className="px-2 py-3 text-center">📚<br/>לימוד</th>
-                  <th className="px-2 py-3 text-center">⭐<br/>הרוויח</th>
-                  <th className="px-2 py-3 text-center">⭐<br/>הוציא</th>
-                  <th className="px-2 py-3 text-center">💰<br/>שינוי ₪</th>
-                  <th className="px-2 py-3 text-center">🏦<br/>מאזן</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, idx) => (
-                  <tr key={r.child.id} className={idx % 2 === 0 ? 'bg-white' : 'bg-gray-50/60'}>
-                    <td className="px-3 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{r.child.avatar || '🦁'}</span>
-                        <span className="font-bold text-gray-800 text-sm leading-tight">{r.child.name}</span>
-                      </div>
-                    </td>
-                    <Cell>
-                      <span className={`font-black text-base ${r.chores > 0 ? 'text-emerald-600' : 'text-gray-300'}`}>
-                        {r.chores || '—'}
-                      </span>
-                    </Cell>
-                    <Cell>
-                      <span className={`font-black text-base ${r.learning > 0 ? 'text-sky-600' : 'text-gray-300'}`}>
-                        {r.learning || '—'}
-                      </span>
-                    </Cell>
-                    <Cell>
-                      <span className={`font-black text-base ${r.starsIn > 0 ? 'text-amber-500' : 'text-gray-300'}`}>
-                        {r.starsIn > 0 ? `+${r.starsIn}` : '—'}
-                      </span>
-                    </Cell>
-                    <Cell>
-                      <span className={`font-black text-base ${r.starsOut > 0 ? 'text-red-500' : 'text-gray-300'}`}>
-                        {r.starsOut > 0 ? `-${r.starsOut}` : '—'}
-                      </span>
-                    </Cell>
-                    <Cell>
-                      <Delta value={r.shekelsIn - r.shekelsOut} unit="₪" />
-                    </Cell>
-                    <Cell>
-                      <div className="flex flex-col items-center gap-0.5">
-                        <span className="text-xs font-bold text-amber-600">{r.child.starBalance}⭐</span>
-                        <span className="text-xs font-bold text-green-700">{r.child.shekelBalance}₪</span>
-                      </div>
-                    </Cell>
-                  </tr>
-                ))}
-              </tbody>
-              {rows.length > 1 && (
-                <tfoot>
-                  <tr className="bg-indigo-50 border-t-2 border-indigo-200 text-indigo-800 font-black">
-                    <td className="px-3 py-3 text-sm">סה״כ</td>
-                    <Cell>{totals.chores || '—'}</Cell>
-                    <Cell>{totals.learning || '—'}</Cell>
-                    <Cell>{totals.starsIn > 0 ? `+${totals.starsIn}` : '—'}</Cell>
-                    <Cell>{totals.starsOut > 0 ? `-${totals.starsOut}` : '—'}</Cell>
-                    <Cell><Delta value={totals.shekelsIn - totals.shekelsOut} unit="₪" /></Cell>
-                    <Cell>—</Cell>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        )}
+      {/* Cards */}
+      <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 pb-6">
+        {rows.length === 0
+          ? <p className="text-center text-gray-400 mt-12">אין ילדים</p>
+          : rows.map(r => <ChildCard key={r.child.id} child={r.child} r={r} />)
+        }
       </div>
     </div>
   )
