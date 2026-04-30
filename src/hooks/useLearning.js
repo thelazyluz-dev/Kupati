@@ -22,7 +22,7 @@ function emptySession() {
 }
 
 function freshChildState() {
-  return { date: todayStr(), math: emptySession(), hebrew: emptySession() }
+  return { date: todayStr(), math: emptySession(), hebrew: emptySession(), english: emptySession(), general: emptySession() }
 }
 
 function load() {
@@ -49,16 +49,16 @@ export function useLearning() {
     return resolveChild(all, childId)
   }
 
-  function startSession(childId, subject, grade) {
+  function startSession(childId, subject, grade, pregenQuestions) {
     commit(prev => {
       const cs = resolveChild(prev, childId)
       const sess = cs[subject]
 
       // If starting fresh (available or no questions), generate new ones
       if (sess.status === 'available' || sess.questions.length === 0) {
-        const questions = subject === 'math'
+        const questions = pregenQuestions || (subject === 'math'
           ? generateMathQuestions(grade, 5)
-          : getHebrewQuestions(grade, 5)
+          : getHebrewQuestions(grade, 5))
         return {
           ...prev,
           [childId]: {

@@ -2,10 +2,16 @@ import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { celebrateGoal } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
+import { generateMathQuestions } from '../../lib/learning/mathQuestions.js'
+import { getHebrewQuestions } from '../../lib/learning/hebrewQuestions.js'
+import { getEnglishQuestions } from '../../lib/learning/englishQuestions.js'
+import { getGeneralQuestions } from '../../lib/learning/generalQuestions.js'
 
 const SUBJECTS = {
-  math:   { label: 'מתמטיקה', emoji: '🔢', color: 'from-blue-400 to-indigo-500',   bg: 'bg-blue-50',   btn: 'bg-blue-500 hover:bg-blue-600',   ring: 'ring-blue-300' },
-  hebrew: { label: 'עברית',   emoji: '📖', color: 'from-emerald-400 to-green-500', bg: 'bg-emerald-50', btn: 'bg-emerald-500 hover:bg-emerald-600', ring: 'ring-emerald-300' },
+  math:    { label: 'מתמטיקה',  emoji: '🔢', color: 'from-blue-400 to-indigo-500',    bg: 'bg-blue-50',    btn: 'bg-blue-500 hover:bg-blue-600',    ring: 'ring-blue-300' },
+  hebrew:  { label: 'עברית',    emoji: '📖', color: 'from-emerald-400 to-green-500',  bg: 'bg-emerald-50', btn: 'bg-emerald-500 hover:bg-emerald-600', ring: 'ring-emerald-300' },
+  english: { label: 'אנגלית',   emoji: '🔤', color: 'from-sky-400 to-blue-500',       bg: 'bg-sky-50',     btn: 'bg-sky-500 hover:bg-sky-600',       ring: 'ring-sky-300' },
+  general: { label: 'ידע כללי', emoji: '🌍', color: 'from-amber-400 to-orange-500',   bg: 'bg-amber-50',   btn: 'bg-amber-500 hover:bg-amber-600',   ring: 'ring-amber-300' },
 }
 
 const STATUS_LABEL = {
@@ -36,7 +42,7 @@ function Dots({ total, current, wrong = [] }) {
 }
 
 // ── Answer button ──────────────────────────────────────────────
-function AnswerBtn({ text, state, onClick, isHebrew }) {
+function AnswerBtn({ text, state, onClick, dir }) {
   const base = 'w-full py-5 px-3 rounded-2xl font-bold text-xl transition-all duration-200 active:scale-95 border-2 text-center leading-snug'
   const styles = {
     idle:    'bg-white border-gray-200 text-gray-800 hover:border-gray-300 hover:shadow-sm',
@@ -44,13 +50,14 @@ function AnswerBtn({ text, state, onClick, isHebrew }) {
     wrong:   'bg-red-100   border-red-400   text-red-800   scale-100',
     reveal:  'bg-green-100 border-green-400 text-green-800',
   }
+  const isRtl = dir !== 'ltr'
   return (
     <button
       type="button"
       onClick={state === 'idle' ? onClick : undefined}
       className={`${base} ${styles[state] || styles.idle}`}
-      dir={isHebrew ? 'rtl' : 'ltr'}
-      style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif", fontSize: '1.2rem' } : { fontSize: '1.35rem' }}
+      dir={dir || 'rtl'}
+      style={isRtl ? { fontFamily: "'Noto Serif Hebrew', 'David', serif", fontSize: '1.2rem' } : { fontSize: '1.35rem' }}
     >
       {text}
     </button>
@@ -68,38 +75,36 @@ function Hub({ childLearning, onSelect, onClose }) {
         <p className="text-white/70 text-sm mt-1">בחר מקצוע לסשן של היום</p>
       </div>
 
-      <div className="flex-1 p-5 space-y-4">
-        {Object.entries(SUBJECTS).map(([key, sub]) => {
-          const sess = childLearning[key]
-          const sl = STATUS_LABEL[sess.status] || STATUS_LABEL.available
-          const done = sess.status === 'done'
-          const stars = sess.starsFirst + (sess.status === 'done' && sess.corrections.length > 0 ? 1 : 0)
+      <div className="flex-1 p-5 flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-3">
+          {Object.entries(SUBJECTS).map(([key, sub]) => {
+            const sess = childLearning[key]
+            const sl = STATUS_LABEL[sess?.status] || STATUS_LABEL.available
+            const done = sess?.status === 'done'
+            const stars = (sess?.starsFirst || 0) + (done && sess?.corrections?.length > 0 ? 1 : 0)
 
-          return (
-            <button
-              key={key}
-              type="button"
-              onClick={() => !done && onSelect(key)}
-              className={[
-                'w-full rounded-3xl p-5 flex items-center gap-4 transition-all active:scale-95',
-                done ? 'bg-gray-50 opacity-60' : `bg-gradient-to-br ${sub.color} shadow-lg text-white`,
-              ].join(' ')}
-            >
-              <span className="text-4xl">{sub.emoji}</span>
-              <div className="flex-1 text-right">
-                <p className={`font-black text-xl ${done ? 'text-gray-500' : 'text-white'}`}>{sub.label}</p>
+            return (
+              <button
+                key={key}
+                type="button"
+                onClick={() => !done && onSelect(key)}
+                className={[
+                  'rounded-3xl p-4 flex flex-col items-center gap-2 transition-all active:scale-95 text-center',
+                  done ? 'bg-gray-50 opacity-60' : `bg-gradient-to-br ${sub.color} shadow-lg text-white`,
+                ].join(' ')}
+              >
+                <span className="text-4xl">{sub.emoji}</span>
+                <p className={`font-black text-base ${done ? 'text-gray-500' : 'text-white'}`}>{sub.label}</p>
                 <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${sl.color}`}>{sl.text}</span>
-              </div>
-              {stars > 0 && (
-                <div className="text-right">
-                  <p className={`text-2xl font-black ${done ? 'text-amber-500' : 'text-yellow-200'}`}>+{stars}⭐</p>
-                </div>
-              )}
-            </button>
-          )
-        })}
+                {stars > 0 && (
+                  <p className={`text-lg font-black ${done ? 'text-amber-500' : 'text-yellow-200'}`}>+{stars}⭐</p>
+                )}
+              </button>
+            )
+          })}
+        </div>
 
-        <div className="bg-violet-50 rounded-2xl p-4 text-center text-sm text-violet-600 font-semibold mt-2">
+        <div className="bg-violet-50 rounded-2xl p-4 text-center text-sm text-violet-600 font-semibold">
           💡 5 שאלות · 1⭐ לתשובה נכונה · +1⭐ בונוס על תיקון טעויות
         </div>
       </div>
@@ -120,7 +125,7 @@ function Session({ subject, session, onAnswer, onBack }) {
 
   const [reveal, setReveal] = useState(null) // { chosen, correct }
   const timerRef = useRef(null)
-  const isHebrew = subject === 'hebrew'
+  const isLtr = subject === 'math' || subject === 'english'
 
   useEffect(() => () => clearTimeout(timerRef.current), [])
 
@@ -168,8 +173,8 @@ function Session({ subject, session, onAnswer, onBack }) {
         <div className="text-center mb-2">
           <p
             className="text-3xl font-black text-gray-800 leading-snug whitespace-pre-line"
-            dir={isHebrew ? 'rtl' : 'ltr'}
-            style={isHebrew ? { fontFamily: "'Noto Serif Hebrew', 'David', serif" } : { fontSize: '2rem' }}
+            dir={isLtr ? 'ltr' : 'rtl'}
+            style={isLtr ? { fontSize: '2rem' } : { fontFamily: "'Noto Serif Hebrew', 'David', serif" }}
           >
             {currentQ.question}
           </p>
@@ -183,7 +188,7 @@ function Session({ subject, session, onAnswer, onBack }) {
               text={opt}
               state={btnState(idx)}
               onClick={() => handleAnswer(idx)}
-              isHebrew={isHebrew}
+              dir={isLtr ? 'ltr' : 'rtl'}
             />
           ))}
         </div>
@@ -301,8 +306,12 @@ export default function LearningModal() {
   const session = subject ? childLearning[subject] : null
 
   function openSubject(subj) {
+    const questions = subj === 'math' ? generateMathQuestions(grade, 5)
+      : subj === 'english' ? getEnglishQuestions(grade, 5)
+      : subj === 'general' ? getGeneralQuestions(5)
+      : getHebrewQuestions(grade, 5)
     setSubject(subj)
-    startLearningSession(childId, subj, grade)
+    startLearningSession(childId, subj, grade, questions)
     setView('session')
   }
 
