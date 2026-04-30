@@ -111,7 +111,7 @@ function PinSettings() {
 }
 
 export default function SettingsPanel() {
-  const { navigate, resetAllData, requirePin } = useApp()
+  const { navigate, resetAllData, requirePin, showModal } = useApp()
   const [confirmReset, setConfirmReset] = useState(false)
 
   async function handleForceUpdate() {
@@ -186,6 +186,15 @@ export default function SettingsPanel() {
 
         <SettingsSection icon="☁️" label="סנכרון בין מכשירים" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
           <SyncSettings />
+        </SettingsSection>
+
+        <SettingsSection icon="📊" label="דוח שבועי" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+          <Button variant="secondary" fullWidth onClick={() => showModal('weeklyReport')}>
+            📊 פתח דוח שבועי
+          </Button>
+          <p className="text-xs text-gray-400 text-center mt-2">
+            מטלות, לימודים, שינויי כוכבים וכספים לכל ילד
+          </p>
         </SettingsSection>
 
         <SettingsSection icon="💾" label="גיבוי ועדכון" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">

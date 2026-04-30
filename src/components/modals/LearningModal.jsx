@@ -77,7 +77,7 @@ function Hub({ childLearning, onSelect, onClose }) {
 
       <div className="flex-1 p-5 flex flex-col gap-3">
         <div className="grid grid-cols-2 gap-3">
-          {Object.entries(SUBJECTS).map(([key, sub]) => {
+          {Object.entries(SUBJECTS).map(([key, sub], i) => {
             const sess = childLearning[key]
             const sl = STATUS_LABEL[sess?.status] || STATUS_LABEL.available
             const done = sess?.status === 'done'
@@ -89,9 +89,10 @@ function Hub({ childLearning, onSelect, onClose }) {
                 type="button"
                 onClick={() => !done && onSelect(key)}
                 className={[
-                  'rounded-3xl p-4 flex flex-col items-center gap-2 transition-all active:scale-95 text-center',
+                  'card-pop-in rounded-3xl p-4 flex flex-col items-center gap-2 transition-all active:scale-95 text-center',
                   done ? 'bg-gray-50 opacity-60' : `bg-gradient-to-br ${sub.color} shadow-lg text-white`,
                 ].join(' ')}
+                style={{ animationDelay: `${i * 80}ms` }}
               >
                 <span className="text-4xl">{sub.emoji}</span>
                 <p className={`font-black text-base ${done ? 'text-gray-500' : 'text-white'}`}>{sub.label}</p>
