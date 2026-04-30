@@ -546,6 +546,14 @@ export default function ChildDashboard({ childId }) {
           🏦 חסכון
         </Button>
 
+        <button
+          onClick={() => showModal('learning', { childId })}
+          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+        >
+          <span className="text-xl">📚</span>
+          <span>למד וצבור כוכבים!</span>
+        </button>
+
         {children.length > 1 && (
           <Button
             variant="ghost"

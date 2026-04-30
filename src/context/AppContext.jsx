@@ -4,6 +4,7 @@ import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
 import { useTransactions } from '../hooks/useTransactions.js'
 import { useSyncEngine } from '../hooks/useSyncEngine.js'
+import { useLearning } from '../hooks/useLearning.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 
@@ -15,6 +16,7 @@ export function AppProvider({ children: reactChildren }) {
   const settingsApi = useSettings()
   const transactionsApi = useTransactions()
   const { status: syncStatus } = useSyncEngine(settingsApi.settings.familyCode || '')
+  const learningApi = useLearning()
 
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
@@ -223,6 +225,10 @@ export function AppProvider({ children: reactChildren }) {
       setCoinInFlight(childId)
       setTimeout(() => setCoinInFlight(null), durationMs)
     },
+    getChildLearning:       learningApi.getChildLearning,
+    startLearningSession:   learningApi.startSession,
+    answerLearningQuestion: learningApi.answerQuestion,
+    startLearningCorrection: learningApi.startCorrection,
     syncStatus,
     screen,
     activeChildId,

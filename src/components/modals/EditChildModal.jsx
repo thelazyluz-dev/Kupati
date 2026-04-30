@@ -121,6 +121,7 @@ export default function EditChildModal() {
   const [avatar, setAvatar] = useState(child?.avatar || '🦁')
   const [colorKey, setColorKey] = useState(child?.colorKey || '')
   const [birthday, setBirthday] = useState(child?.birthday || '')
+  const [grade, setGrade] = useState(child?.grade || 1)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   // undefined = unchanged, null = remove, string = new dataURL
@@ -148,6 +149,7 @@ export default function EditChildModal() {
       avatar,
       colorKey: colorKey || null,
       birthday: birthday || null,
+      grade: grade || 1,
       allowance: {
         enabled: allowanceEnabled,
         amount: parseFloat(allowanceAmount) || 0,
@@ -236,6 +238,23 @@ export default function EditChildModal() {
           <p className="text-xs text-gray-400 mt-1 text-center">
             מציג ספירה לאחור על הכרטיס וה-Dashboard
           </p>
+        </div>
+
+        {/* Grade */}
+        <div>
+          <label className="text-sm font-semibold text-gray-600 block mb-2">📚 כיתה (ללמידה)</label>
+          <div className="grid grid-cols-6 gap-1.5">
+            {[1,2,3,4,5,6].map((g) => (
+              <button
+                key={g}
+                type="button"
+                onClick={() => setGrade(g)}
+                className={`py-2.5 rounded-xl font-bold text-sm transition-all active:scale-90 ${grade === g ? 'bg-violet-500 text-white shadow-md' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`}
+              >
+                {['א','ב','ג','ד','ה','ו'][g-1]}׳
+              </button>
+            ))}
+          </div>
         </div>
 
         {/* Allowance */}

@@ -5,7 +5,7 @@ import { DEFAULT_SETTINGS } from '../lib/defaults.js'
 export function useChildren() {
   const [children, setChildren] = useLocalStorage('children', [])
 
-  function addChild({ name, avatar, exchangeRate }) {
+  function addChild({ name, avatar, exchangeRate, grade }) {
     const child = {
       id: generateId(),
       name,
@@ -14,6 +14,7 @@ export function useChildren() {
       shekelBalance: 0,
       goals: [],
       exchangeRate: exchangeRate ? parseFloat(exchangeRate) : null,
+      grade: grade || 1,
     }
     setChildren((prev) => [...prev, child])
     return child

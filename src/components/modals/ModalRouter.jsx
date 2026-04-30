@@ -15,6 +15,7 @@ import ParentNoteModal from './ParentNoteModal.jsx'
 import MemoriesModal from './MemoriesModal.jsx'
 import LoanModal from './LoanModal.jsx'
 import TransferStarsModal from './TransferStarsModal.jsx'
+import LearningModal from './LearningModal.jsx'
 
 export default function ModalRouter() {
   const { openModal } = useApp()
@@ -38,6 +39,7 @@ export default function ModalRouter() {
     memories: MemoriesModal,
     loan: LoanModal,
     transferStars: TransferStarsModal,
+    learning: LearningModal,
   }
 
   const ModalComponent = map[openModal]

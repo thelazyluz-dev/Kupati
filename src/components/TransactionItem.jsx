@@ -20,6 +20,7 @@ const TYPE_STYLE = {
   wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   loan:           { icon: '💳', label: 'הלוואה',        bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
+  learning:       { icon: '📚', label: 'למידה',         bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
   loan_repay:     { icon: '💳', label: 'פרעון הלוואה',  bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
   allowance:      { icon: '💰', label: 'קצבה',           bg: 'bg-lime-50',    border: 'border-r-4 border-lime-400',    amount: 'text-lime-600'     },
 }
