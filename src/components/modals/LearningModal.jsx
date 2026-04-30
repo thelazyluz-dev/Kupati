@@ -305,12 +305,28 @@ export default function LearningModal() {
   const childLearning = getChildLearning(childId)
   const session = subject ? childLearning[subject] : null
 
+  function shuffleOpts(q) {
+    const order = [0, 1, 2, 3]
+    for (let i = 3; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[order[i], order[j]] = [order[j], order[i]]
+    }
+    return { ...q, options: order.map(i => q.options[i]), correctIndex: order.indexOf(q.correctIndex) }
+  }
+
   function openSubject(subj) {
-    const questions = subj === 'math' ? generateMathQuestions(grade, 5)
+    setSubject(subj)
+    const sess = childLearning[subj]
+    // Resume correction summary — don't restart
+    if (sess?.status === 'needs_correction') {
+      setView('summary')
+      return
+    }
+    const questions = (subj === 'math' ? generateMathQuestions(grade, 5)
       : subj === 'english' ? getEnglishQuestions(grade, 5)
       : subj === 'general' ? getGeneralQuestions(5)
       : getHebrewQuestions(grade, 5)
-    setSubject(subj)
+    ).map(shuffleOpts)
     startLearningSession(childId, subj, grade, questions)
     setView('session')
   }
