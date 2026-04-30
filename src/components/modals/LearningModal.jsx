@@ -171,13 +171,28 @@ function Session({ subject, session, onAnswer, onBack }) {
       {/* Question card */}
       <div className="flex-1 bg-white rounded-t-[2rem] px-5 pt-6 pb-4 flex flex-col gap-4 overflow-y-auto">
         <div className="text-center mb-2">
-          <p
-            className="text-3xl font-black text-gray-800 leading-snug whitespace-pre-line"
-            dir={isLtr ? 'ltr' : 'rtl'}
-            style={isLtr ? { fontSize: '2rem' } : { fontFamily: "'Noto Serif Hebrew', 'David', serif" }}
-          >
-            {currentQ.question}
-          </p>
+          {currentQ.question.includes('\n') ? (() => {
+            const [a, b] = currentQ.question.split('\n')
+            const emojiFirst = a.length <= 4
+            const textPart = emojiFirst ? b : a
+            const emojiPart = emojiFirst ? a : b
+            return (
+              <div className="space-y-2">
+                <p className="font-black text-gray-800 text-2xl"
+                   dir={isLtr ? 'ltr' : 'rtl'}
+                   style={isLtr ? {} : { fontFamily: "'Noto Serif Hebrew', 'David', serif" }}>
+                  {textPart}
+                </p>
+                <p className="text-8xl leading-none select-none">{emojiPart}</p>
+              </div>
+            )
+          })() : (
+            <p className="text-3xl font-black text-gray-800 leading-snug whitespace-pre-line"
+               dir={isLtr ? 'ltr' : 'rtl'}
+               style={isLtr ? { fontSize: '2rem' } : { fontFamily: "'Noto Serif Hebrew', 'David', serif" }}>
+              {currentQ.question}
+            </p>
+          )}
         </div>
 
         {/* Answer grid */}
@@ -268,7 +283,7 @@ function Summary({ subject, session, onCorrection, onClose, starsAwarded }) {
           <button
             type="button"
             onClick={onCorrection}
-            className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 text-white font-black text-lg shadow-md active:scale-95 transition-transform"
+            className="w-full py-5 rounded-2xl bg-gradient-to-r from-amber-400 to-orange-400 text-white font-black text-xl shadow-lg active:scale-95 transition-transform"
           >
             🔄 תקן טעויות וקבל כוכבים!
           </button>
@@ -277,9 +292,13 @@ function Summary({ subject, session, onCorrection, onClose, starsAwarded }) {
         <button
           type="button"
           onClick={onClose}
-          className="w-full py-3 rounded-2xl bg-gray-100 text-gray-600 font-bold active:scale-95 transition-transform"
+          className={`w-full py-5 rounded-2xl font-black text-xl shadow-md active:scale-95 transition-transform ${
+            isDone
+              ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white'
+              : 'bg-gray-100 text-gray-500'
+          }`}
         >
-          חזרה
+          {isDone ? '🏠 חזרה לתפריט' : 'חזרה'}
         </button>
       </div>
     </div>

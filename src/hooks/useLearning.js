@@ -57,8 +57,9 @@ export function useLearning() {
       const cs = resolveChild(prev, childId)
       const sess = cs[subject]
 
-      // If starting fresh (available or no questions), generate new ones
-      if (sess.status === 'available' || sess.questions.length === 0) {
+      // If starting fresh, no questions, or stuck past end of first phase
+      const isStuck = sess.phase === 'first' && sess.progress >= (sess.questions?.length || 0)
+      if (sess.status === 'available' || !sess.questions?.length || isStuck) {
         const questions = pregenQuestions || (subject === 'math'
           ? generateMathQuestions(grade, 5)
           : getHebrewQuestions(grade, 5))
