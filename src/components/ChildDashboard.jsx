@@ -528,24 +528,7 @@ export default function ChildDashboard({ childId }) {
           </button>
         </div>
 
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={() => showModal('goal', { childId })}
-          className="active:scale-95"
-        >
-          {goals.length > 0 ? `🎯 מטרות (${goals.length})` : '🎯 קבע מטרה'}
-        </Button>
-
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={() => showModal('savings', { childId, child })}
-          className="active:scale-95"
-        >
-          🏦 חסכון
-        </Button>
-
+        {/* Learning — full-width prominent */}
         <button
           onClick={() => showModal('learning', { childId })}
           className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-violet-500 to-purple-600 text-white font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
@@ -554,34 +537,41 @@ export default function ChildDashboard({ childId }) {
           <span>למד וצבור כוכבים!</span>
         </button>
 
-        {children.length > 1 && (
-          <Button
-            variant="ghost"
-            fullWidth
-            onClick={() => showModal('transferStars', { childId, child })}
-            className="active:scale-95 border-indigo-200 text-indigo-700 hover:bg-indigo-50"
+        {/* Secondary actions — horizontal scrollable chips */}
+        <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
+          <button
+            onClick={() => showModal('goal', { childId })}
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
-            🔄 העבר/מכור כוכבים לאח
-          </Button>
-        )}
-
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={() => showModal('loan', { childId, child })}
-          className="active:scale-95 border-cyan-200 text-cyan-700 hover:bg-cyan-50"
-        >
-          💳 הלוואה{outstandingTotal > 0 ? ` — יתרה: ${formatNumber(outstandingTotal)}₪` : ''}
-        </Button>
-
-        <Button
-          variant="ghost"
-          fullWidth
-          onClick={() => showModal('memories', { childId })}
-          className="active:scale-95 border-amber-200 text-amber-700 hover:bg-amber-50"
-        >
-          📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
-        </Button>
+            🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
+          </button>
+          <button
+            onClick={() => showModal('savings', { childId, child })}
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+          >
+            🏦 חסכון
+          </button>
+          {children.length > 1 && (
+            <button
+              onClick={() => showModal('transferStars', { childId, child })}
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            >
+              🔄 העבר כוכבים
+            </button>
+          )}
+          <button
+            onClick={() => showModal('loan', { childId, child })}
+            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'border-cyan-300 text-cyan-700' : 'border-gray-200 text-gray-700'}`}
+          >
+            💳 הלוואה{outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}
+          </button>
+          <button
+            onClick={() => showModal('memories', { childId })}
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+          >
+            📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
+          </button>
+        </div>
 
         <WeeklySummary transactions={transactions} />
 
