@@ -289,17 +289,26 @@ function Summary({ subject, session, onCorrection, onClose, starsAwarded }) {
           </button>
         )}
 
-        <button
-          type="button"
-          onClick={onClose}
-          className={`w-full py-5 rounded-2xl font-black text-xl shadow-md active:scale-95 transition-transform ${
-            isDone
-              ? 'bg-gradient-to-r from-violet-500 to-purple-600 text-white'
-              : 'bg-gray-100 text-gray-500'
-          }`}
-        >
-          {isDone ? '🏠 חזרה לתפריט' : 'חזרה'}
-        </button>
+        {isDone ? (
+          <div className="flex flex-col items-center gap-2 mt-2">
+            <span className="text-3xl animate-bounce">👇</span>
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full py-6 rounded-3xl bg-gradient-to-r from-green-400 to-emerald-500 text-white font-black text-3xl shadow-xl active:scale-95 transition-transform ring-4 ring-green-300"
+            >
+              🎉 סיום!
+            </button>
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={onClose}
+            className="w-full py-4 rounded-2xl bg-gray-100 text-gray-500 font-bold text-lg active:scale-95 transition-transform"
+          >
+            חזרה
+          </button>
+        )}
       </div>
     </div>
   )
