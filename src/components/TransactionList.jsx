@@ -14,8 +14,8 @@ const FILTERS = [
 
 function DaySeparator({ label }) {
   return (
-    <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 border-b border-gray-100">
-      <span className="text-xs font-bold text-gray-500">{label}</span>
+    <div className="flex items-center gap-2 px-1 py-1">
+      <span className="text-xs font-bold text-gray-400">{label}</span>
       <div className="flex-1 h-px bg-gray-200" />
     </div>
   )
@@ -158,7 +158,7 @@ export default function TransactionList({ transactions, childId }) {
         </div>
       ) : (
         <>
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="flex flex-col gap-1.5">
             {rows.map((row, i) =>
               row.type === 'sep' ? (
                 <DaySeparator key={`sep-${i}`} label={row.label} />

@@ -829,13 +829,13 @@ export default function HomeScreen() {
             )}
 
             <div
-              className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
+              className="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
               style={pigRingStyle}
               onClick={handlePigClick}
               title="לחץ עלי 🐷"
             >
               <span
-                className={`text-2xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
+                className={`text-4xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
                 style={pigClicks >= 3 && !isBursting ? { animation: 'pig-shake 0.35s ease-in-out' } : {}}
               >
                 {showPigFloat ? '' : isBursting && countdown === null ? '💥' : isBursting && countdown !== null ? '' : '🐷'}
@@ -844,7 +844,6 @@ export default function HomeScreen() {
             </div>
           </div>
           <h1 className="text-lg font-bold tracking-tight">הארנק שלי</h1>
-          <p className="text-xs text-white/65 mt-0.5">כסף חכם לילדים 💡</p>
         </div>
       </header>
 
@@ -889,10 +888,10 @@ export default function HomeScreen() {
                 <div key={child.id} className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-1 ring-white/50 rounded-3xl p-2.5 shadow-xl"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
-                  <div className="mt-2 bg-black/5 rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
+                  <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
                       <span className="text-lg leading-none">⭐</span>
                       <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
@@ -906,7 +905,7 @@ export default function HomeScreen() {
                         <button
                           ref={(el) => registerCoinTarget(child.id, el)}
                           onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                          className={`w-full rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
+                          className={`w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
                             freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
                           }`}
                         >

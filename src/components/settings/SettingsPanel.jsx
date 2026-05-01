@@ -137,7 +137,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="min-h-screen bg-slate-100 flex flex-col">
-      <header className="bg-gradient-to-br from-gray-700 to-gray-900 px-5 pt-8 pb-6 text-white">
+      <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="invisible flex items-center gap-1 pl-3 pr-2 py-2 text-sm font-bold">
             חזרה ›
