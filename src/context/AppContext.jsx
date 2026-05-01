@@ -180,6 +180,16 @@ export function AppProvider({ children: reactChildren }) {
     }
   }
 
+  function doTransferMoney(fromId, toId, amount) {
+    const fromChild = childrenApi.children.find(c => c.id === fromId)
+    const toChild   = childrenApi.children.find(c => c.id === toId)
+    if (!fromChild || !toChild) return
+    childrenApi.adjustShekels(fromId, -amount)
+    childrenApi.adjustShekels(toId,    amount)
+    addTransaction(fromId, { type: 'money_transfer_out', amount, currency: 'shekels', description: `💸 שלחת ${amount}₪ ל${toChild.name}` })
+    addTransaction(toId,   { type: 'money_transfer_in',  amount, currency: 'shekels', description: `💸 קיבלת ${amount}₪ מ${fromChild.name}` })
+  }
+
   // ── Loan wrappers (update child + log transaction) ────────────────
   function loanMoney(childId, { amount, description }) {
     childrenApi.addLoan(childId, { amount, description })
@@ -214,6 +224,7 @@ export function AppProvider({ children: reactChildren }) {
     startSavings,
     finishSavings,
     doTransferStars,
+    doTransferMoney,
     loanMoney,
     repayLoan,        // override childrenApi.repayLoan with tx-logging version
     requirePin,

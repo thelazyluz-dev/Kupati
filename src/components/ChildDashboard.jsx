@@ -1,4 +1,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
+
+// Tracks per-session which children's penalty hints have been shown
+const _penaltyHintShown = new Set()
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
@@ -214,9 +217,9 @@ export default function ChildDashboard({ childId }) {
     }
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show hint if daily penalties were applied today (by useDailyPenalty in AppContext)
+  // Show penalty hint once per session per child
   useEffect(() => {
-    if (!child) return
+    if (!child || _penaltyHintShown.has(childId)) return
     const todayStr = new Date().toISOString().slice(0, 10)
     const todayPenalties = transactions.filter(
       t => t.type === 'penalty' &&
@@ -224,6 +227,7 @@ export default function ChildDashboard({ childId }) {
            new Date(t.timestamp).toISOString().slice(0, 10) === todayStr
     )
     if (todayPenalties.length > 0) {
+      _penaltyHintShown.add(childId)
       const total = todayPenalties.reduce((s, t) => s + t.amount, 0)
       setHint(`⚡ הופחתו ${total} כוכבים על מטלות שלא בוצעו`)
     }
@@ -571,7 +575,7 @@ export default function ChildDashboard({ childId }) {
               onClick={() => showModal('transferStars', { childId, child })}
               className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
             >
-              🔄 העבר כוכבים
+              🔄 העברה
             </button>
           )}
           <button
