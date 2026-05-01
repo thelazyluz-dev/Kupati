@@ -188,9 +188,9 @@ export default function SettingsPanel() {
           <SyncSettings />
         </SettingsSection>
 
-        <SettingsSection icon="📊" label="דוח שבועי" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+        <SettingsSection icon="📊" label="דוח פעילות" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
           <Button variant="secondary" fullWidth onClick={() => showModal('weeklyReport')}>
-            📊 פתח דוח שבועי
+            📊 פתח דוח פעילות
           </Button>
           <p className="text-xs text-gray-400 text-center mt-2">
             מטלות, לימודים, שינויי כוכבים וכספים לכל ילד
