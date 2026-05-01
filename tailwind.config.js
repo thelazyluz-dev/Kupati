@@ -7,7 +7,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['system-ui', '-apple-system', 'Segoe UI', 'sans-serif'],
+        sans: ['Rubik', 'system-ui', '-apple-system', 'sans-serif'],
       },
       borderRadius: {
         '3xl': '1.5rem',

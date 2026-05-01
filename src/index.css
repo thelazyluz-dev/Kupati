@@ -15,7 +15,7 @@
   body {
     margin: 0;
     padding: 0;
-    font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+    font-family: 'Rubik', system-ui, -apple-system, sans-serif;
     color: #1e293b;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -40,7 +40,7 @@
     min-height: 100svh;
     max-width: 480px;
     margin: 0 auto;
-    background: linear-gradient(180deg, #c7d2fe 0%, #e9d5ff 100%);
+    background: #f1f5f9;
     /* Phone-frame shadow visible on desktop */
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.45);
   }

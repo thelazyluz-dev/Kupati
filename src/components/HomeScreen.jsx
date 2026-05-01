@@ -888,18 +888,8 @@ export default function HomeScreen() {
               {sortedChildren.map((child, i) => (
                 <div key={child.id} className="animate-slide-up"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
-                  {i > 0 && (
-                    <div className="flex items-center gap-3 my-6 px-2">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
-                      <div className="flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm ring-1 ring-gray-200/70">
-                        <span className="text-sm">🐷</span>
-                        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">הילד הבא</span>
-                      </div>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
-                    </div>
-                  )}
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
-                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner space-y-1.5">
+                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
                       className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
