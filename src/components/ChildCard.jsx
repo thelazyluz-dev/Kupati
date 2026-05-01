@@ -59,6 +59,13 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
 
   const streak = useMemo(() => calculateStreak(transactions), [transactions])
 
+  const missedYesterday = useMemo(() => {
+    const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
+    const yStart = todayStart.getTime() - 86400000
+    const yEnd   = todayStart.getTime()
+    return !transactions.some(t => t.type === 'chore' && t.timestamp >= yStart && t.timestamp < yEnd)
+  }, [transactions])
+
   const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
   const goals      = getGoals(child)
@@ -103,12 +110,18 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
       )}
 
       {/* Status badges — top-left corner */}
-      {(hasActiveSavings || goalReached || birthdayToday || showMedal) && (
+      {(hasActiveSavings || goalReached || birthdayToday || showMedal || missedYesterday) && (
         <div className="absolute top-3 left-3 flex gap-1">
           {showMedal        && <span className="text-xl leading-none animate-pop" title={`מקום ${rank}`}>{MEDALS[rank - 1]}</span>}
           {birthdayToday    && <span className="text-base leading-none animate-bounce" title="יום הולדת!">🎂</span>}
           {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
           {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
+          {missedYesterday  && (
+            <span
+              className="text-base leading-none"
+              title="לא בוצעה מטלה אתמול — הופחתו כוכבים"
+            >🚩</span>
+          )}
         </div>
       )}
 

@@ -9,7 +9,7 @@ export function useTransactions() {
     return allTx[childId] || []
   }
 
-  function addTransaction(childId, { type, amount, currency, description, note = '' }) {
+  function addTransaction(childId, { type, amount, currency, description, note = '', timestamp }) {
     const tx = {
       id: generateId(),
       type,        // 'chore' | 'gift' | 'other' | 'expense' | 'convert_out' | 'convert_in'
@@ -17,7 +17,7 @@ export function useTransactions() {
       currency,    // 'stars' | 'shekels'
       description,
       note,
-      timestamp: Date.now(),
+      timestamp: timestamp ?? Date.now(),
     }
     setAllTx((prev) => ({
       ...prev,
