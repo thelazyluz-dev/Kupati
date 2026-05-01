@@ -762,6 +762,9 @@ export default function HomeScreen() {
         className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}
         style={pigClicks >= 3 && !isBursting ? { animation: `header-tremble ${pigClicks >= 4 ? '0.07s' : '0.15s'} ease-in-out infinite` } : {}}
       >
+        {/* Shimmer sweep */}
+        <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none animate-shimmer"
+             style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)', backgroundSize: '200% 100%' }} />
         {/* Feature 9 — progressive darkness overlay */}
         <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
              style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />

@@ -446,7 +446,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Parent note card */}
         {child.parentNote ? (
-          <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up">
+          <div className="bg-pink-50/70 backdrop-blur-sm border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up shadow-sm">
             <span className="text-2xl flex-shrink-0">💌</span>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
@@ -463,7 +463,7 @@ export default function ChildDashboard({ childId }) {
         ) : (
           <button
             onClick={() => showModal('parentNote', { childId, child })}
-            className="w-full bg-pink-50 border border-dashed border-pink-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-400 hover:bg-pink-100 active:scale-95 transition-all"
+            className="w-full bg-pink-50/60 backdrop-blur-sm border border-dashed border-pink-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-400 hover:bg-pink-100/70 active:scale-95 transition-all"
           >
             <span className="text-base">💌</span>
             <span className="text-xs font-semibold">השאר הודעה לילד</span>
@@ -472,7 +472,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Outstanding loans card */}
         {outstandingTotal > 0 && (
-          <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-3 flex items-center justify-between gap-3">
+          <div className="bg-cyan-50/70 backdrop-blur-sm border border-cyan-200/60 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
             <div>
               <p className="text-xs font-bold text-cyan-600 mb-0.5">💳 יתרת הלוואות</p>
               <p className="text-2xl font-black text-cyan-700">{formatNumber(outstandingTotal)}₪</p>
@@ -488,7 +488,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Onboarding tips — shown only when child has no transactions yet */}
         {transactions.length === 0 && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
+          <div className="bg-indigo-50/70 backdrop-blur-sm border border-indigo-100/60 rounded-2xl p-4 space-y-2.5 shadow-sm">
             <p className="text-xs font-bold text-indigo-600 mb-1">💡 איך מתחילים?</p>
             {[
               { icon: '⭐', text: 'לחץ "עשיתי מטלה!" אחרי כל מטלה שהילד השלים' },
@@ -558,20 +558,20 @@ export default function ChildDashboard({ childId }) {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
           <button
             onClick={() => showModal('goal', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
           </button>
           <button
             onClick={() => showModal('savings', { childId, child })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🏦 חסכון
           </button>
           {children.length > 1 && (
             <button
               onClick={() => showModal('transferStars', { childId, child })}
-              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50/70 backdrop-blur-sm border border-indigo-200/60 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
             >
               🔄 העברה
             </button>
@@ -584,7 +584,7 @@ export default function ChildDashboard({ childId }) {
           </button>
           <button
             onClick={() => showModal('memories', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
           </button>

@@ -41,7 +41,7 @@ function SettingsSection({ icon, label, iconColor, accent, children, collapsible
         <SectionHeader icon={icon} label={label} color={iconColor} />
       )}
       {(!collapsible || open) && (
-        <div className={`bg-white rounded-2xl shadow-sm p-4 border-r-4 ${accent}`}>
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm ring-1 ring-white/50 p-4">
           {children}
         </div>
       )}
@@ -136,7 +136,7 @@ export default function SettingsPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-100 flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #ede9fe 0%, #dbeafe 100%)', backgroundAttachment: 'fixed' }}>
       <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="invisible flex items-center gap-1 pl-3 pr-2 py-2 text-sm font-bold">
