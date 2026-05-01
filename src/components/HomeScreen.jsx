@@ -764,7 +764,7 @@ export default function HomeScreen() {
       >
         {/* Shimmer sweep */}
         <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none animate-shimmer"
-             style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)', backgroundSize: '200% 100%' }} />
+             style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)', backgroundSize: '200% 100%', animationDuration: '5s' }} />
         {/* Feature 9 — progressive darkness overlay */}
         <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
              style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
