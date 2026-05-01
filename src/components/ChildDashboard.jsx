@@ -1,7 +1,4 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
-
-// Tracks per-session which children's penalty hints have been shown
-const _penaltyHintShown = new Set()
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
@@ -217,17 +214,18 @@ export default function ChildDashboard({ childId }) {
     }
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show penalty hint once per session per child
+  // Show penalty hint once per day per child (sessionStorage survives navigation, resets on tab close)
   useEffect(() => {
-    if (!child || _penaltyHintShown.has(childId)) return
+    if (!child) return
     const todayStr = new Date().toISOString().slice(0, 10)
+    const ssKey = `penaltyHint_${childId}_${todayStr}`
+    if (sessionStorage.getItem(ssKey)) return
     const todayPenalties = transactions.filter(
-      t => t.type === 'penalty' &&
-           t.description?.includes('קנס יומי') &&
+      t => t.type === 'penalty' && t.description?.includes('קנס יומי') &&
            new Date(t.timestamp).toISOString().slice(0, 10) === todayStr
     )
     if (todayPenalties.length > 0) {
-      _penaltyHintShown.add(childId)
+      sessionStorage.setItem(ssKey, '1')
       const total = todayPenalties.reduce((s, t) => s + t.amount, 0)
       setHint(`⚡ הופחתו ${total} כוכבים על מטלות שלא בוצעו`)
     }
