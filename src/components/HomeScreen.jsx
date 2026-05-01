@@ -888,6 +888,7 @@ export default function HomeScreen() {
               {sortedChildren.map((child, i) => (
                 <div key={child.id} className="animate-slide-up"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
+                  {i > 0 && <div className="h-px bg-gray-300/70 mx-3 mt-2 mb-4" />}
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
                   <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner grid grid-cols-2 gap-1.5">
                     <button

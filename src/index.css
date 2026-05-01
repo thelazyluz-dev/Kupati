@@ -40,7 +40,7 @@
     min-height: 100svh;
     max-width: 480px;
     margin: 0 auto;
-    background: #f1f5f9;
+    background: #e2e8f0;
     /* Phone-frame shadow visible on desktop */
     box-shadow: 0 0 80px rgba(0, 0, 0, 0.45);
   }
