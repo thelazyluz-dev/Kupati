@@ -558,33 +558,33 @@ export default function ChildDashboard({ childId }) {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
           <button
             onClick={() => showModal('goal', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50 border border-indigo-300 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
           </button>
           <button
             onClick={() => showModal('savings', { childId, child })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-sm font-bold text-emerald-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🏦 חסכון
           </button>
           {children.length > 1 && (
             <button
               onClick={() => showModal('transferStars', { childId, child })}
-              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-violet-50 border border-violet-300 text-sm font-bold text-violet-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
             >
               🔄 העברה
             </button>
           )}
           <button
             onClick={() => showModal('loan', { childId, child })}
-            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'border-cyan-400 text-cyan-700' : 'border-gray-200 text-gray-700'}`}
+            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'bg-cyan-50 border-cyan-400 text-cyan-700' : 'bg-white border-gray-200 text-gray-700'}`}
           >
             💳 הלוואה{outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}
           </button>
           <button
             onClick={() => showModal('memories', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-300 text-sm font-bold text-rose-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
           </button>

@@ -6,9 +6,11 @@ import { sounds } from '../lib/sounds.js'
 import { COLOR_OPTIONS } from '../lib/defaults.js'
 
 // ── Constants ──────────────────────────────────────────────────────────────
-const CAGE_R = 138
-const BALL_D = 58
-const BALL_R = BALL_D / 2
+const CAGE_R    = 138
+const BALL_D    = 58
+const BALL_R    = BALL_D / 2
+const OUTER_PAD = 24   // space outside cage edge for bulb ring
+const NUM_BULBS = 20
 
 const BALL_COLORS = {
   purple:  { bg: 'linear-gradient(145deg,#d8b4fe,#7c3aed)', glow: 'rgba(139,92,246,.7)'  },
@@ -29,12 +31,15 @@ const FALLBACK_COLORS = [
   { bg: 'linear-gradient(145deg,#fde68a,#d97706)', glow: 'rgba(245,158,11,.7)' },
   { bg: 'linear-gradient(145deg,#d8b4fe,#7c3aed)', glow: 'rgba(139,92,246,.7)' },
 ]
-const SUITS = ['♠','♥','♦','♣']
+const SUITS     = ['♠','♥','♦','♣']
+const BULB_LIST = ['#ff2200','#ffd700','#00cc44','#0088ff','#ff00cc','#ffffff','#ff7700','#aa00ff']
 
 function getBallColor(p, idx) {
   if (p.colorKey && BALL_COLORS[p.colorKey]) return BALL_COLORS[p.colorKey]
   return FALLBACK_COLORS[idx % FALLBACK_COLORS.length]
 }
+
+const wait = ms => new Promise(r => setTimeout(r, ms))
 
 // ── Physics ────────────────────────────────────────────────────────────────
 function initBall(p, idx, total) {
@@ -49,7 +54,7 @@ function initBall(p, idx, total) {
     y: CAGE_R + Math.sin(angle) * dist - BALL_R,
     vx: Math.cos(dir) * speed,
     vy: Math.sin(dir) * speed,
-    alive: true, popping: false, poppingOut: false, opacity: 1, scale: 1,
+    alive: true, popping: false, poppingOut: false, faking: false, opacity: 1, scale: 1,
   }
 }
 
@@ -77,6 +82,8 @@ function tickBalls(balls, speed) {
 // ── Ball component ─────────────────────────────────────────────────────────
 function Ball({ ball }) {
   const showName = ball.isGuest || !ball.avatarImage
+  const isFaking  = ball.faking && ball.popping
+  const isPopping = ball.popping && !ball.poppingOut && !isFaking
   return (
     <div
       className="absolute flex flex-col items-center justify-center rounded-full select-none pointer-events-none overflow-hidden"
@@ -91,18 +98,22 @@ function Ball({ ball }) {
           ? 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease'
           : 'opacity 0.2s ease',
         background: ball.color.bg,
-        boxShadow: (ball.popping && !ball.poppingOut)
-          ? `0 0 0 4px rgba(255,255,255,0.5), 0 4px 20px rgba(0,0,0,0.6), 0 0 40px ${ball.color.glow}, 0 0 80px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.5)`
+        boxShadow: isFaking
+          ? `0 0 0 3px rgba(255,110,0,0.95), 0 0 28px rgba(255,70,0,1), 0 0 60px rgba(255,30,0,0.8), inset 0 1px 3px rgba(255,255,200,0.4)`
+          : isPopping
+          ? `0 0 0 4px rgba(255,255,255,0.6), 0 4px 20px rgba(0,0,0,0.6), 0 0 45px ${ball.color.glow}, 0 0 90px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.5)`
           : `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.35)`,
         willChange: 'transform, opacity',
+        animationName: isFaking ? 'fake-shake' : 'none',
+        animationDuration: '0.15s',
+        animationIterationCount: 'infinite',
+        animationTimingFunction: 'ease-in-out',
       }}
     >
-      {/* Shine dot — only for emoji balls, not photos */}
       {!ball.avatarImage && (
         <div className="absolute rounded-full bg-white/40 pointer-events-none"
              style={{ width: BALL_D * 0.28, height: BALL_D * 0.28, top: '14%', left: '16%' }} />
       )}
-      {/* Avatar or name */}
       {ball.avatarImage ? (
         <img src={ball.avatarImage} alt={ball.name}
           className="w-full h-full object-cover rounded-full" />
@@ -117,6 +128,30 @@ function Ball({ ball }) {
           </span>
         </div>
       )}
+    </div>
+  )
+}
+
+// ── Bulb strip (horizontal row) ────────────────────────────────────────────
+function BulbStrip({ count = 16, size = 8, gap = 6, duration = 1.5 }) {
+  return (
+    <div className="flex items-center justify-center pointer-events-none" style={{ gap }}>
+      {Array.from({ length: count }, (_, i) => {
+        const color = BULB_LIST[i % BULB_LIST.length]
+        return (
+          <div key={i} className="rounded-full flex-shrink-0"
+               style={{
+                 width: size, height: size,
+                 background: color,
+                 boxShadow: `0 0 ${size * 0.7}px ${color}, 0 0 ${size * 1.4}px ${color}`,
+                 animationName: 'bulb-chase',
+                 animationDuration: `${duration}s`,
+                 animationDelay: `${-(i / count) * duration}s`,
+                 animationTimingFunction: 'ease-in-out',
+                 animationIterationCount: 'infinite',
+               }} />
+        )
+      })}
     </div>
   )
 }
@@ -163,6 +198,7 @@ export default function LotteryScreen({ onClose }) {
   const [balls, setBalls]             = useState([])
   const [showHistory, setShowHistory] = useState(false)
   const [spotlight, setSpotlight]     = useState(false)
+  const [winnerFlash, setWinnerFlash] = useState(false)
 
   const ballsRef = useRef([])
   const rafRef   = useRef(null)
@@ -202,9 +238,8 @@ export default function LotteryScreen({ onClose }) {
     if (activeParts.length < 2 || phaseRef.current !== 'idle') return
     setPhase('drawing'); phaseRef.current = 'drawing'
     speedRef.current = 4
-    setSpotlight(false)
+    setSpotlight(false); setWinnerFlash(false)
 
-    // Escalating ticks
     const times = [0,80,155,225,290,350,405,455,500,540,575,605,630,652,672]
     times.forEach(ms => setTimeout(() => sounds.wheelTick(), ms))
 
@@ -215,53 +250,71 @@ export default function LotteryScreen({ onClose }) {
     }, 1900)
   }
 
-  function doEliminate(parts) {
-    // Weighted fairness: look at recent history and give extra weight to those who haven't won lately
-    const lookback   = Math.min(history.length, parts.length * 3)
-    const recent     = history.slice(0, lookback)
-    const winCounts  = Object.fromEntries(parts.map(p => [p.id, 0]))
+  async function doEliminate(parts) {
+    // Weighted fairness based on recent wins
+    const lookback  = Math.min(history.length, parts.length * 3)
+    const recent    = history.slice(0, lookback)
+    const winCounts = Object.fromEntries(parts.map(p => [p.id, 0]))
     recent.forEach(h => {
       const match = parts.find(p => p.name === h.winner.name)
       if (match) winCounts[match.id] = (winCounts[match.id] || 0) + 1
     })
-    const maxWins  = Math.max(0, ...Object.values(winCounts))
-    const weights  = parts.map(p => maxWins + 1 - (winCounts[p.id] || 0))
-    const total    = weights.reduce((a, b) => a + b, 0)
-    let rnd = Math.random() * total
-    let wi  = parts.length - 1
+    const maxWins = Math.max(0, ...Object.values(winCounts))
+    const weights = parts.map(p => maxWins + 1 - (winCounts[p.id] || 0))
+    const total   = weights.reduce((a, b) => a + b, 0)
+    let rnd = Math.random() * total, wi = parts.length - 1
     for (let i = 0; i < weights.length; i++) { rnd -= weights[i]; if (rnd <= 0) { wi = i; break } }
-    const winnerPart  = parts[wi]
-    const losers      = parts.filter(p => p.id !== winnerPart.id).sort(() => Math.random() - 0.5)
-    let i = 0
 
-    function next() {
-      if (i >= losers.length) {
-        // Slow down to a crawl before reveal
-        speedRef.current = 0.6
-        setTimeout(() => doReveal(winnerPart), 600)
-        return
+    const winnerPart = parts[wi]
+    const losers     = parts.filter(p => p.id !== winnerPart.id).sort(() => Math.random() - 0.5)
+
+    for (let i = 0; i < losers.length; i++) {
+      const dead   = losers[i]
+      const isLast = i === losers.length - 1
+
+      // ── Fake-out: 45% chance (skip on last loser) ─────────────────────
+      if (!isLast && Math.random() < 0.45) {
+        const candidates = ballsRef.current.filter(b =>
+          b.alive && b.id !== dead.id && !b.popping && b.opacity === 1
+        )
+        if (candidates.length > 0) {
+          const fake = candidates[Math.floor(Math.random() * candidates.length)]
+          // Bulge up with orange danger glow + shake
+          ballsRef.current = ballsRef.current.map(b =>
+            b.id === fake.id ? { ...b, popping: true, faking: true, scale: 1.7 } : b
+          )
+          setBalls([...ballsRef.current])
+          await wait(680)
+          // Snap back — instant, like the ball "resisted"
+          ballsRef.current = ballsRef.current.map(b =>
+            b.id === fake.id ? { ...b, popping: false, faking: false, scale: 1, opacity: 1 } : b
+          )
+          setBalls([...ballsRef.current])
+          await wait(300)
+        }
       }
-      const dead = losers[i++]
 
-      // Phase 1: explode big — spring overshoot to 2.8× with glow
+      // ── Real explosion ────────────────────────────────────────────────
       ballsRef.current = ballsRef.current.map(b =>
-        b.id === dead.id ? { ...b, popping: true, poppingOut: false, scale: 2.8 } : b
+        b.id === dead.id ? { ...b, popping: true, poppingOut: false, faking: false, scale: 2.8 } : b
       )
       setBalls([...ballsRef.current])
       sounds.tap()
 
-      // Phase 2: vanish after the explosion has been visible
-      setTimeout(() => {
-        ballsRef.current = ballsRef.current.map(b =>
-          b.id === dead.id ? { ...b, poppingOut: true, scale: 0, opacity: 0 } : b
-        )
-        setBalls([...ballsRef.current])
-      }, 680)
+      await wait(700)
 
-      const delay = i < 2 ? 1400 : i < 5 ? 1050 : 820
-      setTimeout(next, delay + Math.random() * 200)
+      ballsRef.current = ballsRef.current.map(b =>
+        b.id === dead.id ? { ...b, poppingOut: true, scale: 0, opacity: 0 } : b
+      )
+      setBalls([...ballsRef.current])
+
+      const gap = i < 1 ? 720 : i < 4 ? 540 : 380
+      await wait(gap + Math.random() * 200)
     }
-    next()
+
+    speedRef.current = 0.6
+    await wait(600)
+    doReveal(winnerPart)
   }
 
   function doReveal(winnerPart) {
@@ -270,8 +323,10 @@ export default function LotteryScreen({ onClose }) {
     setWinner(winnerPart)
     setPhase('result')
     setSpotlight(true)
+    setWinnerFlash(true)
     sounds.wheelReveal()
     setTimeout(() => sounds.goal(), 450)
+    setTimeout(() => setWinnerFlash(false), 800)
 
     setHistory(prev => [{
       id: generateId(),
@@ -284,7 +339,7 @@ export default function LotteryScreen({ onClose }) {
   function reset() {
     setPhase('idle'); phaseRef.current = 'idle'
     speedRef.current = 1
-    setWinner(null); setSpotlight(false)
+    setWinner(null); setSpotlight(false); setWinnerFlash(false)
     resetBalls(activeParts)
   }
 
@@ -296,7 +351,6 @@ export default function LotteryScreen({ onClose }) {
   function addGuest() {
     const name = guestName.trim()
     if (!name) return
-    const idx = participants.filter(p => p.isGuest).length
     setParticipants(prev => [...prev, {
       id: `guest_${Date.now()}`, name, avatar: '👤',
       avatarImage: null, colorKey: null, active: true, isGuest: true,
@@ -304,21 +358,24 @@ export default function LotteryScreen({ onClose }) {
     setGuestName(''); setShowGuest(false)
   }
 
-  const cageSize = CAGE_R * 2
+  const cageSize  = CAGE_R * 2
+  const outerSize = cageSize + OUTER_PAD * 2
 
   return (
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden"
-         style={{ background: 'linear-gradient(160deg, #0c0008 0%, #1a0008 40%, #080010 100%)' }}>
+         style={{ background: 'linear-gradient(160deg, #040001 0%, #180004 45%, #020008 100%)' }}>
 
-      {/* Casino felt texture overlay */}
-      <div className="absolute inset-0 pointer-events-none opacity-20"
-           style={{ backgroundImage: 'repeating-linear-gradient(45deg, #fff1 0px, transparent 1px, transparent 8px, #fff1 9px)' }} />
+      {/* Diamond-weave carpet texture */}
+      <div className="absolute inset-0 pointer-events-none"
+           style={{
+             backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, transparent 1px, transparent 10px, rgba(255,255,255,0.015) 11px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.008) 0px, transparent 1px, transparent 10px, rgba(255,255,255,0.008) 11px)',
+           }} />
 
       {/* Floating card suits */}
       {SUITS.map((s, i) => (
         <div key={i} className="absolute pointer-events-none font-black select-none"
              style={{
-               color: s === '♥' || s === '♦' ? 'rgba(239,68,68,0.12)' : 'rgba(255,255,255,0.07)',
+               color: s === '♥' || s === '♦' ? 'rgba(220,38,38,0.14)' : 'rgba(255,255,255,0.06)',
                fontSize: 80 + (i % 3) * 40,
                left: `${[5, 70, 15, 78][i]}%`,
                top:  `${[10, 8, 65, 58][i]}%`,
@@ -327,26 +384,52 @@ export default function LotteryScreen({ onClose }) {
              }}>{s}</div>
       ))}
 
-      {/* Neon border strips */}
+      {/* Top neon border */}
       <div className="absolute top-0 inset-x-0 h-0.5 pointer-events-none"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.6), transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.8), rgba(255,50,50,0.6), rgba(251,191,36,0.8), transparent)' }} />
+      {/* Bottom neon border */}
       <div className="absolute bottom-0 inset-x-0 h-0.5 pointer-events-none"
-           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.6), transparent)' }} />
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.8), rgba(255,50,50,0.6), rgba(251,191,36,0.8), transparent)' }} />
 
-      {/* Header */}
-      <div className="relative flex items-center justify-between px-5 pt-10 pb-3 shrink-0">
+      {/* Winner flash overlay */}
+      {winnerFlash && (
+        <div className="absolute inset-0 z-[55] pointer-events-none"
+             style={{ background: 'rgba(251,191,36,0.18)', animationName: 'winner-flash', animationDuration: '0.8s', animationFillMode: 'forwards', animationTimingFunction: 'ease-out' }} />
+      )}
+
+      {/* ── Header ─────────────────────────────────────────────────────── */}
+      <div className="relative flex items-center justify-between px-5 pt-10 pb-1 shrink-0">
         <button onClick={onClose}
           className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg active:scale-90 transition-all"
           style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)' }}>
           ×
         </button>
+
         <div className="text-center">
-          <h1 className="text-2xl font-black tracking-widest"
-              style={{ color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.7), 0 0 40px rgba(251,191,36,0.3)' }}>
-            🎱 JACKPOT
-          </h1>
-          <p className="text-[10px] tracking-[0.3em] text-white/30 font-bold mt-0.5">FAMILY LOTTERY</p>
+          {/* Neon JACKPOT sign */}
+          <div className="inline-block px-4 py-1 rounded-xl mb-0.5"
+               style={{
+                 border: '2px solid rgba(251,191,36,0.6)',
+                 animationName: 'neon-sign-glow',
+                 animationDuration: '2.5s',
+                 animationTimingFunction: 'ease-in-out',
+                 animationIterationCount: 'infinite',
+               }}>
+            <h1 className="text-2xl font-black tracking-widest"
+                style={{
+                  color: '#fbbf24',
+                  animationName: 'neon-flicker',
+                  animationDuration: '6s',
+                  animationTimingFunction: 'linear',
+                  animationIterationCount: 'infinite',
+                }}>
+              🎰 JACKPOT
+            </h1>
+          </div>
+          <p className="text-[10px] tracking-[0.35em] font-bold"
+             style={{ color: 'rgba(255,100,100,0.7)' }}>VEGAS · FAMILY · LOTTERY</p>
         </div>
+
         <button onClick={() => setShowHistory(v => !v)}
           className="w-9 h-9 rounded-full flex items-center justify-center text-base active:scale-90 transition-all"
           style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)' }}>
@@ -354,8 +437,13 @@ export default function LotteryScreen({ onClose }) {
         </button>
       </div>
 
-      {/* Participants */}
-      <div className="px-4 mb-2 shrink-0">
+      {/* ── Top bulb strip ──────────────────────────────────────────────── */}
+      <div className="shrink-0 py-2">
+        <BulbStrip count={18} size={9} gap={5} duration={1.6} />
+      </div>
+
+      {/* ── Participants ─────────────────────────────────────────────────── */}
+      <div className="px-4 mb-1 shrink-0">
         <div className="flex flex-wrap gap-1.5 justify-center">
           {participants.map(p => (
             <button key={p.id} onClick={() => toggleParticipant(p.id)}
@@ -363,7 +451,7 @@ export default function LotteryScreen({ onClose }) {
               style={p.active ? {
                 background: 'linear-gradient(135deg, #fbbf24, #f59e0b)',
                 color: '#000',
-                boxShadow: '0 2px 10px rgba(251,191,36,0.4)',
+                boxShadow: '0 2px 10px rgba(251,191,36,0.45)',
               } : {
                 background: 'rgba(255,255,255,0.06)',
                 color: 'rgba(255,255,255,0.3)',
@@ -407,91 +495,143 @@ export default function LotteryScreen({ onClose }) {
         </div>
       </div>
 
-      {/* Cage */}
-      <div className="flex-1 flex flex-col items-center justify-center gap-4">
-        <div className="relative" style={{ width: cageSize, height: cageSize }}>
+      {/* ── Cage + action ────────────────────────────────────────────────── */}
+      <div className="flex-1 flex flex-col items-center justify-center gap-3">
+        {/* Outer container includes bulb ring */}
+        <div className="relative" style={{ width: outerSize, height: outerSize }}>
 
-          {/* Spotlight beam from top — z-index 6 so it renders above the cage body */}
-          {spotlight && (
-            <>
-              {/* Wide warm fill */}
-              <div className="absolute inset-0 rounded-full pointer-events-none animate-fade-in"
-                   style={{ zIndex: 6, background: 'radial-gradient(ellipse 80% 95% at 50% -5%, rgba(255,240,160,0.55) 0%, rgba(251,191,36,0.22) 45%, transparent 72%)' }} />
-              {/* Tight bright cone centre */}
-              <div className="absolute inset-0 rounded-full pointer-events-none"
-                   style={{ zIndex: 6, background: 'radial-gradient(ellipse 38% 68% at 50% 0%, rgba(255,255,220,0.72) 0%, rgba(255,240,100,0.3) 40%, transparent 65%)' }} />
-            </>
-          )}
+          {/* Bulb ring around cage perimeter */}
+          {Array.from({ length: NUM_BULBS }, (_, i) => {
+            const angle = (i / NUM_BULBS) * Math.PI * 2 - Math.PI / 2
+            const r     = CAGE_R + OUTER_PAD - 7
+            const cx    = outerSize / 2, cy = outerSize / 2
+            const x = cx + Math.cos(angle) * r, y = cy + Math.sin(angle) * r
+            const color = BULB_LIST[i % BULB_LIST.length]
+            return (
+              <div key={i} className="absolute rounded-full pointer-events-none"
+                   style={{
+                     width: 12, height: 12,
+                     left: x - 6, top: y - 6,
+                     background: color,
+                     boxShadow: `0 0 7px ${color}, 0 0 16px ${color}, 0 0 28px ${color}`,
+                     animationName: 'bulb-chase',
+                     animationDuration: '2.2s',
+                     animationDelay: `${-(i / NUM_BULBS) * 2.2}s`,
+                     animationTimingFunction: 'ease-in-out',
+                     animationIterationCount: 'infinite',
+                   }} />
+            )
+          })}
 
-          {/* Outer ambient glow */}
-          <div className="absolute pointer-events-none rounded-full transition-all duration-700"
-               style={{
-                 inset: -12,
-                 boxShadow: phase === 'drawing'
-                   ? '0 0 60px rgba(251,191,36,0.45), 0 0 120px rgba(251,191,36,0.2)'
-                   : phase === 'result'
-                   ? '0 0 80px rgba(251,191,36,0.6), 0 0 160px rgba(251,191,36,0.25)'
-                   : '0 0 30px rgba(251,191,36,0.12)',
-               }} />
+          {/* ── Inner cage ──────────────────────────────────────────────── */}
+          <div className="absolute" style={{ left: OUTER_PAD, top: OUTER_PAD, width: cageSize, height: cageSize }}>
 
-          {/* Cage body */}
-          <div className="absolute inset-0 rounded-full overflow-hidden"
-               style={{
-                 background: 'radial-gradient(circle at 50% 30%, rgba(60,20,0,0.5) 0%, rgba(10,0,0,0.92) 100%)',
-                 border: '3px solid',
-                 borderColor: phase === 'result' ? 'rgba(251,191,36,0.9)' : phase === 'drawing' ? 'rgba(251,191,36,0.65)' : 'rgba(251,191,36,0.35)',
-                 transition: 'border-color 0.5s ease',
-                 boxShadow: 'inset 0 0 40px rgba(0,0,0,0.7), inset 0 2px 8px rgba(255,255,255,0.06)',
-               }}>
-            {/* Glass dome highlight */}
-            <div className="absolute inset-0 pointer-events-none rounded-full"
-                 style={{ background: 'radial-gradient(ellipse 70% 40% at 50% 8%, rgba(255,255,255,0.09) 0%, transparent 60%)' }} />
-          </div>
+            {/* Spotlight beam — zIndex 6 renders above dark cage body */}
+            {spotlight && (
+              <>
+                <div className="absolute inset-0 rounded-full pointer-events-none animate-fade-in"
+                     style={{ zIndex: 6, background: 'radial-gradient(ellipse 80% 95% at 50% -5%, rgba(255,240,160,0.55) 0%, rgba(251,191,36,0.22) 45%, transparent 72%)' }} />
+                <div className="absolute inset-0 rounded-full pointer-events-none"
+                     style={{ zIndex: 6, background: 'radial-gradient(ellipse 38% 68% at 50% 0%, rgba(255,255,220,0.72) 0%, rgba(255,240,100,0.3) 40%, transparent 65%)' }} />
+              </>
+            )}
 
-          {/* Gold cage bars (3 arches) */}
-          <svg className="absolute inset-0 pointer-events-none" width={cageSize} height={cageSize}>
-            <defs>
-              <clipPath id="lc"><circle cx={CAGE_R} cy={CAGE_R} r={CAGE_R - 4} /></clipPath>
-            </defs>
-            <g clipPath="url(#lc)" stroke="rgba(251,191,36,0.15)" strokeWidth="1.5" fill="none">
-              {[-30, 0, 30].map(angle => {
-                const rad = (angle * Math.PI) / 180
-                const x1  = CAGE_R + Math.cos(rad - Math.PI / 2) * (CAGE_R - 4)
-                const y1  = CAGE_R + Math.sin(rad - Math.PI / 2) * (CAGE_R - 4)
-                const x2  = CAGE_R + Math.cos(rad + Math.PI / 2) * (CAGE_R - 4)
-                const y2  = CAGE_R + Math.sin(rad + Math.PI / 2) * (CAGE_R - 4)
-                return <line key={angle} x1={x1} y1={y1} x2={x2} y2={y2} />
-              })}
-              <circle cx={CAGE_R} cy={CAGE_R} r={CAGE_R * 0.55} />
-            </g>
-          </svg>
+            {/* Outer ambient glow ring */}
+            <div className="absolute pointer-events-none rounded-full transition-all duration-700"
+                 style={{
+                   inset: -14,
+                   boxShadow: phase === 'drawing'
+                     ? '0 0 60px rgba(220,38,38,0.5), 0 0 100px rgba(251,191,36,0.35), 0 0 160px rgba(220,38,38,0.2)'
+                     : phase === 'result'
+                     ? '0 0 80px rgba(251,191,36,0.7), 0 0 140px rgba(251,191,36,0.35), 0 0 200px rgba(251,191,36,0.15)'
+                     : '0 0 30px rgba(251,191,36,0.18)',
+                 }} />
 
-          {/* Balls — no overflow-hidden so explosion scales can burst beyond cage edge */}
-          <div className="absolute inset-0 rounded-full">
-            {balls.map(ball => <Ball key={ball.id} ball={ball} />)}
-          </div>
-
-          {/* Winner overlay */}
-          {phase === 'result' && winner && (
-            <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center z-10 animate-bounce-in">
-              <div className="w-28 h-28 rounded-full overflow-hidden ring-4 ring-yellow-300 shadow-[0_0_40px_rgba(251,191,36,0.9)] animate-pulse-gold">
-                {winner.avatarImage
-                  ? <img src={winner.avatarImage} className="w-full h-full object-cover" />
-                  : <div className="w-full h-full flex items-center justify-center"
-                         style={{ background: getBallColor(winner, 0).bg }}>
-                      <span style={{ fontSize: 52 }}>{winner.avatar}</span>
-                    </div>}
-              </div>
-              <p className="font-black text-2xl mt-2"
-                 style={{ color: '#fbbf24', textShadow: '0 0 15px rgba(251,191,36,0.9)' }}>
-                {winner.name}
-              </p>
-              <p className="text-yellow-300/60 text-sm font-bold tracking-widest mt-0.5">🏆 WINNER</p>
+            {/* Cage body — deep red interior */}
+            <div className="absolute inset-0 rounded-full"
+                 style={{
+                   background: 'radial-gradient(circle at 50% 30%, rgba(80,5,5,0.6) 0%, rgba(8,0,2,0.95) 100%)',
+                   border: '3px solid',
+                   borderColor: phase === 'result' ? 'rgba(251,191,36,0.95)' : phase === 'drawing' ? 'rgba(251,191,36,0.7)' : 'rgba(251,191,36,0.4)',
+                   transition: 'border-color 0.5s ease',
+                   boxShadow: 'inset 0 0 50px rgba(0,0,0,0.8), inset 0 2px 10px rgba(255,255,255,0.04)',
+                 }}>
+              {/* Glass dome */}
+              <div className="absolute inset-0 pointer-events-none rounded-full"
+                   style={{ background: 'radial-gradient(ellipse 70% 40% at 50% 8%, rgba(255,255,255,0.07) 0%, transparent 60%)' }} />
             </div>
-          )}
+
+            {/* Roulette wheel sectors SVG */}
+            <svg className="absolute inset-0 pointer-events-none" width={cageSize} height={cageSize}
+                 style={{ opacity: 0.28 }}>
+              <defs>
+                <clipPath id="lc"><circle cx={CAGE_R} cy={CAGE_R} r={CAGE_R - 4} /></clipPath>
+              </defs>
+              <g clipPath="url(#lc)">
+                {Array.from({ length: 12 }, (_, i) => {
+                  const a1 = (i / 12) * Math.PI * 2
+                  const a2 = ((i + 1) / 12) * Math.PI * 2
+                  const x1 = CAGE_R + Math.cos(a1) * (CAGE_R - 4)
+                  const y1 = CAGE_R + Math.sin(a1) * (CAGE_R - 4)
+                  const x2 = CAGE_R + Math.cos(a2) * (CAGE_R - 4)
+                  const y2 = CAGE_R + Math.sin(a2) * (CAGE_R - 4)
+                  return (
+                    <path key={i}
+                      d={`M${CAGE_R},${CAGE_R} L${x1},${y1} A${CAGE_R-4},${CAGE_R-4} 0 0,1 ${x2},${y2} Z`}
+                      fill={i % 2 === 0 ? 'rgba(200,0,0,0.65)' : 'rgba(0,0,0,0.65)'}
+                      stroke="rgba(251,191,36,0.55)" strokeWidth="1.5"
+                    />
+                  )
+                })}
+                {/* Inner ring */}
+                <circle cx={CAGE_R} cy={CAGE_R} r={CAGE_R * 0.4}
+                  fill="rgba(0,0,0,0.65)" stroke="rgba(251,191,36,0.6)" strokeWidth="2" />
+                {/* Center jewel */}
+                <circle cx={CAGE_R} cy={CAGE_R} r={13}
+                  fill="rgba(251,191,36,0.18)" stroke="rgba(251,191,36,0.7)" strokeWidth="2.5" />
+                <circle cx={CAGE_R} cy={CAGE_R} r={5}
+                  fill="rgba(251,191,36,0.5)" />
+              </g>
+            </svg>
+
+            {/* Balls — no overflow-hidden so explosion scales burst through */}
+            <div className="absolute inset-0 rounded-full">
+              {balls.map(ball => <Ball key={ball.id} ball={ball} />)}
+            </div>
+
+            {/* Winner overlay */}
+            {phase === 'result' && winner && (
+              <div className="absolute inset-0 rounded-full flex flex-col items-center justify-center animate-bounce-in"
+                   style={{ zIndex: 10 }}>
+                {/* Rainbow ring around winner photo */}
+                <div className="rounded-full p-1 mb-1"
+                     style={{
+                       background: 'linear-gradient(135deg,#ff2200,#ffd700,#00cc44,#0088ff,#ff00cc,#ff2200)',
+                       animationName: 'neon-sign-glow',
+                       animationDuration: '1.5s',
+                       animationIterationCount: 'infinite',
+                     }}>
+                  <div className="w-28 h-28 rounded-full overflow-hidden bg-black">
+                    {winner.avatarImage
+                      ? <img src={winner.avatarImage} className="w-full h-full object-cover" />
+                      : <div className="w-full h-full flex items-center justify-center"
+                             style={{ background: getBallColor(winner, 0).bg }}>
+                          <span style={{ fontSize: 52 }}>{winner.avatar}</span>
+                        </div>}
+                  </div>
+                </div>
+                <p className="font-black text-2xl drop-shadow-lg"
+                   style={{ color: '#fbbf24', textShadow: '0 0 15px rgba(251,191,36,0.9), 0 0 30px rgba(251,191,36,0.5)' }}>
+                  {winner.name}
+                </p>
+                <p className="text-sm font-black tracking-widest mt-0.5"
+                   style={{ color: 'rgba(255,220,100,0.8)' }}>🏆 WINNER!</p>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Action button */}
+        {/* ── Action button ─────────────────────────────────────────────── */}
         <div className="flex gap-3 items-center">
           {phase === 'idle' && (
             <button onClick={startDraw} disabled={activeParts.length < 2}
@@ -499,11 +639,10 @@ export default function LotteryScreen({ onClose }) {
               style={{
                 background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #fbbf24 100%)',
                 backgroundSize: '200% 100%',
-                boxShadow: '0 4px 24px rgba(251,191,36,0.5), 0 1px 3px rgba(0,0,0,0.4)',
+                boxShadow: '0 4px 28px rgba(251,191,36,0.55), 0 1px 3px rgba(0,0,0,0.4)',
                 letterSpacing: '0.05em',
-              }}
-            >
-              🎱 הגרל!
+              }}>
+              🎰 הגרל!
             </button>
           )}
           {phase === 'drawing' && (
@@ -526,11 +665,16 @@ export default function LotteryScreen({ onClose }) {
         </div>
       </div>
 
-      {/* History panel */}
+      {/* ── Bottom bulb strip ────────────────────────────────────────────── */}
+      <div className="shrink-0 py-2">
+        <BulbStrip count={18} size={9} gap={5} duration={1.6} />
+      </div>
+
+      {/* ── History panel ────────────────────────────────────────────────── */}
       {showHistory && (
         <div className="absolute inset-x-0 bottom-0 z-20 rounded-t-3xl p-5"
              style={{
-               background: 'rgba(15,0,8,0.97)',
+               background: 'rgba(12,0,4,0.97)',
                backdropFilter: 'blur(20px)',
                border: '1px solid rgba(251,191,36,0.25)',
                borderBottom: 'none',

@@ -388,6 +388,35 @@
     100% { transform: scale(1);    filter: brightness(1); }
   }
 
+  @keyframes neon-flicker {
+    0%, 18%, 22%, 25%, 53%, 57%, 100% {
+      opacity: 1;
+      text-shadow: 0 0 8px #fbbf24, 0 0 18px #fbbf24, 0 0 35px #fbbf24, 0 0 70px rgba(251,191,36,0.6);
+    }
+    20%, 24%, 55% { opacity: 0.75; text-shadow: none; }
+  }
+
+  @keyframes bulb-chase {
+    0%, 100% { opacity: 1; }
+    45%, 55%  { opacity: 0.08; }
+  }
+
+  @keyframes winner-flash {
+    0%   { opacity: 0.6; }
+    100% { opacity: 0; }
+  }
+
+  @keyframes neon-sign-glow {
+    0%, 100% { box-shadow: 0 0 12px rgba(251,191,36,0.7), 0 0 28px rgba(251,191,36,0.4), 0 0 55px rgba(251,191,36,0.2); }
+    50%       { box-shadow: 0 0 20px rgba(251,191,36,0.9), 0 0 45px rgba(251,191,36,0.6), 0 0 90px rgba(251,191,36,0.35); }
+  }
+
+  @keyframes fake-shake {
+    0%,100% { transform: scale(var(--fs,1.65)) rotate(0deg); }
+    25%      { transform: scale(var(--fs,1.65)) rotate(-4deg); }
+    75%      { transform: scale(var(--fs,1.65)) rotate(4deg); }
+  }
+
   @keyframes jumpscare-flash {
     0%   { background: #dc2626; }
     25%  { background: #1c1c1c; }
