@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - claude/hebrew-piggy-bank-pwa-yo1Dk
+      - claude/add-english-general-learning-IiQjZ
 
 permissions:
   contents: read
