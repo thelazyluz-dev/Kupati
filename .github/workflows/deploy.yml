@@ -11,7 +11,6 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  environments: write
 
 concurrency:
   group: "pages"
@@ -45,17 +44,6 @@ jobs:
           VITE_FIREBASE_STORAGE_BUCKET:      ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
           VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
           VITE_FIREBASE_APP_ID:              ${{ secrets.VITE_FIREBASE_APP_ID }}
-
-      - name: Allow this branch in Pages environment
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          curl -s -X PUT \
-            -H "Authorization: Bearer $GH_TOKEN" \
-            -H "Accept: application/vnd.github+json" \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/${{ github.repository }}/environments/github-pages" \
-            -d '{"deployment_branch_policy":null}' || true
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
