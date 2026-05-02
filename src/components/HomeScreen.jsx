@@ -888,7 +888,7 @@ export default function HomeScreen() {
             </div>
             <div className="flex flex-col gap-2">
               {sortedChildren.map((child, i) => (
-                <div key={child.id} className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-2 ring-white/80 rounded-3xl p-2.5 shadow-xl"
+                <div key={child.id} className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-2 ring-black/20 rounded-3xl p-2.5 shadow-xl"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
                   <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
