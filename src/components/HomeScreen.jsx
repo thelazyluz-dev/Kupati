@@ -788,6 +788,13 @@ export default function HomeScreen() {
           <button onClick={() => navigate('settings')}
             className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-xl"
             aria-label="הגדרות">⚙️</button>
+          {children.length > 0 && (
+            <button onClick={() => setShowLottery(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-sm font-bold text-white"
+              aria-label="הגרלה">
+              🎱 <span>הגרלה</span>
+            </button>
+          )}
           <button onClick={() => showModal('addChild')}
             className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-2xl font-bold leading-none"
             aria-label="הוסף ילד">+</button>
@@ -950,27 +957,7 @@ export default function HomeScreen() {
         )}
       </main>
 
-      {/* Sticky bottom lottery button */}
-      {children.length > 0 && (
-        <div className="sticky bottom-0 px-4 pb-4 pt-2"
-             style={{ background: 'linear-gradient(to top, rgba(109,40,217,0.55) 0%, transparent 100%)' }}>
-          <button
-            onClick={() => setShowLottery(true)}
-            className="w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition-all"
-            style={{
-              background: 'linear-gradient(135deg, rgba(10,10,26,0.82), rgba(0,20,0,0.82))',
-              border: '1px solid rgba(251,191,36,0.45)',
-              color: '#fbbf24',
-              boxShadow: '0 2px 16px rgba(251,191,36,0.18)',
-              backdropFilter: 'blur(12px)',
-            }}
-          >
-            🎱 הגרלה
-          </button>
-        </div>
-      )}
-
-      {showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
+{showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
     </div>
   )
 }

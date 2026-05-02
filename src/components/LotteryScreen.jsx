@@ -86,16 +86,18 @@ function Ball({ ball }) {
         opacity: ball.opacity,
         transform: `scale(${ball.scale})`,
         transition: ball.popping
-          ? 'transform 0.35s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease'
+          ? 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.45s ease'
           : 'opacity 0.2s ease',
         background: ball.color.bg,
         boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.35)`,
         willChange: 'transform, opacity',
       }}
     >
-      {/* Shine dot */}
-      <div className="absolute rounded-full bg-white/40 pointer-events-none"
-           style={{ width: BALL_D * 0.28, height: BALL_D * 0.28, top: '14%', left: '16%' }} />
+      {/* Shine dot — only for emoji balls, not photos */}
+      {!ball.avatarImage && (
+        <div className="absolute rounded-full bg-white/40 pointer-events-none"
+             style={{ width: BALL_D * 0.28, height: BALL_D * 0.28, top: '14%', left: '16%' }} />
+      )}
       {/* Avatar or name */}
       {ball.avatarImage ? (
         <img src={ball.avatarImage} alt={ball.name}
@@ -236,10 +238,10 @@ export default function LotteryScreen({ onClose }) {
         )
         setBalls([...ballsRef.current])
         sounds.tap()
-      }, 180)
+      }, 300)
 
-      const delay = i < 3 ? 500 : i < 6 ? 380 : 280
-      setTimeout(next, delay + Math.random() * 120)
+      const delay = i < 2 ? 1100 : i < 5 ? 780 : 520
+      setTimeout(next, delay + Math.random() * 180)
     }
     next()
   }
@@ -391,10 +393,16 @@ export default function LotteryScreen({ onClose }) {
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="relative" style={{ width: cageSize, height: cageSize }}>
 
-          {/* Spotlight beam from top (only in result) */}
+          {/* Spotlight beam from top */}
           {spotlight && (
-            <div className="absolute inset-0 rounded-full pointer-events-none animate-fade-in"
-                 style={{ background: 'radial-gradient(ellipse 60% 80% at 50% 10%, rgba(251,191,36,0.18) 0%, transparent 70%)' }} />
+            <>
+              {/* Wide warm fill */}
+              <div className="absolute inset-0 rounded-full pointer-events-none animate-fade-in"
+                   style={{ background: 'radial-gradient(ellipse 75% 90% at 50% -5%, rgba(255,240,160,0.38) 0%, rgba(251,191,36,0.12) 45%, transparent 70%)' }} />
+              {/* Tight cone centre */}
+              <div className="absolute inset-0 rounded-full pointer-events-none"
+                   style={{ background: 'radial-gradient(ellipse 35% 65% at 50% 0%, rgba(255,255,200,0.55) 0%, transparent 60%)' }} />
+            </>
           )}
 
           {/* Outer ambient glow */}
