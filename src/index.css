@@ -108,6 +108,12 @@
     100% { transform: translate(var(--rx), 0px)              rotate(0deg);  }
   }
 
+  /* Gentle drift for child dashboard balance card icons */
+  @keyframes icon-drift {
+    0%   { transform: translate(0px, 0px); }
+    100% { transform: translate(var(--dx), var(--dy)); }
+  }
+
   /* Floating particles (HomeScreen header) */
   @keyframes particle-float {
     0%, 100% { transform: translateY(0px)   rotate(0deg)   scale(1);    }
