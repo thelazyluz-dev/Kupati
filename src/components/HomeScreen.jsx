@@ -946,24 +946,29 @@ export default function HomeScreen() {
                 )
               })}
             </div>
-
-            {/* Lottery button */}
-            <button
-              onClick={() => setShowLottery(true)}
-              className="mt-3 w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition-all animate-fade-in"
-              style={{
-                background: 'linear-gradient(135deg, rgba(10,10,26,0.7), rgba(0,30,0,0.7))',
-                border: '1px solid rgba(251,191,36,0.35)',
-                color: '#fbbf24',
-                boxShadow: '0 2px 12px rgba(251,191,36,0.12)',
-                backdropFilter: 'blur(8px)',
-              }}
-            >
-              🎱 הגרלה
-            </button>
           </>
         )}
       </main>
+
+      {/* Sticky bottom lottery button */}
+      {children.length > 0 && (
+        <div className="sticky bottom-0 px-4 pb-4 pt-2"
+             style={{ background: 'linear-gradient(to top, rgba(109,40,217,0.55) 0%, transparent 100%)' }}>
+          <button
+            onClick={() => setShowLottery(true)}
+            className="w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition-all"
+            style={{
+              background: 'linear-gradient(135deg, rgba(10,10,26,0.82), rgba(0,20,0,0.82))',
+              border: '1px solid rgba(251,191,36,0.45)',
+              color: '#fbbf24',
+              boxShadow: '0 2px 16px rgba(251,191,36,0.18)',
+              backdropFilter: 'blur(12px)',
+            }}
+          >
+            🎱 הגרלה
+          </button>
+        </div>
+      )}
 
       {showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
     </div>
