@@ -896,7 +896,7 @@ export default function HomeScreen() {
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black/15 to-transparent" />
                   </div>
                 )}
-                <div className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-2 ring-black/20 rounded-3xl p-2.5 shadow-xl"
+                <div className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-2 ring-black/40 rounded-3xl p-2.5 shadow-xl"
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
                   <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
