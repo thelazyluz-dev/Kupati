@@ -14,6 +14,7 @@ function getTimeGradient() {
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 
 // ── Pig Easter Egg — constants ────────────────────────────────────────────────
 
@@ -887,7 +888,9 @@ export default function HomeScreen() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
             </div>
             <div className="flex flex-col gap-2">
-              {sortedChildren.map((child, i) => (
+              {sortedChildren.map((child, i) => {
+                const childGradient = (child.colorKey && COLOR_OPTIONS.find(c => c.key === child.colorKey)?.gradient) ?? CARD_GRADIENTS[i % CARD_GRADIENTS.length]
+                return (
                 <div key={child.id}>
                 {i > 0 && (
                   <div className="flex items-center gap-2 px-3 mb-2">
@@ -896,7 +899,7 @@ export default function HomeScreen() {
                     <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black/15 to-transparent" />
                   </div>
                 )}
-                <div className="animate-slide-up bg-gradient-to-br from-white/35 to-white/10 backdrop-blur-xl ring-2 ring-black/40 rounded-3xl p-2.5 shadow-xl"
+                <div className={`animate-slide-up bg-gradient-to-br ${childGradient} ring-2 ring-black/40 rounded-3xl p-2.5 shadow-xl`}
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
                   <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
@@ -938,7 +941,8 @@ export default function HomeScreen() {
                   </div>
                 </div>
                 </div>
-              ))}
+                )
+              })}
             </div>
           </>
         )}
