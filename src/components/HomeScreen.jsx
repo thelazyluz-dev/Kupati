@@ -15,6 +15,7 @@ import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
+import LotteryScreen from './LotteryScreen.jsx'
 
 // ── Pig Easter Egg — constants ────────────────────────────────────────────────
 
@@ -568,6 +569,7 @@ export default function HomeScreen() {
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
   const [showSuccess,      setShowSuccess]      = useState(false)
+  const [showLottery,      setShowLottery]      = useState(false)
   const speechTimer   = useRef(null)
   const pigWrapperRef = useRef(null)
   const pigCenterRef  = useRef({ x: '50%', y: '13%' })
@@ -944,9 +946,26 @@ export default function HomeScreen() {
                 )
               })}
             </div>
+
+            {/* Lottery button */}
+            <button
+              onClick={() => setShowLottery(true)}
+              className="mt-3 w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition-all animate-fade-in"
+              style={{
+                background: 'linear-gradient(135deg, rgba(10,10,26,0.7), rgba(0,30,0,0.7))',
+                border: '1px solid rgba(251,191,36,0.35)',
+                color: '#fbbf24',
+                boxShadow: '0 2px 12px rgba(251,191,36,0.12)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
+              🎱 הגרלה
+            </button>
           </>
         )}
       </main>
+
+      {showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
     </div>
   )
 }
