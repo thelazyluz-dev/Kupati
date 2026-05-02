@@ -53,40 +53,32 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
   }
 }
 
-// Icons orbit in random ellipses — deterministic per index so no re-render flicker
 function IconCloud({ icons }) {
   if (!icons.length) return null
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
       {icons.map((emoji, i) => {
-        // Pseudo-random positions using golden-ratio spread across the card
-        const seed = i * 2654403.9   // large prime keeps values spread
-        const px   = 10 + ((seed * 0.000031) % 80)          // 10–90 %
-        const py   = 10 + ((i * 137.508 * 0.0027 + i * 3.7) % 80)  // 10–90 %
-        const rx   = 8  + (i % 9) * 3.5    // orbit X radius 8–36 px
-        const ry   = 5  + (i % 7) * 3      // orbit Y radius 5–23 px
-        const dur  = 6  + (i % 11) * 1.2   // period 6–18 s — slow, relaxed
-        const del  = -((i * 2.3) % dur)     // spread phase so they don't sync
-        const size = 10 + (i % 4) * 2      // font 10/12/14/16 px
-        const op   = 0.30 + (i % 5) * 0.06 // opacity 0.30–0.54
+        const angle = (i * 137.508) % 360
+        const r     = 12 + (i % 5) * 9
+        const x     = 50 + r * Math.cos(angle * Math.PI / 180)
+        const y     = 50 + r * Math.sin(angle * Math.PI / 180)
+        const dx    = 5 + (i % 6) * 2.5
+        const dy    = 3 + (i % 4) * 1.5
+        const dur   = 4 + (i % 5) * 0.9
+        const del   = -((i * 1.4) % dur)
         return (
-          <span
-            key={i}
-            className="absolute leading-none select-none"
-            style={{
-              left: `${Math.max(8, Math.min(88, px))}%`,
-              top:  `${Math.max(8, Math.min(88, py))}%`,
-              fontSize: size,
-              opacity: op,
-              animationName:           'icon-orbit',
-              animationDuration:       `${dur}s`,
-              animationDelay:          `${del}s`,
-              animationTimingFunction: 'linear',
-              animationIterationCount: 'infinite',
-              '--rx': `${rx}px`,
-              '--ry': `${ry}px`,
-            }}
-          >{emoji}</span>
+          <span key={i} className="absolute leading-none select-none" style={{
+            left: `${Math.max(8, Math.min(90, x))}%`,
+            top:  `${Math.max(8, Math.min(90, y))}%`,
+            fontSize: 9, opacity: 0.4,
+            animationName:           'icon-drift',
+            animationDuration:       `${dur}s`,
+            animationDelay:          `${del}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+            animationDirection:      'alternate',
+            '--dx': `${dx}px`, '--dy': `${dy}px`,
+          }}>{emoji}</span>
         )
       })}
     </div>
@@ -140,20 +132,18 @@ function MonthlySummary({ transactions }) {
   )
 }
 
-const STAR_EMOJIS  = ['⭐','🌟','💫','✨','⭐','🌟','💫','✨','⭐','🌟']
-const MONEY_EMOJIS = ['💵','🪙','💰','💎','🤑','💸','💵','🪙','💎','🏆','💵','🪙','💰','💎']
-
 function StarIconCloud({ count }) {
-  const n = Math.min(Math.round(count), 40)
-  const icons = Array.from({ length: n }, (_, i) => STAR_EMOJIS[i % STAR_EMOJIS.length])
-  return <IconCloud icons={icons} />
+  const n = Math.min(Math.round(count), 50)
+  return <IconCloud icons={Array.from({ length: n }, () => '⭐')} />
 }
 
 function ShekelIconCloud({ balance }) {
   if (balance <= 0) return <IconCloud icons={[]} />
-  const n = Math.max(6, Math.min(28, Math.round(6 + 22 * Math.sqrt(balance / 1000))))
-  const icons = Array.from({ length: n }, (_, i) => MONEY_EMOJIS[i % MONEY_EMOJIS.length])
-  return <IconCloud icons={icons} />
+  const total    = Math.max(5, Math.min(30, Math.round(5 + 25 * Math.sqrt(balance / 1000))))
+  const billFrac = Math.min(balance / 500, 1)
+  const bills    = Math.round(total * billFrac * 0.6)
+  const coins    = total - bills
+  return <IconCloud icons={[...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]} />
 }
 
 export default function ChildDashboard({ childId }) {
