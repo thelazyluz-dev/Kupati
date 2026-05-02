@@ -14,9 +14,9 @@ const FILTERS = [
 
 function DaySeparator({ label }) {
   return (
-    <div className="flex items-center gap-2 px-1 py-1">
-      <span className="text-xs font-bold text-gray-400">{label}</span>
-      <div className="flex-1 h-px bg-gray-200" />
+    <div className="flex items-center gap-2 px-1 py-1.5">
+      <span className="text-xs font-black text-gray-600">{label}</span>
+      <div className="flex-1 h-px bg-gray-300" />
     </div>
   )
 }

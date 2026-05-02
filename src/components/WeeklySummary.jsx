@@ -78,7 +78,7 @@ export default function WeeklySummary({ transactions }) {
   const labelColor  = mode === 'stars' ? 'text-amber-500' : 'text-emerald-600'
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4">
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
       {/* Header + toggle */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-black text-gray-800 text-sm">📊 השבוע הנוכחי</h3>

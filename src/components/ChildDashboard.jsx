@@ -131,7 +131,7 @@ function MonthlySummary({ transactions }) {
   if (tiles.length === 0) return null
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4">
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
       <h3 className="font-black text-gray-800 text-sm mb-3">📅 30 הימים האחרונים</h3>
       <div className="grid grid-cols-2 gap-2">
         {tiles.map((t) => <StatTile key={t.label} {...t} />)}
@@ -451,7 +451,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Parent note card */}
         {child.parentNote ? (
-          <div className="bg-pink-50/70 backdrop-blur-sm border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up shadow-sm">
+          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 flex items-start gap-3 animate-slide-up shadow-sm">
             <span className="text-2xl flex-shrink-0">💌</span>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
@@ -468,7 +468,7 @@ export default function ChildDashboard({ childId }) {
         ) : (
           <button
             onClick={() => showModal('parentNote', { childId, child })}
-            className="w-full bg-pink-50/60 backdrop-blur-sm border border-dashed border-pink-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-400 hover:bg-pink-100/70 active:scale-95 transition-all"
+            className="w-full bg-pink-50 border border-dashed border-pink-300 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-500 hover:bg-pink-100 active:scale-95 transition-all"
           >
             <span className="text-base">💌</span>
             <span className="text-xs font-semibold">השאר הודעה לילד</span>
@@ -477,7 +477,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Outstanding loans card */}
         {outstandingTotal > 0 && (
-          <div className="bg-cyan-50/70 backdrop-blur-sm border border-cyan-200/60 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
+          <div className="bg-cyan-50 border border-cyan-300 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
             <div>
               <p className="text-xs font-bold text-cyan-600 mb-0.5">💳 יתרת הלוואות</p>
               <p className="text-2xl font-black text-cyan-700">{formatNumber(outstandingTotal)}₪</p>
@@ -493,7 +493,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Onboarding tips — shown only when child has no transactions yet */}
         {transactions.length === 0 && (
-          <div className="bg-indigo-50/70 backdrop-blur-sm border border-indigo-100/60 rounded-2xl p-4 space-y-2.5 shadow-sm">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-2.5 shadow-sm">
             <p className="text-xs font-bold text-indigo-600 mb-1">💡 איך מתחילים?</p>
             {[
               { icon: '⭐', text: 'לחץ "עשיתי מטלה!" אחרי כל מטלה שהילד השלים' },
@@ -601,14 +601,16 @@ export default function ChildDashboard({ childId }) {
 
         <div>
           <h2 className="text-lg font-black text-gray-800 mb-3">📜 היסטוריה</h2>
-          <div className="relative">
-            <div className="max-h-[460px] overflow-y-auto rounded-2xl">
-              <TransactionList transactions={transactions} childId={childId} />
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3">
+            <div className="relative">
+              <div className="max-h-[460px] overflow-y-auto">
+                <TransactionList transactions={transactions} childId={childId} />
+              </div>
+              <div
+                className="pointer-events-none absolute bottom-0 inset-x-0 h-14 rounded-b-2xl"
+                style={{ background: 'linear-gradient(to top, white, transparent)' }}
+              />
             </div>
-            <div
-              className="pointer-events-none absolute bottom-0 inset-x-0 h-14 rounded-b-2xl"
-              style={{ background: `linear-gradient(to top, ${bgTint}, transparent)` }}
-            />
           </div>
         </div>
       </main>
