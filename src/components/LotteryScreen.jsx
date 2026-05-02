@@ -49,7 +49,7 @@ function initBall(p, idx, total) {
     y: CAGE_R + Math.sin(angle) * dist - BALL_R,
     vx: Math.cos(dir) * speed,
     vy: Math.sin(dir) * speed,
-    alive: true, popping: false, opacity: 1, scale: 1,
+    alive: true, popping: false, poppingOut: false, opacity: 1, scale: 1,
   }
 }
 
@@ -85,11 +85,15 @@ function Ball({ ball }) {
         left: ball.x, top: ball.y,
         opacity: ball.opacity,
         transform: `scale(${ball.scale})`,
-        transition: ball.popping
-          ? 'transform 0.55s cubic-bezier(0.34,1.56,0.64,1), opacity 0.45s ease'
+        transition: ball.poppingOut
+          ? 'transform 0.28s ease-in, opacity 0.22s ease-in'
+          : ball.popping
+          ? 'transform 0.6s cubic-bezier(0.34,1.56,0.64,1), opacity 0.3s ease'
           : 'opacity 0.2s ease',
         background: ball.color.bg,
-        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.35)`,
+        boxShadow: (ball.popping && !ball.poppingOut)
+          ? `0 0 0 4px rgba(255,255,255,0.5), 0 4px 20px rgba(0,0,0,0.6), 0 0 40px ${ball.color.glow}, 0 0 80px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.5)`
+          : `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${ball.color.glow}, inset 0 1px 3px rgba(255,255,255,0.35)`,
         willChange: 'transform, opacity',
       }}
     >
@@ -225,23 +229,23 @@ export default function LotteryScreen({ onClose }) {
       }
       const dead = losers[i++]
 
-      // Phase 1: scale up (pop)
+      // Phase 1: explode big — spring overshoot to 2.8× with glow
       ballsRef.current = ballsRef.current.map(b =>
-        b.id === dead.id ? { ...b, popping: true, scale: 1.5 } : b
+        b.id === dead.id ? { ...b, popping: true, poppingOut: false, scale: 2.8 } : b
       )
       setBalls([...ballsRef.current])
+      sounds.tap()
 
-      // Phase 2: vanish
+      // Phase 2: vanish after the explosion has been visible
       setTimeout(() => {
         ballsRef.current = ballsRef.current.map(b =>
-          b.id === dead.id ? { ...b, scale: 0, opacity: 0 } : b
+          b.id === dead.id ? { ...b, poppingOut: true, scale: 0, opacity: 0 } : b
         )
         setBalls([...ballsRef.current])
-        sounds.tap()
-      }, 300)
+      }, 680)
 
-      const delay = i < 2 ? 1100 : i < 5 ? 780 : 520
-      setTimeout(next, delay + Math.random() * 180)
+      const delay = i < 2 ? 1400 : i < 5 ? 1050 : 820
+      setTimeout(next, delay + Math.random() * 200)
     }
     next()
   }
@@ -393,15 +397,15 @@ export default function LotteryScreen({ onClose }) {
       <div className="flex-1 flex flex-col items-center justify-center gap-4">
         <div className="relative" style={{ width: cageSize, height: cageSize }}>
 
-          {/* Spotlight beam from top */}
+          {/* Spotlight beam from top — z-index 6 so it renders above the cage body */}
           {spotlight && (
             <>
               {/* Wide warm fill */}
               <div className="absolute inset-0 rounded-full pointer-events-none animate-fade-in"
-                   style={{ background: 'radial-gradient(ellipse 75% 90% at 50% -5%, rgba(255,240,160,0.38) 0%, rgba(251,191,36,0.12) 45%, transparent 70%)' }} />
-              {/* Tight cone centre */}
+                   style={{ zIndex: 6, background: 'radial-gradient(ellipse 80% 95% at 50% -5%, rgba(255,240,160,0.55) 0%, rgba(251,191,36,0.22) 45%, transparent 72%)' }} />
+              {/* Tight bright cone centre */}
               <div className="absolute inset-0 rounded-full pointer-events-none"
-                   style={{ background: 'radial-gradient(ellipse 35% 65% at 50% 0%, rgba(255,255,200,0.55) 0%, transparent 60%)' }} />
+                   style={{ zIndex: 6, background: 'radial-gradient(ellipse 38% 68% at 50% 0%, rgba(255,255,220,0.72) 0%, rgba(255,240,100,0.3) 40%, transparent 65%)' }} />
             </>
           )}
 
@@ -448,8 +452,8 @@ export default function LotteryScreen({ onClose }) {
             </g>
           </svg>
 
-          {/* Balls */}
-          <div className="absolute inset-0 overflow-hidden rounded-full">
+          {/* Balls — no overflow-hidden so explosion scales can burst beyond cage edge */}
+          <div className="absolute inset-0 rounded-full">
             {balls.map(ball => <Ball key={ball.id} ball={ball} />)}
           </div>
 
