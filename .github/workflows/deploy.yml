@@ -11,7 +11,7 @@ permissions:
   contents: read
   pages: write
   id-token: write
-  administration: write
+  environments: write
 
 concurrency:
   group: "pages"
