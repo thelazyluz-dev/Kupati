@@ -122,17 +122,17 @@ function MonthlySummary({ transactions }) {
     .filter((tx) => tx.type === 'expense')
     .reduce((s, tx) => s + tx.amount, 0)
   const tiles = [
-    starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-600',   bg: 'bg-amber-50'   },
-    prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-600',  bg: 'bg-purple-50'  },
-    shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-600',    bg: 'bg-rose-50'    },
+    starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-700',   bg: 'bg-amber-100'   },
+    prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-700',  bg: 'bg-purple-100'  },
+    shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-700', bg: 'bg-emerald-100' },
+    shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-700',    bg: 'bg-rose-100'    },
   ].filter(Boolean)
 
   if (tiles.length === 0) return null
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4">
-      <h3 className="font-bold text-gray-700 text-sm mb-3">📅 30 הימים האחרונים</h3>
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-100 p-4">
+      <h3 className="font-black text-gray-800 text-sm mb-3">📅 30 הימים האחרונים</h3>
       <div className="grid grid-cols-2 gap-2">
         {tiles.map((t) => <StatTile key={t.label} {...t} />)}
       </div>
@@ -558,33 +558,33 @@ export default function ChildDashboard({ childId }) {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
           <button
             onClick={() => showModal('goal', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
           </button>
           <button
             onClick={() => showModal('savings', { childId, child })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🏦 חסכון
           </button>
           {children.length > 1 && (
             <button
               onClick={() => showModal('transferStars', { childId, child })}
-              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50/70 backdrop-blur-sm border border-indigo-200/60 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50 border border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
             >
               🔄 העברה
             </button>
           )}
           <button
             onClick={() => showModal('loan', { childId, child })}
-            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'border-cyan-300 text-cyan-700' : 'border-gray-200 text-gray-700'}`}
+            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'border-cyan-400 text-cyan-700' : 'border-gray-200 text-gray-700'}`}
           >
             💳 הלוואה{outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}
           </button>
           <button
             onClick={() => showModal('memories', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white/60 backdrop-blur-sm border border-white/60 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
           </button>
@@ -595,7 +595,7 @@ export default function ChildDashboard({ childId }) {
         <MonthlySummary transactions={transactions} />
 
         <div>
-          <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>
+          <h2 className="text-lg font-black text-gray-800 mb-3">📜 היסטוריה</h2>
           <div className="relative">
             <div className="max-h-[460px] overflow-y-auto rounded-2xl">
               <TransactionList transactions={transactions} childId={childId} />

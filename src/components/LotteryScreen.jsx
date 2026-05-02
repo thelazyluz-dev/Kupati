@@ -216,7 +216,21 @@ export default function LotteryScreen({ onClose }) {
   }
 
   function doEliminate(parts) {
-    const winnerPart  = parts[Math.floor(Math.random() * parts.length)]
+    // Weighted fairness: look at recent history and give extra weight to those who haven't won lately
+    const lookback   = Math.min(history.length, parts.length * 3)
+    const recent     = history.slice(0, lookback)
+    const winCounts  = Object.fromEntries(parts.map(p => [p.id, 0]))
+    recent.forEach(h => {
+      const match = parts.find(p => p.name === h.winner.name)
+      if (match) winCounts[match.id] = (winCounts[match.id] || 0) + 1
+    })
+    const maxWins  = Math.max(0, ...Object.values(winCounts))
+    const weights  = parts.map(p => maxWins + 1 - (winCounts[p.id] || 0))
+    const total    = weights.reduce((a, b) => a + b, 0)
+    let rnd = Math.random() * total
+    let wi  = parts.length - 1
+    for (let i = 0; i < weights.length; i++) { rnd -= weights[i]; if (rnd <= 0) { wi = i; break } }
+    const winnerPart  = parts[wi]
     const losers      = parts.filter(p => p.id !== winnerPart.id).sort(() => Math.random() - 0.5)
     let i = 0
 
