@@ -99,10 +99,13 @@
     100% { transform: translateY(105vh) rotate(540deg) scale(0.8); opacity: 0; }
   }
 
-  /* Balance card icons drifting wall-to-wall (uses CSS custom props --dx --dy per element) */
-  @keyframes icon-drift {
-    from { transform: translate(calc(-50% + var(--dx, 6px)), calc(-50% + var(--dy, 4px))); }
-    to   { transform: translate(calc(-50% - var(--dx, 6px)), calc(-50% - var(--dy, 4px))); }
+  /* Balance card icons — elliptical orbit (--rx, --ry per element) */
+  @keyframes icon-orbit {
+    0%   { transform: translate(var(--rx), 0px)              rotate(0deg);  }
+    25%  { transform: translate(0px, var(--ry))              rotate(6deg);  }
+    50%  { transform: translate(calc(-1 * var(--rx)), 0px)  rotate(0deg);  }
+    75%  { transform: translate(0px, calc(-1 * var(--ry)))  rotate(-6deg); }
+    100% { transform: translate(var(--rx), 0px)              rotate(0deg);  }
   }
 
   /* Floating particles (HomeScreen header) */
