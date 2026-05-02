@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { formatNumber } from '../../lib/utils.js'
 
-const STAR_EXCLUDE   = new Set(['convert_out', 'penalty', 'prize_redeem', 'savings_open'])
-const SHEKEL_NEUTRAL = new Set(['money_transfer_in', 'money_transfer_out'])
-const SHEKEL_OUT_TYPES = new Set(['expense', 'convert_out', 'prize_redeem', 'savings_open', 'wheel_spin', 'loan_repay'])
+const STAR_DEDUCT_TYPES  = new Set(['convert_out', 'penalty', 'prize_redeem', 'wheel_spin', 'stars_transfer_out', 'stars_sold_out'])
+const SHEKEL_OUT_TYPES   = new Set(['expense', 'savings_open', 'loan_repay'])
+const SHEKEL_NEUTRAL     = new Set(['money_transfer_in', 'money_transfer_out'])
 const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר']
 
 function getWeekBounds(offset = 0) {
@@ -47,8 +47,8 @@ function buildReport(txList, start, end) {
   const tx = txList.filter(t => t.timestamp >= start && t.timestamp < end)
   const chores   = tx.filter(t => t.type === 'chore').length
   const learning = tx.filter(t => t.type === 'learning').length
-  const starsIn  = tx.filter(t => t.currency === 'stars' && t.amount > 0 && !STAR_EXCLUDE.has(t.type)).reduce((s, t) => s + t.amount, 0)
-  const starsOut = tx.filter(t => t.currency === 'stars' && STAR_EXCLUDE.has(t.type)).reduce((s, t) => s + t.amount, 0)
+  const starsIn  = tx.filter(t => t.currency === 'stars' && t.amount > 0 && !STAR_DEDUCT_TYPES.has(t.type)).reduce((s, t) => s + t.amount, 0)
+  const starsOut = tx.filter(t => t.currency === 'stars' && STAR_DEDUCT_TYPES.has(t.type)).reduce((s, t) => s + t.amount, 0)
   const shekelsIn  = tx.filter(t => t.currency === 'shekels' && t.amount > 0 && !SHEKEL_OUT_TYPES.has(t.type) && !SHEKEL_NEUTRAL.has(t.type)).reduce((s, t) => s + t.amount, 0)
   const shekelsOut = tx.filter(t => t.currency === 'shekels' && SHEKEL_OUT_TYPES.has(t.type) && !SHEKEL_NEUTRAL.has(t.type)).reduce((s, t) => s + Math.abs(t.amount), 0)
   return { chores, learning, starsIn, starsOut, shekelsIn, shekelsOut }
