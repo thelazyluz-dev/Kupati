@@ -261,8 +261,13 @@ export default function ChildDashboard({ childId }) {
   const gradient   = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
 
-  const BG_TINTS = { purple:'#f5f3ff', pink:'#fdf2f8', amber:'#fffbeb', emerald:'#ecfdf5', sky:'#f0f9ff', red:'#fff1f2', lime:'#f7fee7', cyan:'#ecfeff', fuchsia:'#fdf4ff', yellow:'#fefce8' }
-  const bgTint = (child.colorKey && BG_TINTS[child.colorKey]) || '#f1f5f9'
+  // -100 Tailwind level: clearly colored, not just a whisper of tint
+  const BG_TOPS  = { purple:'#ede9fe', pink:'#fce7f3', amber:'#fef3c7', emerald:'#d1fae5', sky:'#e0f2fe', red:'#fee2e2', lime:'#ecfccb', cyan:'#cffafe', fuchsia:'#fae8ff', yellow:'#fef9c3' }
+  // -50 Tailwind level: lighter fade toward bottom
+  const BG_FADES = { purple:'#f5f3ff', pink:'#fdf2f8', amber:'#fffbeb', emerald:'#ecfdf5', sky:'#f0f9ff', red:'#fff1f2', lime:'#f7fee7', cyan:'#ecfeff', fuchsia:'#fdf4ff', yellow:'#fefce8' }
+  const bgTop  = (child.colorKey && BG_TOPS[child.colorKey])  || '#dbeafe'
+  const bgFade = (child.colorKey && BG_FADES[child.colorKey]) || '#eff6ff'
+  const bgTint = bgTop  // kept for the bottom history gradient
 
   const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
   const cheapestStarCost = Math.min(...prizes.map((p) => p.starCost))
@@ -297,7 +302,7 @@ export default function ChildDashboard({ childId }) {
   const firstGoal = goals[0] ?? null
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: bgTint }}>
+    <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(180deg, ${bgTop} 0%, ${bgFade} 55%, ${bgFade} 100%)` }}>
       {/* Flying star trail */}
       {flyingStar && (
         <div

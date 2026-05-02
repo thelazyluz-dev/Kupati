@@ -240,8 +240,9 @@ export default function LotteryScreen({ onClose }) {
     speedRef.current = 4
     setSpotlight(false); setWinnerFlash(false)
 
-    const times = [0,80,155,225,290,350,405,455,500,540,575,605,630,652,672]
-    times.forEach(ms => setTimeout(() => sounds.wheelTick(), ms))
+    // Accelerating metallic clicks building to spin
+    const tickTimes = [0,90,175,255,330,400,463,522,575,622,664,700,731,757,778,796]
+    tickTimes.forEach(ms => setTimeout(() => sounds.wheelTick(), ms))
 
     setTimeout(() => {
       sounds.wheelSuspense()
@@ -279,18 +280,19 @@ export default function LotteryScreen({ onClose }) {
         )
         if (candidates.length > 0) {
           const fake = candidates[Math.floor(Math.random() * candidates.length)]
-          // Bulge up with orange danger glow + shake
           ballsRef.current = ballsRef.current.map(b =>
             b.id === fake.id ? { ...b, popping: true, faking: true, scale: 1.7 } : b
           )
           setBalls([...ballsRef.current])
-          await wait(680)
-          // Snap back — instant, like the ball "resisted"
+          sounds.lotteryWarn()
+          await wait(700)
+          // Snap back — instant surprise
           ballsRef.current = ballsRef.current.map(b =>
             b.id === fake.id ? { ...b, popping: false, faking: false, scale: 1, opacity: 1 } : b
           )
           setBalls([...ballsRef.current])
-          await wait(300)
+          sounds.lotteryBack()
+          await wait(320)
         }
       }
 
@@ -299,7 +301,7 @@ export default function LotteryScreen({ onClose }) {
         b.id === dead.id ? { ...b, popping: true, poppingOut: false, faking: false, scale: 2.8 } : b
       )
       setBalls([...ballsRef.current])
-      sounds.tap()
+      sounds.lotteryPop()
 
       await wait(700)
 
