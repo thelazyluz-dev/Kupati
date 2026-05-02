@@ -51,16 +51,19 @@ export default function WeeklySummary({ transactions }) {
   // Last week totals (for trend chip)
   const lastWeekStart = new Date(weekStart)
   lastWeekStart.setDate(weekStart.getDate() - 7)
+  const lwStart = lastWeekStart.getTime()
+  const lwEnd   = weekStart.getTime()
   const lastWeekStars = transactions
-    .filter((tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime() && tx.currency === 'stars')
+    .filter((tx) => tx.timestamp >= lwStart && tx.timestamp < lwEnd && tx.currency === 'stars')
     .reduce((s, tx) => {
       if (STARS_EXCLUDE.has(tx.type)) return s
       if (tx.type === 'wheel_spin') return s - tx.amount
       return s + tx.amount
     }, 0)
-  const hadLastWeek = transactions.some(
-    (tx) => tx.timestamp >= lastWeekStart.getTime() && tx.timestamp < weekStart.getTime()
-  )
+  const lastWeekShekels = transactions
+    .filter((tx) => tx.timestamp >= lwStart && tx.timestamp < lwEnd && tx.currency === 'shekels' && (tx.type === 'gift' || tx.type === 'other' || tx.type === 'convert_in'))
+    .reduce((s, tx) => s + tx.amount, 0)
+  const hadLastWeek = transactions.some((tx) => tx.timestamp >= lwStart && tx.timestamp < lwEnd)
 
   // Active dataset based on toggle
   const data   = mode === 'stars' ? starsByDay : shekelsByDay
@@ -75,10 +78,10 @@ export default function WeeklySummary({ transactions }) {
   const labelColor  = mode === 'stars' ? 'text-amber-500' : 'text-emerald-600'
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4">
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
       {/* Header + toggle */}
       <div className="flex items-center justify-between mb-4">
-        <h3 className="font-bold text-gray-700 text-sm">📊 השבוע הנוכחי</h3>
+        <h3 className="font-black text-gray-800 text-sm">📊 השבוע הנוכחי</h3>
         <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-0.5">
           <button
             onClick={() => setMode('stars')}
@@ -130,8 +133,8 @@ export default function WeeklySummary({ transactions }) {
         })}
       </div>
 
-      {/* Trend chip */}
-      {(totalStars > 0 || hadLastWeek) && (
+      {/* Summary chip — switches with mode */}
+      {mode === 'stars' ? (
         <p className={`text-center text-xs font-semibold mt-3 rounded-xl py-1.5 px-3 ${
           !hadLastWeek
             ? 'bg-indigo-50 text-indigo-600'
@@ -141,13 +144,35 @@ export default function WeeklySummary({ transactions }) {
                 ? 'bg-gray-50 text-gray-500'
                 : 'bg-amber-50 text-amber-700'
         }`}>
-          {!hadLastWeek
-            ? '🌟 שבוע ראשון — המשך כך!'
-            : totalStars > lastWeekStars
-              ? `⬆️ יותר מהשבוע שעבר (+${formatNumber(totalStars - lastWeekStars)}⭐)!`
-              : totalStars === lastWeekStars
-                ? `= אותו הדבר כמו השבוע שעבר`
-                : `⬇️ קצת פחות מהשבוע שעבר (${formatNumber(lastWeekStars)}⭐ אז)`}
+          {totalStars === 0
+            ? '⭐ אפס כוכבים השבוע עדיין'
+            : !hadLastWeek
+              ? `🌟 ${formatNumber(totalStars)}⭐ השבוע — המשך כך!`
+              : totalStars > lastWeekStars
+                ? `⬆️ ${formatNumber(totalStars)}⭐ השבוע — יותר מהשבוע שעבר!`
+                : totalStars === lastWeekStars
+                  ? `${formatNumber(totalStars)}⭐ השבוע — אותו הדבר כמו השבוע שעבר`
+                  : `${formatNumber(totalStars)}⭐ השבוע — קצת פחות מהשבוע שעבר (${formatNumber(lastWeekStars)}⭐ אז)`}
+        </p>
+      ) : (
+        <p className={`text-center text-xs font-semibold mt-3 rounded-xl py-1.5 px-3 ${
+          totalShekels === 0
+            ? 'bg-gray-50 text-gray-400'
+            : totalShekels > lastWeekShekels
+              ? 'bg-emerald-50 text-emerald-700'
+              : totalShekels === lastWeekShekels
+                ? 'bg-gray-50 text-gray-500'
+                : 'bg-amber-50 text-amber-700'
+        }`}>
+          {totalShekels === 0
+            ? '₪ אפס כסף נכנס השבוע'
+            : !hadLastWeek
+              ? `💵 ${formatNumber(totalShekels)}₪ נכנסו השבוע`
+              : totalShekels > lastWeekShekels
+                ? `⬆️ ${formatNumber(totalShekels)}₪ השבוע — יותר מהשבוע שעבר!`
+                : totalShekels === lastWeekShekels
+                  ? `${formatNumber(totalShekels)}₪ השבוע — אותו הדבר כמו השבוע שעבר`
+                  : `${formatNumber(totalShekels)}₪ השבוע — קצת פחות מהשבוע שעבר (${formatNumber(lastWeekShekels)}₪ אז)`}
         </p>
       )}
 

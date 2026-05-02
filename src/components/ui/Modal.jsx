@@ -56,7 +56,7 @@ export default function Modal({ title, onClose, children, size = 'md', headerCol
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       {/* Backdrop */}
-      <div className={`absolute inset-0 bg-black/50 ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
+      <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
       {/* Panel */}
       <div

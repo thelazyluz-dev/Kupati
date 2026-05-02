@@ -2,30 +2,30 @@ import { useApp } from '../context/AppContext.jsx'
 import { formatRelativeTime, formatNumber } from '../lib/utils.js'
 
 const TYPE_STYLE = {
-  chore:          { icon: '📋', label: 'מטלה',         bg: 'bg-amber-50',   border: 'border-r-4 border-amber-400',   amount: 'text-amber-600'   },
-  gift:           { icon: '🎁', label: 'מתנה',         bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600'  },
-  other:          { icon: '💝', label: 'קיבלתי',       bg: 'bg-emerald-50', border: 'border-r-4 border-emerald-400', amount: 'text-emerald-600'  },
-  expense:        { icon: '🛍️', label: 'קנייה',        bg: 'bg-rose-50',    border: 'border-r-4 border-rose-400',    amount: 'text-rose-600'     },
-  convert_out:    { icon: '🔄', label: 'המרה',         bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'     },
-  convert_in:     { icon: '✨', label: 'המרה',         bg: 'bg-sky-50',     border: 'border-r-4 border-sky-400',     amount: 'text-sky-600'     },
-  prize_redeem:   { icon: '🎁', label: 'פרס',          bg: 'bg-purple-50',  border: 'border-r-4 border-purple-400',  amount: 'text-purple-600'   },
-  savings_open:   { icon: '🏦', label: 'חסכון נפתח',   bg: 'bg-blue-50',    border: 'border-r-4 border-blue-400',    amount: 'text-blue-600'     },
-  savings_close:  { icon: '💰', label: 'חסכון הבשיל',  bg: 'bg-teal-50',    border: 'border-r-4 border-teal-400',    amount: 'text-teal-600'     },
-  savings_early:  { icon: '⚠️', label: 'פדיון מוקדם',  bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'   },
-  penalty:        { icon: '⚡', label: 'קנס',            bg: 'bg-red-50',     border: 'border-r-4 border-red-500',     amount: 'text-red-600'      },
-  stars_transfer_out: { icon: '↗️', label: 'כוכבים נשלחו',   bg: 'bg-indigo-50',  border: 'border-r-4 border-indigo-400',  amount: 'text-indigo-600'  },
-  stars_transfer_in:  { icon: '↙️', label: 'כוכבים התקבלו',  bg: 'bg-indigo-50',  border: 'border-r-4 border-indigo-400',  amount: 'text-indigo-600'  },
-  stars_sold_out:     { icon: '🤝', label: 'מכירת כוכבים',   bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'  },
-  stars_bought_in:    { icon: '🤝', label: 'קניית כוכבים',   bg: 'bg-orange-50',  border: 'border-r-4 border-orange-400',  amount: 'text-orange-600'  },
-  wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
-  wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
-  loan:           { icon: '💳', label: 'הלוואה',        bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
-  learning:       { icon: '📚', label: 'למידה',         bg: 'bg-violet-50',  border: 'border-r-4 border-violet-400',  amount: 'text-violet-600'   },
-  loan_repay:     { icon: '💳', label: 'פרעון הלוואה',  bg: 'bg-cyan-50',    border: 'border-r-4 border-cyan-400',    amount: 'text-cyan-600'     },
-  allowance:      { icon: '💰', label: 'קצבה',           bg: 'bg-lime-50',    border: 'border-r-4 border-lime-400',    amount: 'text-lime-600'     },
+  chore:          { icon: '📋', label: 'מטלה',         bg: 'bg-white',      iconBg: 'bg-amber-100',   amount: 'text-amber-600'   },
+  gift:           { icon: '🎁', label: 'מתנה',         bg: 'bg-white',      iconBg: 'bg-emerald-100', amount: 'text-emerald-600'  },
+  other:          { icon: '💝', label: 'קיבלתי',       bg: 'bg-white',      iconBg: 'bg-emerald-100', amount: 'text-emerald-600'  },
+  expense:        { icon: '🛍️', label: 'קנייה',        bg: 'bg-white',      iconBg: 'bg-rose-100',    amount: 'text-rose-600'     },
+  convert_out:    { icon: '🔄', label: 'המרה',         bg: 'bg-white',      iconBg: 'bg-sky-100',     amount: 'text-sky-600'     },
+  convert_in:     { icon: '✨', label: 'המרה',         bg: 'bg-white',      iconBg: 'bg-sky-100',     amount: 'text-sky-600'     },
+  prize_redeem:   { icon: '🎁', label: 'פרס',          bg: 'bg-white',      iconBg: 'bg-purple-100',  amount: 'text-purple-600'   },
+  savings_open:   { icon: '🏦', label: 'חסכון נפתח',   bg: 'bg-white',      iconBg: 'bg-blue-100',    amount: 'text-blue-600'     },
+  savings_close:  { icon: '💰', label: 'חסכון הבשיל',  bg: 'bg-white',      iconBg: 'bg-teal-100',    amount: 'text-teal-600'     },
+  savings_early:  { icon: '⚠️', label: 'פדיון מוקדם',  bg: 'bg-white',      iconBg: 'bg-orange-100',  amount: 'text-orange-600'   },
+  penalty:        { icon: '⚡', label: 'קנס',            bg: 'bg-white',      iconBg: 'bg-red-100',     amount: 'text-red-600'      },
+  stars_transfer_out: { icon: '↗️', label: 'כוכבים נשלחו',   bg: 'bg-white', iconBg: 'bg-indigo-100',  amount: 'text-indigo-600'  },
+  stars_transfer_in:  { icon: '↙️', label: 'כוכבים התקבלו',  bg: 'bg-white', iconBg: 'bg-indigo-100',  amount: 'text-indigo-600'  },
+  stars_sold_out:     { icon: '🤝', label: 'מכירת כוכבים',   bg: 'bg-white', iconBg: 'bg-orange-100',  amount: 'text-orange-600'  },
+  stars_bought_in:    { icon: '🤝', label: 'קניית כוכבים',   bg: 'bg-white', iconBg: 'bg-orange-100',  amount: 'text-orange-600'  },
+  wheel_spin:     { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-white',      iconBg: 'bg-violet-100',  amount: 'text-violet-600'   },
+  wheel_win:      { icon: '🎰', label: 'גלגל המזל',     bg: 'bg-white',      iconBg: 'bg-violet-100',  amount: 'text-violet-600'   },
+  loan:           { icon: '💳', label: 'הלוואה',        bg: 'bg-white',      iconBg: 'bg-cyan-100',    amount: 'text-cyan-600'     },
+  learning:       { icon: '📚', label: 'למידה',         bg: 'bg-white',      iconBg: 'bg-violet-100',  amount: 'text-violet-600'   },
+  loan_repay:     { icon: '💳', label: 'פרעון הלוואה',  bg: 'bg-white',      iconBg: 'bg-cyan-100',    amount: 'text-cyan-600'     },
+  allowance:      { icon: '💰', label: 'קצבה',           bg: 'bg-white',      iconBg: 'bg-lime-100',    amount: 'text-lime-600'     },
 }
 
-const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-gray-50', border: 'border-r-4 border-gray-300', amount: 'text-gray-600' }
+const FALLBACK = { icon: '💸', label: 'עסקה', bg: 'bg-white', iconBg: 'bg-gray-100', amount: 'text-gray-600' }
 
 export default function TransactionItem({ transaction, childId, selectMode = false, isSelected = false, onToggle }) {
   const { showModal } = useApp()
@@ -42,15 +42,15 @@ export default function TransactionItem({ transaction, childId, selectMode = fal
   return (
     <div
       onClick={handleRowClick}
-      className={`flex items-center gap-3 px-3 py-3 border-b border-gray-100 last:border-0 ${style.bg} ${style.border} ${selectMode ? 'cursor-pointer active:brightness-95' : ''} ${isSelected ? 'ring-2 ring-inset ring-indigo-400' : ''}`}
+      className={`flex items-center gap-3 px-3 py-3 rounded-2xl shadow-sm ${style.bg} ${selectMode ? 'cursor-pointer active:brightness-95' : ''} ${isSelected ? 'ring-2 ring-indigo-400' : ''}`}
     >
       {/* Select circle or type icon */}
       {selectMode ? (
-        <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 flex-shrink-0 transition-all ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'bg-white border-gray-300'}`}>
+        <div className={`w-9 h-9 flex items-center justify-center rounded-full border-2 flex-shrink-0 transition-all ${isSelected ? 'bg-indigo-500 border-indigo-500' : 'bg-gray-100 border-gray-200'}`}>
           {isSelected && <span className="text-white text-base font-bold">✓</span>}
         </div>
       ) : (
-        <div className="w-9 h-9 flex items-center justify-center rounded-xl bg-white/70 text-lg flex-shrink-0 shadow-sm">
+        <div className={`w-9 h-9 flex items-center justify-center rounded-full text-lg flex-shrink-0 ${style.iconBg}`}>
           {style.icon}
         </div>
       )}

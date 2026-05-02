@@ -111,35 +111,104 @@ export const sounds = {
     beep({ freq: 1700, type: 'triangle', duration: 0.14, delay: 0.05, gain: 0.22 })
   },
 
-  // Wheel click tick — short percussive snap
-  wheelTick: () => beep({ freq: 380, type: 'square', duration: 0.03, gain: 0.22 }),
+  // Wheel click tick — metallic double-click like a roulette ball
+  wheelTick: () => {
+    beep({ freq: 1800, type: 'triangle', duration: 0.015, gain: 0.38 })
+    beep({ freq: 900,  type: 'triangle', duration: 0.03,  gain: 0.22, delay: 0.018 })
+  },
 
-  // Rising suspense swoop (last ~0.5s before reveal)
+  // Rising suspense swoop — longer, dual-layer build before elimination
   wheelSuspense: () => {
     if (!isSoundEnabled()) return
+    try {
+      const ac = getCtx()
+      // Main rising sweep
+      const osc = ac.createOscillator()
+      const g   = ac.createGain()
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(120, ac.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(900, ac.currentTime + 0.9)
+      g.gain.setValueAtTime(0.0, ac.currentTime)
+      g.gain.linearRampToValueAtTime(0.28, ac.currentTime + 0.5)
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 1.0)
+      osc.start(ac.currentTime)
+      osc.stop(ac.currentTime + 1.05)
+      // Harmony layer
+      const osc2 = ac.createOscillator()
+      const g2   = ac.createGain()
+      osc2.connect(g2); g2.connect(ac.destination)
+      osc2.type = 'sawtooth'
+      osc2.frequency.setValueAtTime(160, ac.currentTime)
+      osc2.frequency.exponentialRampToValueAtTime(620, ac.currentTime + 0.9)
+      g2.gain.setValueAtTime(0.0, ac.currentTime)
+      g2.gain.linearRampToValueAtTime(0.10, ac.currentTime + 0.5)
+      g2.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 1.0)
+      osc2.start(ac.currentTime)
+      osc2.stop(ac.currentTime + 1.05)
+    } catch {}
+  },
+
+  // Grand reveal fanfare — 8 ascending notes, stronger
+  wheelReveal: () => {
+    haptic([30, 15, 50, 20, 80, 25, 150])
+    const notes = [330, 415, 494, 587, 698, 831, 988, 1175]
+    notes.forEach((f, i) =>
+      beep({ freq: f, duration: 0.32 + i * 0.05, delay: i * 0.08, gain: 0.34 - i * 0.02 })
+    )
+  },
+
+  // Lottery ball explosion — sub-bass thud + crack + shimmer
+  lotteryPop: () => {
+    haptic([60, 20, 50])
+    beep({ freq: 70,   type: 'sawtooth', duration: 0.28, gain: 0.60 })
+    beep({ freq: 190,  type: 'sawtooth', duration: 0.14, gain: 0.42, delay: 0.02 })
+    beep({ freq: 2400, type: 'triangle', duration: 0.05, gain: 0.32, delay: 0.01 })
+    beep({ freq: 850,  type: 'triangle', duration: 0.12, gain: 0.20, delay: 0.06 })
+    beep({ freq: 420,  type: 'sine',     duration: 0.22, gain: 0.14, delay: 0.10 })
+  },
+
+  // Fake-out warning — tritone tension alarm with rising sweep
+  lotteryWarn: () => {
+    if (!isSoundEnabled()) return
+    haptic([20, 10, 20])
+    try {
+      const ac = getCtx()
+      const osc = ac.createOscillator()
+      const g   = ac.createGain()
+      osc.connect(g); g.connect(ac.destination)
+      osc.type = 'sawtooth'
+      osc.frequency.setValueAtTime(220, ac.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(460, ac.currentTime + 0.45)
+      g.gain.setValueAtTime(0.0, ac.currentTime)
+      g.gain.linearRampToValueAtTime(0.22, ac.currentTime + 0.1)
+      g.gain.setValueAtTime(0.22, ac.currentTime + 0.38)
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.55)
+      osc.start(ac.currentTime)
+      osc.stop(ac.currentTime + 0.6)
+    } catch {}
+    beep({ freq: 311, type: 'square', duration: 0.07, gain: 0.16 })
+    beep({ freq: 466, type: 'square', duration: 0.07, gain: 0.13, delay: 0.18 })
+    beep({ freq: 311, type: 'square', duration: 0.07, gain: 0.10, delay: 0.36 })
+  },
+
+  // Fake-out snap-back — descending "whew" glide
+  lotteryBack: () => {
+    if (!isSoundEnabled()) return
+    haptic([12])
     try {
       const ac = getCtx()
       const osc = ac.createOscillator()
       const g   = ac.createGain()
       osc.connect(g); g.connect(ac.destination)
       osc.type = 'sine'
-      osc.frequency.setValueAtTime(180, ac.currentTime)
-      osc.frequency.exponentialRampToValueAtTime(780, ac.currentTime + 0.55)
-      g.gain.setValueAtTime(0.0, ac.currentTime)
-      g.gain.linearRampToValueAtTime(0.22, ac.currentTime + 0.25)
-      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.6)
+      osc.frequency.setValueAtTime(580, ac.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(180, ac.currentTime + 0.28)
+      g.gain.setValueAtTime(0.26, ac.currentTime)
+      g.gain.exponentialRampToValueAtTime(0.001, ac.currentTime + 0.32)
       osc.start(ac.currentTime)
-      osc.stop(ac.currentTime + 0.65)
+      osc.stop(ac.currentTime + 0.35)
     } catch {}
-  },
-
-  // Grand reveal fanfare (7 ascending notes with reverb-like tail)
-  wheelReveal: () => {
-    haptic([30, 15, 30, 15, 80, 20, 120])
-    const notes = [392, 494, 587, 659, 784, 988, 1175]
-    notes.forEach((f, i) =>
-      beep({ freq: f, duration: 0.28 + i * 0.04, delay: i * 0.09, gain: 0.3 - i * 0.02 })
-    )
   },
 
   // Error screen — alarm siren (alternating high/low beeps)

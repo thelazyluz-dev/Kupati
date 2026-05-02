@@ -53,38 +53,38 @@ function useLongPress(onTap, onLong, holdMs = 1500) {
   }
 }
 
-// Deterministic star/coin scatter — each icon drifts gently wall-to-wall
+// Icons orbit in random ellipses — deterministic per index so no re-render flicker
 function IconCloud({ icons }) {
   if (!icons.length) return null
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-2xl">
       {icons.map((emoji, i) => {
-        const angle = (i * 137.508) % 360
-        const r     = 12 + (i % 5) * 9
-        const x     = 50 + r * Math.cos(angle * Math.PI / 180)
-        const y     = 50 + r * Math.sin(angle * Math.PI / 180)
-        // Individual drift amounts so icons don't move in sync
-        const dx  = 5 + (i % 6) * 2.5   // 5–17.5 px horizontal
-        const dy  = 3 + (i % 4) * 1.5   // 3–7.5 px vertical
-        const dur = 4 + (i % 5) * 0.9   // 4–7.6 s per cycle
-        const del = -((i * 1.4) % dur)   // start mid-cycle so no pop-in
+        // Pseudo-random positions using golden-ratio spread across the card
+        const seed = i * 2654403.9   // large prime keeps values spread
+        const px   = 10 + ((seed * 0.000031) % 80)          // 10–90 %
+        const py   = 10 + ((i * 137.508 * 0.0027 + i * 3.7) % 80)  // 10–90 %
+        const rx   = 8  + (i % 9) * 3.5    // orbit X radius 8–36 px
+        const ry   = 5  + (i % 7) * 3      // orbit Y radius 5–23 px
+        const dur  = 6  + (i % 11) * 1.2   // period 6–18 s — slow, relaxed
+        const del  = -((i * 2.3) % dur)     // spread phase so they don't sync
+        const size = 10 + (i % 4) * 2      // font 10/12/14/16 px
+        const op   = 0.30 + (i % 5) * 0.06 // opacity 0.30–0.54
         return (
           <span
             key={i}
             className="absolute leading-none select-none"
             style={{
-              left: `${Math.max(8, Math.min(90, x))}%`,
-              top:  `${Math.max(8, Math.min(90, y))}%`,
-              fontSize: 9,
-              opacity: 0.4,
-              animationName:            'icon-drift',
-              animationDuration:        `${dur}s`,
-              animationDelay:           `${del}s`,
-              animationTimingFunction:  'ease-in-out',
-              animationIterationCount:  'infinite',
-              animationDirection:       'alternate',
-              '--dx': `${dx}px`,
-              '--dy': `${dy}px`,
+              left: `${Math.max(8, Math.min(88, px))}%`,
+              top:  `${Math.max(8, Math.min(88, py))}%`,
+              fontSize: size,
+              opacity: op,
+              animationName:           'icon-orbit',
+              animationDuration:       `${dur}s`,
+              animationDelay:          `${del}s`,
+              animationTimingFunction: 'linear',
+              animationIterationCount: 'infinite',
+              '--rx': `${rx}px`,
+              '--ry': `${ry}px`,
             }}
           >{emoji}</span>
         )
@@ -122,17 +122,17 @@ function MonthlySummary({ transactions }) {
     .filter((tx) => tx.type === 'expense')
     .reduce((s, tx) => s + tx.amount, 0)
   const tiles = [
-    starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-600',   bg: 'bg-amber-50'   },
-    prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-600',  bg: 'bg-purple-50'  },
-    shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-600',    bg: 'bg-rose-50'    },
+    starsEarned > 0  && { icon: '⭐', label: 'כוכבים נצברו',  value: `+${formatNumber(starsEarned)}`,     color: 'text-amber-700',   bg: 'bg-amber-100'   },
+    prizesRedeemed > 0 && { icon: '🎁', label: 'פרסים מומשו',   value: `-${formatNumber(prizesRedeemed)}⭐`, color: 'text-purple-700',  bg: 'bg-purple-100'  },
+    shekelIn > 0     && { icon: '💵', label: 'כסף נכנס',       value: `+${formatNumber(shekelIn)}₪`,       color: 'text-emerald-700', bg: 'bg-emerald-100' },
+    shekelOut > 0    && { icon: '🛍️', label: 'קניות',           value: `-${formatNumber(shekelOut)}₪`,      color: 'text-rose-700',    bg: 'bg-rose-100'    },
   ].filter(Boolean)
 
   if (tiles.length === 0) return null
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm p-4">
-      <h3 className="font-bold text-gray-700 text-sm mb-3">📅 30 הימים האחרונים</h3>
+    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
+      <h3 className="font-black text-gray-800 text-sm mb-3">📅 30 הימים האחרונים</h3>
       <div className="grid grid-cols-2 gap-2">
         {tiles.map((t) => <StatTile key={t.label} {...t} />)}
       </div>
@@ -140,19 +140,19 @@ function MonthlySummary({ transactions }) {
   )
 }
 
+const STAR_EMOJIS  = ['⭐','🌟','💫','✨','⭐','🌟','💫','✨','⭐','🌟']
+const MONEY_EMOJIS = ['💵','🪙','💰','💎','🤑','💸','💵','🪙','💎','🏆','💵','🪙','💰','💎']
+
 function StarIconCloud({ count }) {
-  const n = Math.min(Math.round(count), 50)
-  const icons = Array.from({ length: n }, () => '⭐')
+  const n = Math.min(Math.round(count), 40)
+  const icons = Array.from({ length: n }, (_, i) => STAR_EMOJIS[i % STAR_EMOJIS.length])
   return <IconCloud icons={icons} />
 }
 
 function ShekelIconCloud({ balance }) {
   if (balance <= 0) return <IconCloud icons={[]} />
-  const totalIcons = Math.max(5, Math.min(30, Math.round(5 + 25 * Math.sqrt(balance / 1000))))
-  const billFrac   = Math.min(balance / 500, 1)
-  const bills      = Math.round(totalIcons * billFrac * 0.6)
-  const coins      = totalIcons - bills
-  const icons      = [...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]
+  const n = Math.max(6, Math.min(28, Math.round(6 + 22 * Math.sqrt(balance / 1000))))
+  const icons = Array.from({ length: n }, (_, i) => MONEY_EMOJIS[i % MONEY_EMOJIS.length])
   return <IconCloud icons={icons} />
 }
 
@@ -214,16 +214,18 @@ export default function ChildDashboard({ childId }) {
     }
   }, [childId]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Show hint if daily penalties were applied today (by useDailyPenalty in AppContext)
+  // Show penalty hint once per day per child (sessionStorage survives navigation, resets on tab close)
   useEffect(() => {
     if (!child) return
     const todayStr = new Date().toISOString().slice(0, 10)
+    const ssKey = `penaltyHint_${childId}_${todayStr}`
+    if (sessionStorage.getItem(ssKey)) return
     const todayPenalties = transactions.filter(
-      t => t.type === 'penalty' &&
-           t.description?.includes('קנס יומי') &&
+      t => t.type === 'penalty' && t.description?.includes('קנס יומי') &&
            new Date(t.timestamp).toISOString().slice(0, 10) === todayStr
     )
     if (todayPenalties.length > 0) {
+      sessionStorage.setItem(ssKey, '1')
       const total = todayPenalties.reduce((s, t) => s + t.amount, 0)
       setHint(`⚡ הופחתו ${total} כוכבים על מטלות שלא בוצעו`)
     }
@@ -259,8 +261,13 @@ export default function ChildDashboard({ childId }) {
   const gradient   = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[childIndex % CARD_GRADIENTS.length]
 
-  const BG_TINTS = { purple:'#f5f3ff', pink:'#fdf2f8', amber:'#fffbeb', emerald:'#ecfdf5', sky:'#f0f9ff', red:'#fff1f2', lime:'#f7fee7', cyan:'#ecfeff', fuchsia:'#fdf4ff', yellow:'#fefce8' }
-  const bgTint = (child.colorKey && BG_TINTS[child.colorKey]) || '#f1f5f9'
+  // -100 Tailwind level: clearly colored, not just a whisper of tint
+  const BG_TOPS  = { purple:'#ede9fe', pink:'#fce7f3', amber:'#fef3c7', emerald:'#d1fae5', sky:'#e0f2fe', red:'#fee2e2', lime:'#ecfccb', cyan:'#cffafe', fuchsia:'#fae8ff', yellow:'#fef9c3' }
+  // -50 Tailwind level: lighter fade toward bottom
+  const BG_FADES = { purple:'#f5f3ff', pink:'#fdf2f8', amber:'#fffbeb', emerald:'#ecfdf5', sky:'#f0f9ff', red:'#fff1f2', lime:'#f7fee7', cyan:'#ecfeff', fuchsia:'#fdf4ff', yellow:'#fefce8' }
+  const bgTop  = (child.colorKey && BG_TOPS[child.colorKey])  || '#dbeafe'
+  const bgFade = (child.colorKey && BG_FADES[child.colorKey]) || '#eff6ff'
+  const bgTint = bgTop  // kept for the bottom history gradient
 
   const prizes = settings.prizes?.length ? settings.prizes : DEFAULT_PRIZES
   const cheapestStarCost = Math.min(...prizes.map((p) => p.starCost))
@@ -295,7 +302,7 @@ export default function ChildDashboard({ childId }) {
   const firstGoal = goals[0] ?? null
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ backgroundColor: bgTint }}>
+    <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(180deg, ${bgTop} 0%, ${bgFade} 55%, ${bgFade} 100%)` }}>
       {/* Flying star trail */}
       {flyingStar && (
         <div
@@ -444,7 +451,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Parent note card */}
         {child.parentNote ? (
-          <div className="bg-pink-50 border border-pink-100 rounded-2xl p-4 flex items-start gap-3 animate-slide-up">
+          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 flex items-start gap-3 animate-slide-up shadow-sm">
             <span className="text-2xl flex-shrink-0">💌</span>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
@@ -461,7 +468,7 @@ export default function ChildDashboard({ childId }) {
         ) : (
           <button
             onClick={() => showModal('parentNote', { childId, child })}
-            className="w-full bg-pink-50 border border-dashed border-pink-200 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-400 hover:bg-pink-100 active:scale-95 transition-all"
+            className="w-full bg-pink-50 border border-dashed border-pink-300 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-500 hover:bg-pink-100 active:scale-95 transition-all"
           >
             <span className="text-base">💌</span>
             <span className="text-xs font-semibold">השאר הודעה לילד</span>
@@ -470,7 +477,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Outstanding loans card */}
         {outstandingTotal > 0 && (
-          <div className="bg-cyan-50 border border-cyan-200 rounded-2xl p-3 flex items-center justify-between gap-3">
+          <div className="bg-cyan-50 border border-cyan-300 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
             <div>
               <p className="text-xs font-bold text-cyan-600 mb-0.5">💳 יתרת הלוואות</p>
               <p className="text-2xl font-black text-cyan-700">{formatNumber(outstandingTotal)}₪</p>
@@ -486,7 +493,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Onboarding tips — shown only when child has no transactions yet */}
         {transactions.length === 0 && (
-          <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 space-y-2.5">
+          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-2.5 shadow-sm">
             <p className="text-xs font-bold text-indigo-600 mb-1">💡 איך מתחילים?</p>
             {[
               { icon: '⭐', text: 'לחץ "עשיתי מטלה!" אחרי כל מטלה שהילד השלים' },
@@ -556,33 +563,33 @@ export default function ChildDashboard({ childId }) {
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
           <button
             onClick={() => showModal('goal', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50 border border-indigo-300 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
           </button>
           <button
             onClick={() => showModal('savings', { childId, child })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-sm font-bold text-emerald-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             🏦 חסכון
           </button>
           {children.length > 1 && (
             <button
               onClick={() => showModal('transferStars', { childId, child })}
-              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-indigo-200 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-violet-50 border border-violet-300 text-sm font-bold text-violet-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
             >
-              🔄 העבר כוכבים
+              🔄 העברה
             </button>
           )}
           <button
             onClick={() => showModal('loan', { childId, child })}
-            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'border-cyan-300 text-cyan-700' : 'border-gray-200 text-gray-700'}`}
+            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'bg-cyan-50 border-cyan-400 text-cyan-700' : 'bg-white border-gray-200 text-gray-700'}`}
           >
             💳 הלוואה{outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}
           </button>
           <button
             onClick={() => showModal('memories', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-white border-2 border-gray-200 text-sm font-bold text-gray-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-300 text-sm font-bold text-rose-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
           >
             📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
           </button>
@@ -593,15 +600,17 @@ export default function ChildDashboard({ childId }) {
         <MonthlySummary transactions={transactions} />
 
         <div>
-          <h2 className="text-lg font-bold text-gray-700 mb-3">📜 היסטוריה</h2>
-          <div className="relative">
-            <div className="max-h-[460px] overflow-y-auto rounded-2xl">
-              <TransactionList transactions={transactions} childId={childId} />
+          <h2 className="text-lg font-black text-gray-800 mb-3">📜 היסטוריה</h2>
+          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3">
+            <div className="relative">
+              <div className="max-h-[460px] overflow-y-auto">
+                <TransactionList transactions={transactions} childId={childId} />
+              </div>
+              <div
+                className="pointer-events-none absolute bottom-0 inset-x-0 h-14 rounded-b-2xl"
+                style={{ background: 'linear-gradient(to top, white, transparent)' }}
+              />
             </div>
-            <div
-              className="pointer-events-none absolute bottom-0 inset-x-0 h-14 rounded-b-2xl"
-              style={{ background: `linear-gradient(to top, ${bgTint}, transparent)` }}
-            />
           </div>
         </div>
       </main>

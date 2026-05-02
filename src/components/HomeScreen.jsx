@@ -14,6 +14,8 @@ function getTimeGradient() {
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
+import LotteryScreen from './LotteryScreen.jsx'
 
 // ── Pig Easter Egg — constants ────────────────────────────────────────────────
 
@@ -567,6 +569,7 @@ export default function HomeScreen() {
   const [showPigFloat,     setShowPigFloat]     = useState(false)
   const [showRainbow,      setShowRainbow]      = useState(false)
   const [showSuccess,      setShowSuccess]      = useState(false)
+  const [showLottery,      setShowLottery]      = useState(false)
   const speechTimer   = useRef(null)
   const pigWrapperRef = useRef(null)
   const pigCenterRef  = useRef({ x: '50%', y: '13%' })
@@ -762,6 +765,9 @@ export default function HomeScreen() {
         className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}
         style={pigClicks >= 3 && !isBursting ? { animation: `header-tremble ${pigClicks >= 4 ? '0.07s' : '0.15s'} ease-in-out infinite` } : {}}
       >
+        {/* Shimmer sweep */}
+        <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none animate-shimmer"
+             style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)', backgroundSize: '200% 100%', animationDuration: '5s' }} />
         {/* Feature 9 — progressive darkness overlay */}
         <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
              style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
@@ -782,6 +788,13 @@ export default function HomeScreen() {
           <button onClick={() => navigate('settings')}
             className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-xl"
             aria-label="הגדרות">⚙️</button>
+          {children.length > 0 && (
+            <button onClick={() => setShowLottery(true)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-sm font-bold text-white"
+              aria-label="הגרלה">
+              🎱 <span>הגרלה</span>
+            </button>
+          )}
           <button onClick={() => showModal('addChild')}
             className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-2xl font-bold leading-none"
             aria-label="הוסף ילד">+</button>
@@ -829,13 +842,13 @@ export default function HomeScreen() {
             )}
 
             <div
-              className="relative w-11 h-11 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
+              className="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
               style={pigRingStyle}
               onClick={handlePigClick}
               title="לחץ עלי 🐷"
             >
               <span
-                className={`text-2xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
+                className={`text-4xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
                 style={pigClicks >= 3 && !isBursting ? { animation: 'pig-shake 0.35s ease-in-out' } : {}}
               >
                 {showPigFloat ? '' : isBursting && countdown === null ? '💥' : isBursting && countdown !== null ? '' : '🐷'}
@@ -844,7 +857,6 @@ export default function HomeScreen() {
             </div>
           </div>
           <h1 className="text-lg font-bold tracking-tight">הארנק שלי</h1>
-          <p className="text-xs text-white/65 mt-0.5">כסף חכם לילדים 💡</p>
         </div>
       </header>
 
@@ -885,24 +897,24 @@ export default function HomeScreen() {
               <div className="h-px flex-1 bg-gradient-to-r from-transparent via-gray-300 to-transparent" />
             </div>
             <div className="flex flex-col gap-2">
-              {sortedChildren.map((child, i) => (
-                <div key={child.id} className="animate-slide-up"
+              {sortedChildren.map((child, i) => {
+                const childGradient = (child.colorKey && COLOR_OPTIONS.find(c => c.key === child.colorKey)?.gradient) ?? CARD_GRADIENTS[i % CARD_GRADIENTS.length]
+                return (
+                <div key={child.id}>
+                {i > 0 && (
+                  <div className="flex items-center gap-2 px-3 mb-2">
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black/15 to-transparent" />
+                    <span className="text-sm opacity-40">🐷</span>
+                    <div className="h-px flex-1 bg-gradient-to-r from-transparent via-black/15 to-transparent" />
+                  </div>
+                )}
+                <div className={`animate-slide-up bg-gradient-to-br ${childGradient} ring-2 ring-black/40 rounded-3xl p-2.5 shadow-xl`}
                      style={{ animationDelay: `${i * 60}ms`, animationFillMode: 'both' }}>
-                  {i > 0 && (
-                    <div className="flex items-center gap-3 my-6 px-2">
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
-                      <div className="flex items-center gap-1.5 bg-white rounded-full px-3 py-1 shadow-sm ring-1 ring-gray-200/70">
-                        <span className="text-sm">🐷</span>
-                        <span className="text-[10px] font-semibold text-gray-400 tracking-wide">הילד הבא</span>
-                      </div>
-                      <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-300/80 to-transparent" />
-                    </div>
-                  )}
                   <ChildCard child={child} index={i} rank={i + 1} totalChildren={children.length} />
-                  <div className="mt-2 bg-gray-100 rounded-2xl p-1.5 ring-1 ring-gray-200 shadow-inner space-y-1.5">
+                  <div className="mt-2 bg-white/10 backdrop-blur-sm rounded-2xl p-1.5 grid grid-cols-2 gap-1.5">
                     <button
                       onClick={() => showModal('addStars', { childId: child.id, allowFreeEntry: false })}
-                      className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
+                      className="w-full bg-gradient-to-b from-amber-400 to-amber-500 rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 text-white active:scale-95 active:brightness-90 transition-all"
                     >
                       <span className="text-lg leading-none">⭐</span>
                       <span className="text-xs font-bold leading-tight">מטלה מהירה</span>
@@ -916,7 +928,7 @@ export default function HomeScreen() {
                         <button
                           ref={(el) => registerCoinTarget(child.id, el)}
                           onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                          className={`w-full rounded-xl shadow-sm px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
+                          className={`w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
                             freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
                           }`}
                         >
@@ -937,11 +949,15 @@ export default function HomeScreen() {
                     })()}
                   </div>
                 </div>
-              ))}
+                </div>
+                )
+              })}
             </div>
           </>
         )}
       </main>
+
+{showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
     </div>
   )
 }
