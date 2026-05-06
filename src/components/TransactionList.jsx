@@ -15,8 +15,8 @@ const FILTERS = [
 function DaySeparator({ label }) {
   return (
     <div className="flex items-center gap-2 px-1 py-1.5">
-      <span className="text-xs font-black text-gray-600">{label}</span>
-      <div className="flex-1 h-px bg-gray-300" />
+      <span className="text-xs font-black text-gray-500">{label}</span>
+      <div className="flex-1 h-px bg-gray-200" />
     </div>
   )
 }
@@ -56,7 +56,6 @@ export default function TransactionList({ transactions, childId }) {
 
   function deleteSelected() {
     requirePin(() => {
-      // deleteTransaction (AppContext wrapper) handles balance + free spin for each tx
       selected.forEach((id) => deleteTransaction(childId, id))
       exitSelectMode()
     })
@@ -102,12 +101,17 @@ export default function TransactionList({ transactions, childId }) {
                 key={f.key}
                 type="button"
                 onClick={() => handleFilter(f.key)}
-                className={[
-                  'flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95',
-                  filter === f.key
-                    ? 'bg-indigo-500 text-white shadow-sm'
-                    : 'bg-white text-gray-600 shadow-sm hover:bg-gray-50',
-                ].join(' ')}
+                className="flex-shrink-0 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer"
+                style={filter === f.key ? {
+                  background: 'linear-gradient(135deg,#6366f1,#8b5cf6)',
+                  color: 'white',
+                  boxShadow: '0 3px 10px rgba(99,102,241,0.4)',
+                } : {
+                  background: 'rgba(255,255,255,0.85)',
+                  color: '#4b5563',
+                  border: '1px solid rgba(229,231,235,0.8)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+                }}
               >
                 {f.label}
               </button>
@@ -115,7 +119,13 @@ export default function TransactionList({ transactions, childId }) {
             <button
               type="button"
               onClick={() => setSelectMode(true)}
-              className="flex-shrink-0 mr-auto px-3 py-1.5 rounded-full text-xs font-bold bg-white text-gray-500 shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+              className="flex-shrink-0 mr-auto px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95 cursor-pointer"
+              style={{
+                background: 'rgba(255,255,255,0.85)',
+                color: '#6b7280',
+                border: '1px solid rgba(229,231,235,0.8)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.06)',
+              }}
             >
               ☑️ בחר
             </button>
@@ -125,14 +135,16 @@ export default function TransactionList({ transactions, childId }) {
             <button
               type="button"
               onClick={exitSelectMode}
-              className="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-gray-600 shadow-sm active:scale-95 transition-all"
+              className="px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.85)', color: '#4b5563', border: '1px solid rgba(229,231,235,0.8)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}
             >
               ביטול
             </button>
             <button
               type="button"
               onClick={selectAll}
-              className="px-3 py-1.5 rounded-full text-xs font-bold bg-white text-indigo-600 shadow-sm active:scale-95 transition-all"
+              className="px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all cursor-pointer"
+              style={{ background: 'rgba(255,255,255,0.85)', color: '#6366f1', border: '1px solid rgba(199,210,254,0.8)', boxShadow: '0 2px 6px rgba(0,0,0,0.06)' }}
             >
               בחר הכל
             </button>
@@ -143,7 +155,8 @@ export default function TransactionList({ transactions, childId }) {
               <button
                 type="button"
                 onClick={deleteSelected}
-                className="mr-auto px-3 py-1.5 rounded-full text-xs font-bold bg-red-500 text-white shadow-sm active:scale-95 transition-all"
+                className="mr-auto px-3 py-1.5 rounded-full text-xs font-bold active:scale-95 transition-all cursor-pointer text-white"
+                style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', boxShadow: '0 3px 10px rgba(239,68,68,0.4)' }}
               >
                 🗑️ מחק ({selected.size})
               </button>
@@ -153,7 +166,8 @@ export default function TransactionList({ transactions, childId }) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="text-center py-8 bg-white rounded-2xl shadow-sm text-gray-400">
+        <div className="text-center py-8 rounded-2xl text-gray-400"
+          style={{ background: 'rgba(255,255,255,0.7)', border: '1px solid rgba(229,231,235,0.6)' }}>
           <p className="font-medium">אין עסקאות בקטגוריה זו</p>
         </div>
       ) : (
@@ -185,7 +199,8 @@ export default function TransactionList({ transactions, childId }) {
               <button
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages - 1))}
                 disabled={page >= totalPages - 1}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
+                className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.85)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid rgba(229,231,235,0.8)' }}
               >
                 ← ישן יותר
               </button>
@@ -195,7 +210,8 @@ export default function TransactionList({ transactions, childId }) {
               <button
                 onClick={() => setPage((p) => Math.max(p - 1, 0))}
                 disabled={page === 0}
-                className="flex items-center gap-1 px-4 py-2 rounded-xl bg-white shadow-sm text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all"
+                className="flex items-center gap-1 px-4 py-2 rounded-xl text-sm font-semibold text-gray-600 disabled:opacity-30 active:scale-95 transition-all cursor-pointer"
+                style={{ background: 'rgba(255,255,255,0.85)', boxShadow: '0 2px 8px rgba(0,0,0,0.08)', border: '1px solid rgba(229,231,235,0.8)' }}
               >
                 חדש יותר →
               </button>

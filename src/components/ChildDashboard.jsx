@@ -123,7 +123,7 @@ function MonthlySummary({ transactions }) {
   if (tiles.length === 0) return null
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
+    <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)' }}>
       <h3 className="font-black text-gray-800 text-sm mb-3">📅 30 הימים האחרונים</h3>
       <div className="grid grid-cols-2 gap-2">
         {tiles.map((t) => <StatTile key={t.label} {...t} />)}
@@ -301,7 +301,7 @@ export default function ChildDashboard({ childId }) {
         >⭐</div>
       )}
       {/* Header */}
-      <header className={`bg-gradient-to-br ${gradient} px-5 pt-8 pb-6 text-white`}>
+      <header className={`bg-gradient-to-br ${gradient} px-5 pt-8 pb-6 text-white`} style={{ borderRadius: '0 0 36px 36px', boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.10)' }}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex gap-1.5">
             <button
@@ -373,7 +373,7 @@ export default function ChildDashboard({ childId }) {
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
           {/* Shekels card */}
-          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg animate-slide-up" style={{ animationDelay: '60ms', animationFillMode: 'both' }}>
+          <div className="relative overflow-hidden rounded-[22px] p-4 text-center animate-slide-up" style={{ animationDelay: '60ms', animationFillMode: 'both', background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)', boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.6)' }}>
             <ShekelIconCloud balance={child.shekelBalance} />
             <div key={child.shekelBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.shekelBalance)}₪
@@ -402,7 +402,7 @@ export default function ChildDashboard({ childId }) {
             )}
           </div>
           {/* Stars card */}
-          <div className="relative overflow-hidden bg-white/15 backdrop-blur-md rounded-2xl p-4 text-center ring-1 ring-white/30 shadow-lg animate-slide-up" style={{ animationDelay: '130ms', animationFillMode: 'both' }}>
+          <div className="relative overflow-hidden rounded-[22px] p-4 text-center animate-slide-up" style={{ animationDelay: '130ms', animationFillMode: 'both', background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)', boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.6)' }}>
             <StarIconCloud count={child.starBalance} />
             <div key={child.starBalance} className="relative text-4xl font-bold animate-wiggle" dir="ltr">
               {formatNumber(child.starBalance)}
@@ -441,7 +441,7 @@ export default function ChildDashboard({ childId }) {
 
         {/* Parent note card */}
         {child.parentNote ? (
-          <div className="bg-pink-50 border border-pink-200 rounded-2xl p-4 flex items-start gap-3 animate-slide-up shadow-sm">
+          <div className="rounded-[22px] p-4 flex items-start gap-3 animate-slide-up" style={{ background: 'rgba(253,242,248,0.9)', border: '1.5px solid rgba(249,168,212,0.5)', boxShadow: '0 4px 16px rgba(244,63,94,0.1), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
             <span className="text-2xl flex-shrink-0">💌</span>
             <div className="flex-1 min-w-0">
               <p className="text-[10px] font-bold text-pink-400 uppercase tracking-wider mb-0.5">הודעה מהורה</p>
@@ -458,7 +458,8 @@ export default function ChildDashboard({ childId }) {
         ) : (
           <button
             onClick={() => showModal('parentNote', { childId, child })}
-            className="w-full bg-pink-50 border border-dashed border-pink-300 rounded-2xl py-3 px-4 flex items-center justify-center gap-2 text-pink-500 hover:bg-pink-100 active:scale-95 transition-all"
+            className="w-full rounded-[22px] py-3 px-4 flex items-center justify-center gap-2 text-pink-500 active:scale-95 transition-all cursor-pointer"
+            style={{ background: 'rgba(253,242,248,0.7)', border: '1.5px dashed rgba(249,168,212,0.6)', boxShadow: '0 2px 8px rgba(244,63,94,0.08)' }}
           >
             <span className="text-base">💌</span>
             <span className="text-xs font-semibold">השאר הודעה לילד</span>
@@ -467,23 +468,24 @@ export default function ChildDashboard({ childId }) {
 
         {/* Outstanding loans card */}
         {outstandingTotal > 0 && (
-          <div className="bg-cyan-50 border border-cyan-300 rounded-2xl p-3 flex items-center justify-between gap-3 shadow-sm">
+          <div className="rounded-[22px] p-3 flex items-center justify-between gap-3" style={{ background: 'rgba(236,254,255,0.9)', border: '1.5px solid rgba(6,182,212,0.3)', boxShadow: '0 4px 16px rgba(6,182,212,0.15), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
             <div>
               <p className="text-xs font-bold text-cyan-600 mb-0.5">💳 יתרת הלוואות</p>
               <p className="text-2xl font-black text-cyan-700">{formatNumber(outstandingTotal)}₪</p>
             </div>
             <button
               onClick={() => showModal('loan', { childId, child })}
-              className="bg-cyan-500 hover:bg-cyan-600 active:scale-95 text-white rounded-xl px-4 py-2.5 text-sm font-bold transition-all shadow-sm"
+              className="active:scale-95 text-white rounded-xl px-4 py-2.5 text-sm font-bold transition-all cursor-pointer"
+            style={{ background: 'linear-gradient(135deg,#06b6d4,#0891b2)', boxShadow: '0 4px 12px rgba(6,182,212,0.4)' }}
             >
               פרטים
             </button>
           </div>
         )}
 
-        {/* Onboarding tips — shown only when child has no transactions yet */}
+        {/* Onboarding tips */}
         {transactions.length === 0 && (
-          <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 space-y-2.5 shadow-sm">
+          <div className="rounded-[22px] p-4 space-y-2.5" style={{ background: 'rgba(238,242,255,0.9)', border: '1.5px solid rgba(99,102,241,0.2)', boxShadow: '0 4px 16px rgba(99,102,241,0.1), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
             <p className="text-xs font-bold text-indigo-600 mb-1">💡 איך מתחילים?</p>
             {[
               { icon: '⭐', text: 'לחץ "עשיתי מטלה!" אחרי כל מטלה שהילד השלים' },
@@ -499,11 +501,16 @@ export default function ChildDashboard({ childId }) {
           </div>
         )}
 
-        {/* Action buttons — first-person labels, long-press on ⭐ for parent mode */}
+        {/* Action buttons */}
         <div className="grid grid-cols-2 gap-3">
           <button
             {...starsLongPress}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 active:scale-90 transition-all text-white shadow-md font-bold select-none animate-glow-amber"
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-[22px] active:scale-90 transition-all text-white font-bold select-none animate-glow-amber"
+            style={{
+              background: 'linear-gradient(135deg,#f59e0b,#f97316)',
+              border: '2.5px solid rgba(255,255,255,0.45)',
+              boxShadow: '0 8px 24px rgba(245,158,11,0.45), inset 0 1px 2px rgba(255,255,255,0.4)',
+            }}
           >
             <span className="text-2xl">⭐</span>
             <span className="text-sm">עשיתי מטלה!</span>
@@ -514,7 +521,15 @@ export default function ChildDashboard({ childId }) {
               if (child.starBalance === 0) setHint('⭐ אין לך כוכבים עדיין — עשה מטלה!')
               else showModal('redeemPrize', { childId, child })
             }}
-            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-md font-bold ${child.starBalance === 0 ? 'opacity-50 bg-gradient-to-br from-purple-300 to-violet-400' : 'bg-gradient-to-br from-purple-500 to-violet-600'}`}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-[22px] active:scale-90 transition-all text-white font-bold"
+            style={{
+              background: child.starBalance === 0
+                ? 'linear-gradient(135deg,#c4b5fd,#a78bfa)'
+                : 'linear-gradient(135deg,#8b5cf6,#7c3aed)',
+              opacity: child.starBalance === 0 ? 0.6 : 1,
+              border: '2.5px solid rgba(255,255,255,0.45)',
+              boxShadow: '0 8px 24px rgba(139,92,246,0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
+            }}
           >
             <span className="text-2xl">🎁</span>
             <span className="text-sm">מימוש פרס</span>
@@ -522,7 +537,12 @@ export default function ChildDashboard({ childId }) {
 
           <button
             onClick={() => showModal('addMoney', { childId })}
-            className="h-20 flex flex-col items-center justify-center gap-1 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 active:scale-90 transition-all text-white shadow-md font-bold"
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-[22px] active:scale-90 transition-all text-white font-bold"
+            style={{
+              background: 'linear-gradient(135deg,#10b981,#0d9488)',
+              border: '2.5px solid rgba(255,255,255,0.45)',
+              boxShadow: '0 8px 24px rgba(16,185,129,0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
+            }}
           >
             <span className="text-2xl">💝</span>
             <span className="text-sm">הפקדה</span>
@@ -533,7 +553,15 @@ export default function ChildDashboard({ childId }) {
               if (child.shekelBalance === 0) setHint('💵 אין לך שקלים עדיין — בקש מהורה להפקיד!')
               else showModal('expense', { childId })
             }}
-            className={`h-20 flex flex-col items-center justify-center gap-1 rounded-2xl active:scale-90 transition-all text-white shadow-md font-bold ${child.shekelBalance === 0 ? 'opacity-50 bg-gradient-to-br from-rose-300 to-pink-400' : 'bg-gradient-to-br from-rose-400 to-pink-500'}`}
+            className="h-20 flex flex-col items-center justify-center gap-1 rounded-[22px] active:scale-90 transition-all text-white font-bold"
+            style={{
+              background: child.shekelBalance === 0
+                ? 'linear-gradient(135deg,#fda4af,#f9a8d4)'
+                : 'linear-gradient(135deg,#f43f5e,#ec4899)',
+              opacity: child.shekelBalance === 0 ? 0.6 : 1,
+              border: '2.5px solid rgba(255,255,255,0.45)',
+              boxShadow: '0 8px 24px rgba(244,63,94,0.4), inset 0 1px 2px rgba(255,255,255,0.4)',
+            }}
           >
             <span className="text-2xl">🛍️</span>
             <span className="text-sm">קניתי משהו</span>
@@ -543,7 +571,12 @@ export default function ChildDashboard({ childId }) {
         {/* Learning — full-width prominent */}
         <button
           onClick={() => showModal('learning', { childId })}
-          className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 to-blue-600 text-white font-black flex items-center justify-center gap-2 shadow-md active:scale-95 transition-all"
+          className="w-full py-3.5 rounded-[22px] text-white font-black flex items-center justify-center gap-2 active:scale-95 transition-all"
+          style={{
+            background: 'linear-gradient(135deg,#0ea5e9,#2563eb)',
+            border: '2.5px solid rgba(255,255,255,0.35)',
+            boxShadow: '0 8px 24px rgba(14,165,233,0.4), inset 0 1px 2px rgba(255,255,255,0.35)',
+          }}
         >
           <span className="text-xl">📚</span>
           <span>למד וצבור כוכבים!</span>
@@ -551,38 +584,22 @@ export default function ChildDashboard({ childId }) {
 
         {/* Secondary actions — horizontal scrollable chips */}
         <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1" style={{ scrollbarWidth: 'none' }}>
-          <button
-            onClick={() => showModal('goal', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-indigo-50 border border-indigo-300 text-sm font-bold text-indigo-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
-          >
-            🎯 {goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}
-          </button>
-          <button
-            onClick={() => showModal('savings', { childId, child })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-emerald-50 border border-emerald-300 text-sm font-bold text-emerald-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
-          >
-            🏦 חסכון
-          </button>
-          {children.length > 1 && (
+          {[
+            { key: 'goal',    label: `🎯 ${goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}`, color: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)', text: '#4338ca', shadow: 'rgba(99,102,241,0.2)', onClick: () => showModal('goal', { childId }) },
+            { key: 'savings', label: '🏦 חסכון', color: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.35)', text: '#065f46', shadow: 'rgba(16,185,129,0.2)', onClick: () => showModal('savings', { childId, child }) },
+            ...(children.length > 1 ? [{ key: 'transfer', label: '🔄 העברה', color: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.35)', text: '#5b21b6', shadow: 'rgba(139,92,246,0.2)', onClick: () => showModal('transferStars', { childId, child }) }] : []),
+            { key: 'loan', label: `💳 הלוואה${outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}`, color: outstandingTotal > 0 ? 'rgba(6,182,212,0.12)' : 'rgba(243,244,246,0.8)', border: outstandingTotal > 0 ? 'rgba(6,182,212,0.4)' : 'rgba(209,213,219,0.6)', text: outstandingTotal > 0 ? '#0e7490' : '#374151', shadow: outstandingTotal > 0 ? 'rgba(6,182,212,0.2)' : 'rgba(0,0,0,0.04)', onClick: () => showModal('loan', { childId, child }) },
+            { key: 'memories', label: `📖 זכרונות${child.memories?.length > 0 ? ` (${child.memories.length})` : ''}`, color: 'rgba(244,63,94,0.1)', border: 'rgba(244,63,94,0.3)', text: '#9f1239', shadow: 'rgba(244,63,94,0.15)', onClick: () => showModal('memories', { childId }) },
+          ].map(({ key, label, color, border, text, shadow, onClick }) => (
             <button
-              onClick={() => showModal('transferStars', { childId, child })}
-              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-violet-50 border border-violet-300 text-sm font-bold text-violet-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
+              key={key}
+              onClick={onClick}
+              className="flex items-center gap-1.5 px-4 py-3 rounded-2xl text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap cursor-pointer"
+              style={{ background: color, border: `1.5px solid ${border}`, color: text, boxShadow: `0 3px 10px ${shadow}` }}
             >
-              🔄 העברה
+              {label}
             </button>
-          )}
-          <button
-            onClick={() => showModal('loan', { childId, child })}
-            className={`flex items-center gap-1.5 px-4 py-3 rounded-2xl border-2 text-sm font-bold flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm ${outstandingTotal > 0 ? 'bg-cyan-50 border-cyan-400 text-cyan-700' : 'bg-white border-gray-200 text-gray-700'}`}
-          >
-            💳 הלוואה{outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}
-          </button>
-          <button
-            onClick={() => showModal('memories', { childId })}
-            className="flex items-center gap-1.5 px-4 py-3 rounded-2xl bg-rose-50 border border-rose-300 text-sm font-bold text-rose-700 flex-shrink-0 active:scale-95 transition-all whitespace-nowrap shadow-sm"
-          >
-            📖 זכרונות{child.memories?.length > 0 ? ` (${child.memories.length})` : ''}
-          </button>
+          ))}
         </div>
 
         <WeeklySummary transactions={transactions} />
@@ -591,7 +608,7 @@ export default function ChildDashboard({ childId }) {
 
         <div>
           <h2 className="text-lg font-black text-gray-800 mb-3">📜 היסטוריה</h2>
-          <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-3">
+          <div className="rounded-[24px] p-3" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)' }}>
             <div className="relative">
               <div className="max-h-[460px] overflow-y-auto">
                 <TransactionList transactions={transactions} childId={childId} />

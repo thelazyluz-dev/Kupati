@@ -13,15 +13,20 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
 
   return (
     <div
-      className={[
-        'rounded-2xl p-4',
-        reached
-          ? 'bg-gradient-to-br from-amber-50 to-yellow-100 border-2 border-amber-300'
-          : 'bg-white border border-gray-100',
-      ].join(' ')}
+      className="rounded-[24px] p-4"
+      style={reached ? {
+        background: 'linear-gradient(135deg, #fef9c3, #fef3c7)',
+        border: '2px solid rgba(251,191,36,0.5)',
+        boxShadow: '0 8px 24px rgba(245,158,11,0.2), inset 0 1px 2px rgba(255,255,255,0.8)',
+      } : {
+        background: 'rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(8px)',
+        border: '1.5px solid rgba(255,255,255,0.7)',
+        boxShadow: '0 4px 16px rgba(0,0,0,0.06), inset 0 1px 1px rgba(255,255,255,0.9)',
+      }}
     >
       {/* Label row */}
-      <div className="flex items-center justify-between mb-2 gap-2">
+      <div className="flex items-center justify-between mb-2.5 gap-2">
         <div className="text-sm text-gray-500" dir="ltr">
           <span className="font-bold text-gray-700">{formatNumber(totalValue)}₪</span>
           {' / '}
@@ -37,17 +42,24 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
       </div>
 
       {/* Progress track */}
-      <div className="w-full bg-gray-200 rounded-full h-5 overflow-hidden relative">
+      <div
+        className="w-full rounded-full overflow-hidden"
+        style={{ height: 10, background: 'rgba(0,0,0,0.08)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.1)' }}
+      >
         <div
           className={[
-            'h-5 rounded-full transition-all duration-700 relative overflow-hidden',
-            reached
-              ? 'bg-gradient-to-r from-amber-400 to-yellow-500'
-              : 'bg-gradient-to-r from-indigo-400 to-purple-500',
+            'h-full rounded-full transition-all duration-700 relative overflow-hidden',
           ].join(' ')}
-          style={{ width: `${pct}%` }}
+          style={{
+            width: `${pct}%`,
+            background: reached
+              ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
+              : 'linear-gradient(90deg, #6366f1, #8b5cf6)',
+            boxShadow: pct > 0 ? (reached
+              ? '0 0 10px rgba(245,158,11,0.5)'
+              : '0 0 10px rgba(99,102,241,0.5)') : 'none',
+          }}
         >
-          {/* Shimmer sweep */}
           {!reached && pct > 0 && (
             <span
               className="absolute inset-0 animate-shimmer"
@@ -58,16 +70,16 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
             />
           )}
         </div>
-        {/* Percentage label inside bar */}
-        {pct >= 18 && (
-          <span
-            className="absolute inset-0 flex items-center justify-center text-white font-bold pointer-events-none"
-            style={{ fontSize: '11px', paddingRight: `${100 - pct}%` }}
-          >
+      </div>
+
+      {/* Percentage label */}
+      {pct >= 10 && (
+        <div className="flex justify-start mt-1">
+          <span className={`text-xs font-bold ${reached ? 'text-amber-600' : 'text-indigo-500'}`}>
             {Math.round(pct)}%
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       {reached ? (
         <div className="mt-3 space-y-2">
@@ -80,14 +92,15 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
                 <button
                   type="button"
                   onClick={handleRedeem}
-                  className="flex-1 py-2 rounded-xl bg-emerald-500 text-white font-bold text-sm active:scale-95 transition-transform"
+                  className="flex-1 py-2 rounded-xl text-white font-bold text-sm active:scale-95 transition-transform"
+                  style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 12px rgba(16,185,129,0.4)' }}
                 >
                   ✅ כן, ממש!
                 </button>
                 <button
                   type="button"
                   onClick={() => setConfirm(false)}
-                  className="flex-1 py-2 rounded-xl bg-gray-200 text-gray-600 font-bold text-sm active:scale-95 transition-transform"
+                  className="flex-1 py-2 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm active:scale-95 transition-transform border border-gray-200"
                 >
                   ביטול
                 </button>
@@ -96,7 +109,8 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
               <button
                 type="button"
                 onClick={handleRedeem}
-                className="w-full py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm active:scale-95 transition-all shadow-sm"
+                className="w-full py-2.5 rounded-xl text-white font-bold text-sm active:scale-95 transition-all"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 16px rgba(16,185,129,0.4)' }}
               >
                 🛒 ממש מטרה — קנינו!
               </button>
@@ -104,7 +118,7 @@ export default function GoalProgressBar({ progress, goalName, targetAmount, goal
           )}
         </div>
       ) : choresNeeded != null && (
-        <p className="text-center mt-2 text-indigo-600 text-sm font-semibold">
+        <p className="text-center mt-2 text-indigo-500 text-sm font-semibold">
           💪 עוד ~{choresNeeded} מטלות ואתה שם!
         </p>
       )}

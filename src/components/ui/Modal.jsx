@@ -5,27 +5,23 @@ export default function Modal({ title, onClose, children, size = 'md', headerCol
   const dragStart  = useRef(null)
   const panelRef   = useRef(null)
 
-  // Intercept every close attempt → play exit animation first
   function handleClose() {
     if (closing) return
     setClosing(true)
     setTimeout(onClose, 220)
   }
 
-  // Lock body scroll
   useEffect(() => {
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') handleClose() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Swipe-down gesture on the handle bar
   function onHandleTouchStart(e) {
     dragStart.current = e.touches[0].clientY
   }
@@ -56,30 +52,34 @@ export default function Modal({ title, onClose, children, size = 'md', headerCol
       onClick={(e) => e.target === e.currentTarget && handleClose()}
     >
       {/* Backdrop */}
-      <div className={`absolute inset-0 bg-black/40 backdrop-blur-sm ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
+      <div className={`absolute inset-0 bg-black/50 backdrop-blur-sm ${closing ? 'animate-fade-out' : 'animate-fade-in'}`} />
 
       {/* Panel */}
       <div
         ref={panelRef}
         className={[
-          `relative w-full ${sizeClass} bg-white rounded-t-3xl sm:rounded-3xl shadow-2xl max-h-[92vh] flex flex-col`,
+          `relative w-full ${sizeClass} bg-white rounded-t-[32px] sm:rounded-[28px] max-h-[92vh] flex flex-col`,
           closing ? 'animate-slide-down' : 'animate-bounce-in',
         ].join(' ')}
+        style={{
+          border: '2px solid rgba(255,255,255,0.8)',
+          boxShadow: '0 -12px 48px rgba(0,0,0,0.18), 0 8px 32px rgba(0,0,0,0.12), inset 0 1px 2px rgba(255,255,255,0.9)',
+        }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Handle bar (mobile) — swipe down to close */}
+        {/* Handle bar (mobile) */}
         <div
           className="flex justify-center pt-3 pb-1 sm:hidden cursor-grab active:cursor-grabbing touch-none"
           onTouchStart={onHandleTouchStart}
           onTouchMove={onHandleTouchMove}
           onTouchEnd={onHandleTouchEnd}
         >
-          <div className="w-10 h-1 bg-gray-300 rounded-full" />
+          <div className="w-12 h-1.5 bg-gray-200 rounded-full" />
         </div>
 
         {/* Header */}
         {headerColor ? (
-          <div className={`flex items-center justify-between px-5 py-4 bg-gradient-to-r ${headerColor} rounded-t-3xl sm:rounded-t-3xl`}>
+          <div className={`flex items-center justify-between px-5 py-4 bg-gradient-to-r ${headerColor} rounded-t-[30px] sm:rounded-t-[26px]`}>
             <h2 className="text-xl font-bold text-white drop-shadow-sm">{title}</h2>
             <button
               onClick={handleClose}
@@ -94,7 +94,11 @@ export default function Modal({ title, onClose, children, size = 'md', headerCol
             <h2 className="text-xl font-bold text-gray-800">{title}</h2>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:scale-90 text-gray-500 transition-all text-lg"
+              className="w-9 h-9 flex items-center justify-center rounded-full text-gray-400 transition-all text-lg active:scale-90"
+              style={{
+                background: 'rgba(243,244,246,0.9)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.08), inset 0 1px 1px rgba(255,255,255,0.8)',
+              }}
               aria-label="סגור"
             >
               ✕

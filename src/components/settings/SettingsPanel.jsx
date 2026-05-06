@@ -25,7 +25,7 @@ function SettingsSection({ icon, label, iconColor, accent, children, collapsible
       {collapsible ? (
         <button
           type="button"
-          className="flex items-center gap-2 mb-2 w-full active:opacity-70"
+          className="flex items-center gap-2 mb-2 w-full active:opacity-70 cursor-pointer"
           onClick={() => setOpen((v) => !v)}
         >
           <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0 ${iconColor}`}>
@@ -41,7 +41,15 @@ function SettingsSection({ icon, label, iconColor, accent, children, collapsible
         <SectionHeader icon={icon} label={label} color={iconColor} />
       )}
       {(!collapsible || open) && (
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm ring-1 ring-white/50 p-4">
+        <div
+          className="rounded-[24px] p-4"
+          style={{
+            background: 'rgba(255,255,255,0.82)',
+            backdropFilter: 'blur(10px)',
+            border: '1.5px solid rgba(255,255,255,0.75)',
+            boxShadow: '0 6px 20px rgba(0,0,0,0.06), inset 0 1px 2px rgba(255,255,255,0.95)',
+          }}
+        >
           {children}
         </div>
       )}
@@ -137,7 +145,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #ede9fe 0%, #dbeafe 100%)', backgroundAttachment: 'fixed' }}>
-      <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white">
+      <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white" style={{ borderRadius: '0 0 36px 36px', boxShadow: '0 8px 32px rgba(99,102,241,0.35), 0 2px 8px rgba(0,0,0,0.12)' }}>
         <div className="flex items-center justify-between">
           <div className="invisible flex items-center gap-1 pl-3 pr-2 py-2 text-sm font-bold">
             חזרה ›
@@ -219,7 +227,7 @@ export default function SettingsPanel() {
         {/* Danger zone */}
         <section>
           <SectionHeader icon="⚠️" label="אזור מסוכן" color="bg-red-100 text-red-600" />
-          <div className="bg-white rounded-2xl shadow-sm p-4 border-r-4 border-red-400">
+          <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(10px)', border: '1.5px solid rgba(252,165,165,0.5)', borderRight: '4px solid #f87171', boxShadow: '0 6px 20px rgba(239,68,68,0.08), inset 0 1px 2px rgba(255,255,255,0.95)' }}>
             {confirmReset ? (
               <div className="space-y-3">
                 <p className="text-sm text-red-600 font-semibold text-center">

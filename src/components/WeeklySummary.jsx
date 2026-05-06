@@ -1,18 +1,16 @@
 import { useState } from 'react'
 import { formatNumber } from '../lib/utils.js'
 
-// Israeli week: Sunday (0) → Saturday (6)
 const DAY_NAMES = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳']
 
-const BAR_H = 88 // px — chart area height
+const BAR_H = 88
 
 export default function WeeklySummary({ transactions }) {
   const [mode, setMode] = useState('stars')
 
-  // Current week: Sunday through Saturday
   const today = new Date()
   today.setHours(0, 0, 0, 0)
-  const sundayOffset = today.getDay() // 0=Sun … 6=Sat
+  const sundayOffset = today.getDay()
   const weekStart = new Date(today)
   weekStart.setDate(today.getDate() - sundayOffset)
 
@@ -30,7 +28,6 @@ export default function WeeklySummary({ transactions }) {
       .reduce((s, tx) => s + tx.amount, 0)
   }
 
-  // Stars per day: positive types add, wheel_spin subtracts (net wheel result)
   const STARS_EXCLUDE = new Set(['convert_out', 'penalty', 'prize_redeem', 'savings_open'])
   const starsByDay = days.map((d) => {
     const start = d.getTime(), end = start + 86400000
@@ -38,7 +35,7 @@ export default function WeeklySummary({ transactions }) {
       .filter((tx) => tx.timestamp >= start && tx.timestamp < end && tx.currency === 'stars')
       .reduce((s, tx) => {
         if (STARS_EXCLUDE.has(tx.type)) return s
-        if (tx.type === 'wheel_spin') return s - tx.amount   // cost counted as negative
+        if (tx.type === 'wheel_spin') return s - tx.amount
         return s + tx.amount
       }, 0)
   })
@@ -46,9 +43,8 @@ export default function WeeklySummary({ transactions }) {
 
   const totalStars   = starsByDay.reduce((a, b) => a + b, 0)
   const totalShekels = shekelsByDay.reduce((a, b) => a + b, 0)
-  const todayIndex     = sundayOffset
+  const todayIndex   = sundayOffset
 
-  // Last week totals (for trend chip)
   const lastWeekStart = new Date(weekStart)
   lastWeekStart.setDate(weekStart.getDate() - 7)
   const lwStart = lastWeekStart.getTime()
@@ -65,40 +61,60 @@ export default function WeeklySummary({ transactions }) {
     .reduce((s, tx) => s + tx.amount, 0)
   const hadLastWeek = transactions.some((tx) => tx.timestamp >= lwStart && tx.timestamp < lwEnd)
 
-  // Active dataset based on toggle
   const data   = mode === 'stars' ? starsByDay : shekelsByDay
   const maxVal = mode === 'stars'
     ? Math.max(...starsByDay, 1)
     : Math.max(...shekelsByDay, 0.01)
-  // Colors per mode
-  const todayGrad   = mode === 'stars' ? 'linear-gradient(to top,#f97316,#fbbf24)' : 'linear-gradient(to top,#059669,#34d399)'
-  const normalGrad  = mode === 'stars' ? 'linear-gradient(to top,#f59e0b,#fcd34d)' : 'linear-gradient(to top,#10b981,#6ee7b7)'
+
+  const todayGradStars   = 'linear-gradient(to top,#f97316,#fbbf24)'
+  const normalGradStars  = 'linear-gradient(to top,#f59e0b,#fcd34d)'
+  const todayGradShekels = 'linear-gradient(to top,#059669,#34d399)'
+  const normalGradShekels= 'linear-gradient(to top,#10b981,#6ee7b7)'
+  const todayGrad   = mode === 'stars' ? todayGradStars   : todayGradShekels
+  const normalGrad  = mode === 'stars' ? normalGradStars  : normalGradShekels
   const futureColor = mode === 'stars' ? '#fef3c7' : '#d1fae5'
-  const glowColor   = mode === 'stars' ? 'rgba(245,158,11,0.35)' : 'rgba(16,185,129,0.35)'
+  const glowColor   = mode === 'stars' ? 'rgba(245,158,11,0.4)' : 'rgba(16,185,129,0.4)'
   const labelColor  = mode === 'stars' ? 'text-amber-500' : 'text-emerald-600'
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm ring-1 ring-gray-200 p-4">
+    <div
+      className="rounded-[24px] p-4"
+      style={{
+        background: 'rgba(255,255,255,0.85)',
+        backdropFilter: 'blur(8px)',
+        border: '1.5px solid rgba(255,255,255,0.8)',
+        boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)',
+      }}
+    >
       {/* Header + toggle */}
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-black text-gray-800 text-sm">📊 השבוע הנוכחי</h3>
-        <div className="flex items-center gap-0.5 bg-gray-100 rounded-xl p-0.5">
+        <div
+          className="flex items-center gap-0.5 p-0.5 rounded-xl"
+          style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(229,231,235,0.6)' }}
+        >
           <button
             onClick={() => setMode('stars')}
-            className={`text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 ${
-              mode === 'stars' ? 'bg-white shadow-sm text-amber-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className="text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 cursor-pointer"
+            style={mode === 'stars' ? {
+              background: 'white',
+              color: '#d97706',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+            } : { color: '#9ca3af' }}
           >⭐ כוכבים</button>
           <button
             onClick={() => setMode('shekels')}
-            className={`text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 ${
-              mode === 'shekels' ? 'bg-white shadow-sm text-emerald-600' : 'text-gray-400 hover:text-gray-600'
-            }`}
+            className="text-xs font-bold px-2.5 py-1 rounded-[10px] transition-all duration-200 cursor-pointer"
+            style={mode === 'shekels' ? {
+              background: 'white',
+              color: '#059669',
+              boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+            } : { color: '#9ca3af' }}
           >₪ כסף</button>
         </div>
       </div>
 
-      {/* Main chart — key=mode triggers fade-in on switch */}
+      {/* Bar chart */}
       <div key={mode} className="flex items-end gap-1.5 animate-fade-in" style={{ height: BAR_H }}>
         {days.map((day, i) => {
           const val      = data[i]
@@ -108,32 +124,31 @@ export default function WeeklySummary({ transactions }) {
 
           return (
             <div key={i} className="flex-1 flex flex-col items-center justify-end" style={{ height: BAR_H }}>
-              {/* Value label — always rendered so layout doesn't shift */}
               <span className={`text-[10px] font-bold mb-0.5 leading-none ${val > 0 ? labelColor : 'text-transparent'}`}>
                 {val > 0 ? formatNumber(val) : '0'}
               </span>
-              {/* Bar */}
               <div
                 style={{
                   height: barH || 3,
                   background: barH === 0
-                    ? '#f1f5f9'
+                    ? 'rgba(241,245,249,0.8)'
                     : isFuture
                       ? futureColor
                       : isToday
                         ? todayGrad
                         : normalGrad,
-                  boxShadow: barH > 0 && !isFuture ? `0 2px 8px ${glowColor}` : 'none',
+                  boxShadow: barH > 0 && !isFuture ? `0 4px 12px ${glowColor}` : 'none',
                   transition: 'height 0.45s cubic-bezier(0.4,0,0.2,1)',
+                  borderRadius: '8px 8px 4px 4px',
                 }}
-                className="w-full rounded-t-lg"
+                className="w-full"
               />
             </div>
           )
         })}
       </div>
 
-      {/* Summary chip — switches with mode */}
+      {/* Summary chip */}
       {mode === 'stars' ? (
         <p className={`text-center text-xs font-semibold mt-3 rounded-xl py-1.5 px-3 ${
           !hadLastWeek
