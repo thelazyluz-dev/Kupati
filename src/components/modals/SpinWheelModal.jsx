@@ -5,7 +5,7 @@ import { sounds } from '../../lib/sounds.js'
 import { celebrateGoal } from '../../lib/confetti.js'
 import { formatNumber } from '../../lib/utils.js'
 
-const SPIN_COST = 50
+const SPIN_COST = 70
 
 const SEGMENTS = [
   { shekels: 3,  color: '#0ea5e9', emoji: '💵', label: '3'  },
