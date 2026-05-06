@@ -807,9 +807,9 @@ export default function HomeScreen() {
           </button>
           {children.length > 0 && (
             <button onClick={() => setShowLottery(true)} aria-label="הגרלה"
-              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-black text-white active:scale-95 transition-all"
-              style={{ borderRadius: 20, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.4)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.15)', letterSpacing: '0.01em' }}>
-              🎯 <span>הגרלה</span>
+              className="flex items-center justify-center w-10 h-10 text-xl active:scale-95 transition-all"
+              style={{ borderRadius: 20, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.4)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.15)' }}>
+              🎯
             </button>
           )}
           <button onClick={() => showModal('addChild')} aria-label="הוסף ילד"
