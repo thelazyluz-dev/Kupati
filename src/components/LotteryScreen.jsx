@@ -1,12 +1,12 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { useLocalStorage } from '../hooks/useLocalStorage.js'
 import { generateId, formatRelativeTime } from '../lib/utils.js'
 import { sounds } from '../lib/sounds.js'
 
 const BULB_LIST = ['#ff2200','#ffd700','#00cc44','#0088ff','#ff00cc','#ffffff','#ff7700','#aa00ff']
-const MAX_H = 180   // px — tallest possible stick
-const MIN_H = 48    // px — shortest possible stick
+const MAX_H = 180
+const MIN_H = 48
 
 const STICK_GRADS = [
   'linear-gradient(180deg,#ffe066 0%,#b8860b 40%,#d4a853 70%,#7a5200 100%)',
@@ -88,17 +88,49 @@ export default function LotteryScreen({ onClose }) {
       active: true,
     }))
   )
-  const [guestName, setGuestName]     = useState('')
-  const [showGuest, setShowGuest]     = useState(false)
+  const [guestName, setGuestName]   = useState('')
+  const [showGuest, setShowGuest]   = useState(false)
   const [showHistory, setShowHistory] = useState(false)
-  const [phase, setPhase]             = useState('idle')   // idle | revealing | done
-  const [winner, setWinner]           = useState(null)
-  const [revealed, setRevealed]       = useState({})       // id -> height px
-  const [fakeId, setFakeId]           = useState(null)
+
+  // ── Game state ──────────────────────────────────────────────────────────────
+  const [phase, setPhase]           = useState('idle')   // 'idle' | 'selecting' | 'done'
+  const [heights, setHeights]       = useState({})       // id → height px (hidden until revealed)
+  const [claimed, setClaimed]       = useState({})       // id → true  (avatar tapped)
+  const [revealed, setRevealed]     = useState({})       // id → true  (stick tapped, length shown)
+  const [revealingId, setRevealingId] = useState(null)   // id currently in reveal animation
+  const [winner, setWinner]         = useState(null)
   const [winnerFlash, setWinnerFlash] = useState(false)
 
-  const activeParts = participants.filter(p => p.active)
+  const activeParts    = participants.filter(p => p.active)
+  const revealedCount  = activeParts.filter(p => revealed[p.id]).length
+  const claimedCount   = activeParts.filter(p => claimed[p.id]).length
 
+  // ── Detect when all sticks are revealed → crown winner ─────────────────────
+  useEffect(() => {
+    if (phase !== 'selecting' || activeParts.length === 0) return
+    if (!activeParts.every(p => revealed[p.id])) return
+
+    const maxH = Math.max(...activeParts.map(p => heights[p.id]))
+    const winnerPart = activeParts.find(p => heights[p.id] === maxH)
+
+    setTimeout(() => {
+      setWinner(winnerPart)
+      setPhase('done')
+      setWinnerFlash(true)
+      sounds.wheelReveal()
+      setTimeout(() => sounds.goal(), 450)
+      setTimeout(() => setWinnerFlash(false), 900)
+
+      setHistory(prev => [{
+        id: generateId(),
+        winner: { name: winnerPart.name, avatar: winnerPart.avatar, avatarImage: winnerPart.avatarImage },
+        participants: activeParts.map(p => ({ name: p.name, avatar: p.avatar })),
+        timestamp: Date.now(),
+      }, ...prev].slice(0, 30))
+    }, 700)
+  }, [revealed]) // eslint-disable-line
+
+  // ── Actions ─────────────────────────────────────────────────────────────────
   function toggleParticipant(id) {
     if (phase !== 'idle') return
     setParticipants(prev => prev.map(p => p.id === id ? { ...p, active: !p.active } : p))
@@ -114,81 +146,70 @@ export default function LotteryScreen({ onClose }) {
     setGuestName(''); setShowGuest(false)
   }
 
-  async function startDraw() {
+  function startDraw() {
     if (activeParts.length < 2 || phase !== 'idle') return
 
-    // Pick winner with fairness weighting
-    const wi          = pickWinner(activeParts, history)
-    const winnerPart  = activeParts[wi]
+    const wi         = pickWinner(activeParts, history)
+    const winnerPart = activeParts[wi]
 
-    // Assign stick heights — winner gets MAX_H, others get random shorter
-    const heights = {}
+    const newHeights = {}
     activeParts.forEach(p => {
-      heights[p.id] = p.id === winnerPart.id
+      newHeights[p.id] = p.id === winnerPart.id
         ? MAX_H
         : Math.round(MIN_H + Math.random() * (MAX_H - MIN_H - 20))
     })
 
-    // Reveal order: non-winners first (shuffled), winner last
-    const nonWinners  = activeParts.filter(p => p.id !== winnerPart.id).sort(() => Math.random() - 0.5)
-    const revealOrder = [...nonWinners.map(p => p.id), winnerPart.id]
-
+    setHeights(newHeights)
+    setClaimed({})
     setRevealed({})
-    setFakeId(null)
     setWinner(null)
-    setPhase('revealing')
+    setWinnerFlash(false)
+    setRevealingId(null)
+    setPhase('selecting')
+    sounds.wheelTick()
+    setTimeout(() => sounds.wheelTick(), 280)
+  }
 
-    // Build-up sounds
+  function claimStick(id) {
+    if (phase !== 'selecting' || claimed[id] || revealingId !== null) return
+    setClaimed(prev => ({ ...prev, [id]: true }))
+    sounds.lotteryPop()
+  }
+
+  async function revealStick(id) {
+    if (phase !== 'selecting') return
+    if (!claimed[id] || revealed[id] || revealingId !== null) return
+
+    setRevealingId(id)
     sounds.wheelTick()
-    await wait(280)
-    sounds.wheelTick()
-    await wait(240)
+    await wait(300)
     sounds.wheelSuspense()
-    await wait(900)
+    await wait(950)
 
-    // Reveal each stick
-    for (let i = 0; i < revealOrder.length; i++) {
-      const id       = revealOrder[i]
-      const isWinner = id === winnerPart.id
-      const h        = heights[id]
-
-      // Fake-out: if a non-winner stick is tall (>72% of max), briefly highlight it
-      const isFakeCandidate = !isWinner && h > MAX_H * 0.72 && i < revealOrder.length - 2
-
-      setRevealed(prev => ({ ...prev, [id]: h }))
-      sounds.lotteryPop()
-
-      if (isFakeCandidate) {
-        await wait(380)
-        setFakeId(id)
-        sounds.lotteryWarn()
-        await wait(650)
-        setFakeId(null)
-        sounds.lotteryBack()
-        await wait(300)
-      } else {
-        await wait(isWinner ? 600 : 420 + Math.random() * 250)
-      }
-    }
-
-    // Declare winner
-    setPhase('done')
-    setWinner(winnerPart)
-    setWinnerFlash(true)
-    sounds.wheelReveal()
-    setTimeout(() => sounds.goal(), 450)
-    setTimeout(() => setWinnerFlash(false), 800)
-
-    setHistory(prev => [{
-      id: generateId(),
-      winner: { name: winnerPart.name, avatar: winnerPart.avatar, avatarImage: winnerPart.avatarImage },
-      participants: activeParts.map(p => ({ name: p.name, avatar: p.avatar })),
-      timestamp: Date.now(),
-    }, ...prev].slice(0, 30))
+    setRevealed(prev => ({ ...prev, [id]: true }))
+    sounds.lotteryPop()
+    await wait(450)
+    setRevealingId(null)
   }
 
   function reset() {
-    setPhase('idle'); setWinner(null); setRevealed({}); setFakeId(null); setWinnerFlash(false)
+    setPhase('idle'); setWinner(null)
+    setRevealed({}); setClaimed({}); setHeights({})
+    setWinnerFlash(false); setRevealingId(null)
+  }
+
+  // ── Instruction text ────────────────────────────────────────────────────────
+  let instruction = ''
+  if (phase === 'selecting') {
+    const remaining = activeParts.length - revealedCount
+    if (revealedCount === 0 && claimedCount === 0)
+      instruction = '👆 כל אחד לוחץ על התמונה שלו קודם'
+    else if (claimedCount < activeParts.length)
+      instruction = '👆 לחץ על התמונה שלך ▶ אז על המקל'
+    else if (remaining === 1)
+      instruction = '⚡ אחרון! לחץ על המקל שלך...'
+    else
+      instruction = '✊ לחץ על המקל שלך לחשיפה!'
   }
 
   return (
@@ -208,15 +229,15 @@ export default function LotteryScreen({ onClose }) {
       {/* Winner flash */}
       {winnerFlash && (
         <div className="absolute inset-0 z-[55] pointer-events-none"
-             style={{ background: 'rgba(251,191,36,0.18)', animationName: 'winner-flash', animationDuration: '0.8s', animationFillMode: 'forwards', animationTimingFunction: 'ease-out' }} />
+             style={{ background: 'rgba(251,191,36,0.18)', animationName: 'winner-flash', animationDuration: '0.9s', animationFillMode: 'forwards', animationTimingFunction: 'ease-out' }} />
       )}
 
-      {/* ── Header ─────────────────────────────────────────────────────────── */}
+      {/* ── Header ── */}
       <div className="relative flex items-center justify-between px-5 pt-10 pb-1 shrink-0">
-        <button onClick={onClose}
+        <button onClick={phase === 'idle' ? onClose : reset}
           className="w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg active:scale-90 transition-all"
           style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)' }}>
-          ×
+          {phase === 'idle' ? '×' : '↩'}
         </button>
         <div className="text-center">
           <div className="inline-block px-4 py-1 rounded-xl mb-0.5"
@@ -241,50 +262,64 @@ export default function LotteryScreen({ onClose }) {
         <BulbStrip count={18} size={9} gap={5} duration={1.6} />
       </div>
 
-      {/* ── Participants chips ──────────────────────────────────────────────── */}
-      <div className="px-4 mb-2 shrink-0">
-        <div className="flex flex-wrap gap-1.5 justify-center">
-          {participants.map(p => (
-            <button key={p.id} onClick={() => toggleParticipant(p.id)}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
-              style={p.active ? {
-                background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#000',
-                boxShadow: '0 2px 10px rgba(251,191,36,0.45)',
-              } : {
-                background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)',
-                textDecoration: 'line-through', border: '1px solid rgba(255,255,255,0.1)',
-              }}>
-              {p.avatarImage
-                ? <img src={p.avatarImage} className="w-4 h-4 rounded-full object-cover flex-shrink-0" alt="" />
-                : <span className="text-sm flex-shrink-0">{p.avatar}</span>}
-              <span>{p.name}</span>
-              {p.isGuest && p.active && (
-                <span className="opacity-50 text-[10px]"
-                  onClick={e => { e.stopPropagation(); setParticipants(prev => prev.filter(x => x.id !== p.id)) }}>✕</span>
-              )}
-            </button>
-          ))}
-          {!showGuest ? (
-            <button onClick={() => setShowGuest(true)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.12)' }}>
-              + אורח
-            </button>
-          ) : (
-            <div className="flex items-center gap-1">
-              <input autoFocus value={guestName} onChange={e => setGuestName(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && addGuest()} placeholder="שם האורח"
-                className="w-24 px-2 py-1 rounded-full text-xs outline-none text-right"
-                style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(251,191,36,0.4)', caretColor: '#fbbf24' }} />
-              <button onClick={addGuest} className="w-6 h-6 rounded-full font-black text-xs flex items-center justify-center active:scale-90" style={{ background: '#fbbf24', color: '#000' }}>✓</button>
-              <button onClick={() => { setShowGuest(false); setGuestName('') }} className="w-6 h-6 rounded-full text-xs flex items-center justify-center active:scale-90" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>✕</button>
-            </div>
-          )}
+      {/* ── Participant chips (idle only) ── */}
+      {phase === 'idle' && (
+        <div className="px-4 mb-2 shrink-0">
+          <div className="flex flex-wrap gap-1.5 justify-center">
+            {participants.map(p => (
+              <button key={p.id} onClick={() => toggleParticipant(p.id)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
+                style={p.active ? {
+                  background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', color: '#000',
+                  boxShadow: '0 2px 10px rgba(251,191,36,0.45)',
+                } : {
+                  background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.3)',
+                  textDecoration: 'line-through', border: '1px solid rgba(255,255,255,0.1)',
+                }}>
+                {p.avatarImage
+                  ? <img src={p.avatarImage} className="w-4 h-4 rounded-full object-cover flex-shrink-0" alt="" />
+                  : <span className="text-sm flex-shrink-0">{p.avatar}</span>}
+                <span>{p.name}</span>
+                {p.isGuest && p.active && (
+                  <span className="opacity-50 text-[10px]"
+                    onClick={e => { e.stopPropagation(); setParticipants(prev => prev.filter(x => x.id !== p.id)) }}>✕</span>
+                )}
+              </button>
+            ))}
+            {!showGuest ? (
+              <button onClick={() => setShowGuest(true)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold transition-all active:scale-95"
+                style={{ background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.45)', border: '1px solid rgba(255,255,255,0.12)' }}>
+                + אורח
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <input autoFocus value={guestName} onChange={e => setGuestName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && addGuest()} placeholder="שם האורח"
+                  className="w-24 px-2 py-1 rounded-full text-xs outline-none text-right"
+                  style={{ background: 'rgba(255,255,255,0.1)', color: '#fff', border: '1px solid rgba(251,191,36,0.4)', caretColor: '#fbbf24' }} />
+                <button onClick={addGuest} className="w-6 h-6 rounded-full font-black text-xs flex items-center justify-center active:scale-90" style={{ background: '#fbbf24', color: '#000' }}>✓</button>
+                <button onClick={() => { setShowGuest(false); setGuestName('') }} className="w-6 h-6 rounded-full text-xs flex items-center justify-center active:scale-90" style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.5)' }}>✕</button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* ── Sticks arena ───────────────────────────────────────────────────── */}
-      <div className="flex-1 flex flex-col items-center justify-between px-4 pb-6 min-h-0">
+      {/* ── Instruction banner (selecting only) ── */}
+      {phase === 'selecting' && (
+        <div className="text-center px-4 mb-1 shrink-0">
+          <p className="text-xs font-bold" style={{ color: 'rgba(251,191,36,0.85)' }}>
+            {instruction}
+          </p>
+          <p className="text-[10px] mt-0.5" style={{ color: 'rgba(255,255,255,0.25)' }}>
+            {revealedCount} / {activeParts.length} נחשפו
+          </p>
+        </div>
+      )}
+
+      {/* ── Main area ── */}
+      <div className="flex-1 flex flex-col items-center justify-between px-3 pb-4 min-h-0">
 
         {/* History overlay */}
         {showHistory && (
@@ -300,88 +335,137 @@ export default function LotteryScreen({ onClose }) {
           </div>
         )}
 
-        {/* Sticks + avatars */}
-        <div className="flex-1 flex items-end justify-center w-full gap-3 pt-4"
-             style={{ maxWidth: 420 }}>
+        {/* ── Sticks + avatars ── */}
+        <div className="flex-1 flex items-end justify-center w-full gap-2 pt-2"
+             style={{ maxWidth: 440 }}>
           {activeParts.map((p, idx) => {
-            const h        = revealed[p.id] ?? 0
-            const isWinner = winner?.id === p.id
-            const isFake   = fakeId === p.id
-            const grad     = STICK_GRADS[idx % STICK_GRADS.length]
+            const isWinner      = winner?.id === p.id
+            const isClaimed     = !!claimed[p.id]
+            const isRevealed    = !!revealed[p.id]
+            const isRevealingNow = revealingId === p.id
+            const grad          = STICK_GRADS[idx % STICK_GRADS.length]
+            const stickH        = isRevealed ? heights[p.id] : 0
+
+            // Whether this stick can be tapped to reveal
+            const canReveal = phase === 'selecting' && isClaimed && !isRevealed && !isRevealingNow && revealingId === null
 
             return (
               <div key={p.id} className="flex flex-col items-center" style={{ flex: '1 1 0', minWidth: 0 }}>
 
-                {/* Winner crown */}
-                <div style={{ height: 20 }} className="flex items-center justify-center">
-                  {isWinner && <span className="text-base leading-none animate-bounce">👑</span>}
+                {/* Crown space */}
+                <div style={{ height: 22 }} className="flex items-center justify-center">
+                  {isWinner && <span className="text-lg leading-none animate-bounce">👑</span>}
                 </div>
 
                 {/* Length badge */}
-                <div style={{ height: 18 }} className="flex items-center justify-center">
-                  {h > 0 && (
+                <div style={{ height: 16 }} className="flex items-center justify-center">
+                  {isRevealed && (
                     <span className="text-[10px] font-black"
-                          style={{ color: isWinner ? '#fbbf24' : isFake ? 'rgba(255,150,0,0.9)' : 'rgba(255,255,255,0.45)' }}>
-                      {h}
+                          style={{ color: isWinner ? '#fbbf24' : 'rgba(255,255,255,0.4)' }}>
+                      {heights[p.id]}
                     </span>
                   )}
                 </div>
 
-                {/* Stick bar — grows upward */}
-                <div className="relative w-full flex justify-center" style={{ height: MAX_H }}>
-                  {/* Track */}
-                  <div className="absolute bottom-0 rounded-t-full" style={{ width: 16, height: MAX_H, background: 'rgba(255,255,255,0.04)', borderRadius: 6 }} />
-                  {/* Stick */}
+                {/* Stick bar — tappable when claimed */}
+                <div className="relative w-full flex justify-center"
+                     style={{ height: MAX_H, cursor: canReveal ? 'pointer' : 'default' }}
+                     onClick={() => revealStick(p.id)}>
+
+                  {/* Track / glow when ready */}
                   <div className="absolute bottom-0"
                        style={{
-                         width: 16,
-                         height: h,
-                         background: h > 0 ? grad : 'transparent',
-                         borderRadius: '6px 6px 0 0',
-                         boxShadow: h > 0
+                         width: 14, height: MAX_H, borderRadius: 6,
+                         background: isRevealingNow
+                           ? 'rgba(251,191,36,0.25)'
+                           : canReveal
+                             ? 'rgba(251,191,36,0.12)'
+                             : 'rgba(255,255,255,0.04)',
+                         boxShadow: isRevealingNow
+                           ? '0 0 22px rgba(251,191,36,0.7)'
+                           : canReveal
+                             ? '0 0 10px rgba(251,191,36,0.35)'
+                             : 'none',
+                         animationName: isRevealingNow ? 'fake-shake' : 'none',
+                         animationDuration: '0.18s',
+                         animationIterationCount: 'infinite',
+                         transition: 'background 0.3s, box-shadow 0.3s',
+                       }} />
+
+                  {/* Actual stick — appears after reveal */}
+                  <div className="absolute bottom-0"
+                       style={{
+                         width: 14,
+                         height: stickH,
+                         background: stickH > 0 ? grad : 'transparent',
+                         borderRadius: '5px 5px 0 0',
+                         boxShadow: stickH > 0
                            ? isWinner
-                             ? '0 0 14px rgba(251,191,36,0.9), 0 0 30px rgba(251,191,36,0.4)'
-                             : isFake
-                               ? '0 0 12px rgba(255,110,0,0.8)'
-                               : '0 -2px 8px rgba(0,0,0,0.4)'
+                             ? '0 0 14px rgba(251,191,36,0.9), 0 0 28px rgba(251,191,36,0.4)'
+                             : '0 -2px 8px rgba(0,0,0,0.5)'
                            : 'none',
                          transition: 'height 0.65s cubic-bezier(0.34,1.56,0.64,1)',
                        }} />
                 </div>
 
-                {/* Fist gripping the stick */}
-                <div className="text-2xl leading-none select-none my-1">✊</div>
+                {/* Fist / hand emoji — doubles as tap target for reveal */}
+                <div className="text-xl leading-none select-none my-1 text-center"
+                     style={{
+                       cursor: canReveal ? 'pointer' : 'default',
+                       animationName: canReveal ? 'bounce-arrows' : 'none',
+                       animationDuration: '0.75s',
+                       animationTimingFunction: 'ease-in-out',
+                       animationIterationCount: 'infinite',
+                     }}
+                     onClick={() => revealStick(p.id)}>
+                  {isRevealingNow ? '⚡' : canReveal ? '🖐️' : '✊'}
+                </div>
 
-                {/* Avatar */}
-                <div className="relative flex-shrink-0">
-                  {(isWinner || isFake) && (
+                {/* Avatar — TAP 1: claim your stick */}
+                <div className="relative flex-shrink-0"
+                     onClick={() => claimStick(p.id)}
+                     style={{ cursor: phase === 'selecting' && !isClaimed && revealingId === null ? 'pointer' : 'default' }}>
+
+                  {/* Rainbow ring for winner */}
+                  {isWinner && (
                     <div className="absolute -inset-1.5 rounded-full"
-                         style={{
-                           background: isWinner
-                             ? 'linear-gradient(135deg,#ff2200,#ffd700,#00cc44,#0088ff,#ff00cc)'
-                             : 'linear-gradient(135deg,#ff7700,#ffcc00)',
-                           zIndex: 0,
-                         }} />
+                         style={{ background: 'linear-gradient(135deg,#ff2200,#ffd700,#00cc44,#0088ff,#ff00cc)', zIndex: 0 }} />
                   )}
-                  <div className="relative w-10 h-10 rounded-full overflow-hidden flex items-center justify-center"
+
+                  <div className="relative w-11 h-11 rounded-full overflow-hidden flex items-center justify-center"
                        style={{
                          background: 'rgba(255,255,255,0.08)',
-                         border: isWinner ? '2px solid #fbbf24' : isFake ? '2px solid rgba(255,140,0,0.9)' : '2px solid rgba(255,255,255,0.12)',
-                         boxShadow: isWinner ? '0 0 18px rgba(251,191,36,0.8)' : isFake ? '0 0 12px rgba(255,110,0,0.7)' : 'none',
-                         transition: 'box-shadow 0.3s ease, border-color 0.3s ease',
+                         border: isWinner
+                           ? '2px solid #fbbf24'
+                           : isClaimed
+                             ? '2px solid rgba(251,191,36,0.7)'
+                             : phase === 'selecting'
+                               ? '2px solid rgba(255,255,255,0.55)'
+                               : '2px solid rgba(255,255,255,0.15)',
+                         boxShadow: isWinner
+                           ? '0 0 20px rgba(251,191,36,0.8)'
+                           : isClaimed
+                             ? '0 0 10px rgba(251,191,36,0.45)'
+                             : 'none',
+                         transition: 'border-color 0.3s, box-shadow 0.3s',
                          zIndex: 1,
+                         animationName: phase === 'selecting' && !isClaimed && revealingId === null
+                           ? 'border-glow-fade' : 'none',
+                         animationDuration: '1.4s',
+                         animationIterationCount: 'infinite',
                        }}>
                     {p.avatarImage
                       ? <img src={p.avatarImage} className="w-full h-full object-cover" alt={p.name} />
-                      : <span style={{ fontSize: 20 }}>{p.avatar}</span>}
+                      : <span style={{ fontSize: 22 }}>{p.avatar}</span>}
                   </div>
                 </div>
 
                 {/* Name */}
                 <span className="text-[10px] font-bold mt-1 text-center w-full truncate px-1"
-                      style={{ color: isWinner ? '#fbbf24' : isFake ? 'rgba(255,150,0,0.9)' : 'rgba(255,255,255,0.55)' }}>
+                      style={{ color: isWinner ? '#fbbf24' : isClaimed ? 'rgba(255,255,255,0.75)' : 'rgba(255,255,255,0.4)' }}>
                   {p.name}
                 </span>
+
               </div>
             )
           })}
@@ -392,30 +476,24 @@ export default function LotteryScreen({ onClose }) {
           <BulbStrip count={14} size={7} gap={4} duration={1.4} />
         </div>
 
-        {/* Action button */}
+        {/* ── Action button ── */}
         <div className="shrink-0 w-full max-w-xs">
           {phase === 'idle' && (
             <button onClick={startDraw} disabled={activeParts.length < 2}
               className="w-full py-4 rounded-2xl font-black text-lg text-black active:scale-95 transition-all disabled:opacity-40"
               style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', boxShadow: '0 4px 20px rgba(251,191,36,0.45)' }}>
-              🎯 גלה את המקלות!
+              🎯 התחל הגרלה!
             </button>
           )}
-          {phase === 'revealing' && (
-            <div className="text-center py-3">
-              <p className="text-white/60 font-bold text-sm animate-pulse">🎯 מגלה מקלות...</p>
-            </div>
-          )}
           {phase === 'done' && winner && (
-            <div className="flex flex-col items-center gap-3">
-              <p className="text-2xl font-black text-center animate-bounce-in"
-                 style={{ color: '#fbbf24' }}>
-                🏆 {winner.name} זכה!
+            <div className="text-center">
+              <p className="font-black text-2xl mb-2" style={{ color: '#fbbf24', textShadow: '0 0 20px rgba(251,191,36,0.6)' }}>
+                🏆 {winner.name}!
               </p>
               <button onClick={reset}
-                className="w-full py-3 rounded-2xl font-bold text-sm active:scale-95 transition-all"
-                style={{ background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.2)' }}>
-                🔄 הגרלה נוספת
+                className="w-full py-3 rounded-2xl font-black text-sm active:scale-95 transition-all"
+                style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.18)' }}>
+                🔄 הגרלה חדשה
               </button>
             </div>
           )}
