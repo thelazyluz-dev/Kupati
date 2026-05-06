@@ -5,6 +5,18 @@ import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthd
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
+// Per-gradient colored shadow tints for claymorphism depth
+const GRADIENT_SHADOWS = [
+  'rgba(99,102,241,0.35)',   // indigo
+  'rgba(236,72,153,0.35)',   // pink
+  'rgba(16,185,129,0.35)',   // emerald
+  'rgba(245,158,11,0.35)',   // amber
+  'rgba(59,130,246,0.35)',   // blue
+  'rgba(239,68,68,0.35)',    // red
+  'rgba(139,92,246,0.35)',   // violet
+  'rgba(20,184,166,0.35)',   // teal
+]
+
 export default function ChildCard({ child, index, rank, totalChildren }) {
   const { navigate, settings, getTransactions } = useApp()
 
@@ -20,52 +32,50 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
 
   const gradient = (child.colorKey && COLOR_OPTIONS.find((c) => c.key === child.colorKey)?.gradient)
     ?? CARD_GRADIENTS[index % CARD_GRADIENTS.length]
-  const goals      = getGoals(child)
-  const firstGoal  = goals[0] ?? null
-  const progress   = firstGoal ? Math.min(1, getGoalProgress(child, settings, firstGoal)) : 0
-  const totalValue = getTotalValue(child)
+  const shadowTint   = GRADIENT_SHADOWS[index % GRADIENT_SHADOWS.length]
+  const goals        = getGoals(child)
+  const firstGoal    = goals[0] ?? null
+  const progress     = firstGoal ? Math.min(1, getGoalProgress(child, settings, firstGoal)) : 0
+  const totalValue   = getTotalValue(child)
   const birthdayDays  = daysUntilBirthday(child.birthday)
   const birthdayToday = birthdayDays === 0
   const hasActiveSavings = (child.savings || []).some((s) => s.status === 'active')
   const goalReached      = firstGoal != null && totalValue >= firstGoal.targetAmount
   const showMedal        = totalChildren >= 2 && rank <= 3
   const showBirthdayChip = child.birthday && !birthdayToday && birthdayDays <= 60
-  const stateRing = goalReached
-    ? 'ring-2 ring-yellow-300 ring-offset-1'
-    : birthdayToday ? 'ring-2 ring-pink-300 ring-offset-1 animate-pulse-ring' : ''
 
   return (
     <button
       type="button"
       onClick={() => navigate('dashboard', child.id)}
-      className={[
-        `bg-gradient-to-br ${gradient} rounded-3xl p-4 text-white text-right`,
-        'card-shimmer shadow-xl w-full relative overflow-hidden',
-        'active:scale-95 hover:brightness-110 transition-all duration-200',
-        stateRing,
-      ].join(' ')}
+      className={`bg-gradient-to-br ${gradient} w-full text-white text-right relative overflow-hidden active:scale-[0.97] transition-all duration-200`}
+      style={{
+        borderRadius: 28,
+        padding: '18px 18px 16px',
+        border: '3px solid rgba(255,255,255,0.55)',
+        boxShadow: `
+          inset 0 1px 2px rgba(255,255,255,0.45),
+          inset 0 -3px 8px rgba(0,0,0,0.12),
+          0 12px 32px ${shadowTint},
+          0 4px 12px rgba(0,0,0,0.12)
+        `,
+      }}
     >
       {/* Avatar watermark */}
       {child.avatarImage ? (
-        <img
-          src={child.avatarImage}
-          alt=""
-          aria-hidden="true"
+        <img src={child.avatarImage} alt="" aria-hidden="true"
           className="absolute left-2 top-1/2 select-none pointer-events-none rounded-full object-cover"
-          style={{ width: 96, height: 96, opacity: 0.13, transform: 'translateY(-50%)' }}
-        />
+          style={{ width: 110, height: 110, opacity: 0.1, transform: 'translateY(-50%)' }} />
       ) : (
-        <span
-          className="absolute left-1 top-1/2 select-none pointer-events-none leading-none"
-          style={{ fontSize: 96, opacity: 0.08, transform: 'translateY(-50%)' }}
-          aria-hidden="true"
-        >{child.avatar}</span>
+        <span className="absolute left-0 top-1/2 select-none pointer-events-none leading-none"
+          style={{ fontSize: 110, opacity: 0.07, transform: 'translateY(-50%)' }}
+          aria-hidden="true">{child.avatar}</span>
       )}
 
-      {/* Status badges — top-left corner */}
+      {/* Status badges */}
       {(hasActiveSavings || goalReached || birthdayToday || showMedal || missedYesterday) && (
         <div className="absolute top-3 left-3 flex gap-1">
-          {showMedal        && <span className="text-xl leading-none animate-pop"   title={`מקום ${rank}`}>{MEDALS[rank - 1]}</span>}
+          {showMedal        && <span className="text-xl leading-none animate-pop"    title={`מקום ${rank}`}>{MEDALS[rank - 1]}</span>}
           {birthdayToday    && <span className="text-base leading-none animate-bounce" title="יום הולדת!">🎂</span>}
           {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
           {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
@@ -74,39 +84,65 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
       )}
 
       <div className="flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full bg-white/25 ring-2 ring-white/40 flex items-center justify-center flex-shrink-0 overflow-hidden">
+        {/* Clay avatar circle */}
+        <div className="flex-shrink-0"
+          style={{
+            width: 76, height: 76,
+            borderRadius: '50%',
+            border: '3px solid rgba(255,255,255,0.75)',
+            boxShadow: 'inset 0 3px 10px rgba(0,0,0,0.18), 0 6px 16px rgba(0,0,0,0.2)',
+            background: 'rgba(255,255,255,0.25)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+          }}>
           {child.avatarImage
             ? <img src={child.avatarImage} alt={child.name} className="w-full h-full object-cover" />
-            : <span className="text-4xl">{child.avatar}</span>
+            : <span style={{ fontSize: 38 }}>{child.avatar}</span>
           }
         </div>
-        <div className="flex-1 min-w-0">
-          <div className="font-black text-xl mb-2 truncate">{child.name}</div>
 
-          {/* Balance chips */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
-            <div className="flex items-center justify-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2 py-1.5">
-              <span className="text-base leading-none">💵</span>
-              <span className="font-black text-base leading-none">{formatNumber(child.shekelBalance)}</span>
-            </div>
-            <div className="flex items-center justify-center gap-1.5 bg-white/25 ring-1 ring-white/50 rounded-xl px-2 py-1.5">
-              <span className="text-base leading-none">⭐</span>
-              <span className="font-black text-base leading-none">{formatNumber(child.starBalance)}</span>
-            </div>
+        <div className="flex-1 min-w-0">
+          {/* Name */}
+          <div className="font-black text-xl mb-2.5 truncate"
+               style={{ textShadow: '0 1px 3px rgba(0,0,0,0.2)', letterSpacing: '-0.01em' }}>
+            {child.name}
           </div>
 
-          {/* Streak + birthday chip */}
+          {/* Balance chips — glass style */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            {[
+              { icon: '💵', val: formatNumber(child.shekelBalance) },
+              { icon: '⭐', val: formatNumber(child.starBalance) },
+            ].map(({ icon, val }) => (
+              <div key={icon}
+                className="flex items-center justify-center gap-1.5"
+                style={{
+                  background: 'rgba(255,255,255,0.28)',
+                  backdropFilter: 'blur(8px)',
+                  WebkitBackdropFilter: 'blur(8px)',
+                  border: '1.5px solid rgba(255,255,255,0.65)',
+                  borderRadius: 14,
+                  padding: '7px 10px',
+                  boxShadow: 'inset 0 1px 2px rgba(255,255,255,0.4), 0 3px 8px rgba(0,0,0,0.1)',
+                }}>
+                <span className="text-base leading-none">{icon}</span>
+                <span className="font-black text-base leading-none">{val}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Streak + birthday chips */}
           {(streak >= 2 || showBirthdayChip) && (
             <div className="flex gap-1.5 flex-wrap">
               {streak >= 2 && (
-                <div className="flex items-center gap-1 bg-white/35 ring-1 ring-white/60 rounded-xl px-2 py-0.5 text-xs font-black">
+                <div className="flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-black"
+                     style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.6)' }}>
                   🔥 {streak} ימים
                 </div>
               )}
               {showBirthdayChip && (
-                <div className={`flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-semibold ${
-                  birthdayDays <= 7 ? 'bg-white/40 ring-1 ring-white/70 animate-pulse' : 'bg-white/20 ring-1 ring-white/30'
-                }`}>
+                <div className={`flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-semibold ${birthdayDays <= 7 ? 'animate-pulse' : ''}`}
+                     style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)' }}>
                   🎂 {birthdayDays} ימים
                 </div>
               )}
@@ -115,22 +151,29 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
 
           {/* Goal progress */}
           {firstGoal && (
-            <div className="mt-2">
-              <div className="flex items-center justify-between text-xs opacity-85 mb-1">
-                <span>{Math.round(progress * 100)}%</span>
-                <span className="truncate max-w-[130px]">{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
+            <div className="mt-2.5">
+              <div className="flex items-center justify-between text-xs opacity-90 mb-1.5">
+                <span className="font-bold">{Math.round(progress * 100)}%</span>
+                <span className="truncate max-w-[130px] font-semibold">{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
               </div>
-              <div className="w-full bg-white/30 rounded-full h-2">
-                <div className="bg-white rounded-full h-2 transition-all duration-700" style={{ width: `${progress * 100}%` }} />
+              <div className="w-full rounded-full overflow-hidden"
+                   style={{ height: 8, background: 'rgba(0,0,0,0.18)', boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.2)' }}>
+                <div className="h-full rounded-full transition-all duration-700"
+                     style={{
+                       width: `${progress * 100}%`,
+                       background: 'linear-gradient(90deg, rgba(255,255,255,0.9), rgba(255,255,255,0.7))',
+                       boxShadow: '0 0 8px rgba(255,255,255,0.6)',
+                     }} />
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Birthday today — special celebratory strip */}
+      {/* Birthday today strip */}
       {birthdayToday && (
-        <div className="mt-2.5 rounded-2xl bg-white/35 ring-1 ring-white/50 px-3 py-2 flex items-center justify-center gap-2">
+        <div className="mt-3 rounded-2xl px-3 py-2 flex items-center justify-center gap-2"
+             style={{ background: 'rgba(255,255,255,0.35)', border: '1.5px solid rgba(255,255,255,0.6)' }}>
           <span className="text-lg animate-bounce">🎂</span>
           <span className="font-bold text-sm">יום הולדת שמח!</span>
           <span className="text-lg animate-bounce" style={{ animationDelay: '0.2s' }}>🎉</span>

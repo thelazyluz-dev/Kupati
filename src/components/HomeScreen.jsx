@@ -5,11 +5,11 @@ import { sounds } from '../lib/sounds.js'
 
 function getTimeGradient() {
   const h = new Date().getHours()
-  if (h < 6)  return 'from-slate-700 to-indigo-800'
-  if (h < 11) return 'from-sky-400 to-indigo-500'
-  if (h < 17) return 'from-indigo-500 to-purple-600'
-  if (h < 21) return 'from-orange-400 to-pink-500'
-  return 'from-slate-600 to-purple-900'
+  if (h < 6)  return 'from-[#0f0c29] via-[#302b63] to-[#24243e]'
+  if (h < 11) return 'from-[#f093fb] via-[#c471ed] to-[#4facfe]'
+  if (h < 17) return 'from-[#4facfe] via-[#667eea] to-[#764ba2]'
+  if (h < 21) return 'from-[#f6d365] via-[#fda085] to-[#f5576c]'
+  return 'from-[#a18cd1] via-[#764ba2] to-[#667eea]'
 }
 import ChildCard from './ChildCard.jsx'
 import Button from './ui/Button.jsx'
@@ -766,19 +766,26 @@ export default function HomeScreen() {
 
       {/* Header */}
       <header
-        className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-5 text-white rounded-b-[2rem] shadow-lg`}
-        style={pigClicks >= 3 && !isBursting ? { animation: `header-tremble ${pigClicks >= 4 ? '0.07s' : '0.15s'} ease-in-out infinite` } : {}}
+        className={`relative overflow-hidden bg-gradient-to-br ${getTimeGradient()} px-5 pt-3 pb-8 text-white`}
+        style={{
+          borderRadius: '0 0 36px 36px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.12)',
+          ...(pigClicks >= 3 && !isBursting ? { animation: `header-tremble ${pigClicks >= 4 ? '0.07s' : '0.15s'} ease-in-out infinite` } : {}),
+        }}
       >
         {/* Shimmer sweep */}
-        <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none animate-shimmer"
-             style={{ background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.07) 50%, transparent 60%)', backgroundSize: '200% 100%', animationDuration: '5s' }} />
+        <div className="absolute inset-0 pointer-events-none animate-shimmer"
+             style={{ borderRadius: '0 0 36px 36px', background: 'linear-gradient(105deg, transparent 40%, rgba(255,255,255,0.09) 50%, transparent 60%)', backgroundSize: '200% 100%', animationDuration: '4s' }} />
+        {/* Glass inner highlight at top */}
+        <div className="absolute top-0 inset-x-0 h-px pointer-events-none"
+             style={{ background: 'linear-gradient(90deg,transparent,rgba(255,255,255,0.5),transparent)' }} />
         {/* Feature 9 — progressive darkness overlay */}
-        <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
-             style={{ background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
+        <div className="absolute inset-0 pointer-events-none"
+             style={{ borderRadius: '0 0 36px 36px', background: `rgba(0,0,0,${headerDark})`, transition: 'background 0.5s ease' }} />
         {/* Feature 6 — red pulse overlay */}
         {redPulseOn && !isBursting && (
-          <div className="absolute inset-0 rounded-b-[2rem] pointer-events-none"
-               style={{ background: 'rgba(239,68,68,0.18)', animation: `red-pulse ${redPulseSpeed} ease-in-out infinite` }} />
+          <div className="absolute inset-0 pointer-events-none"
+               style={{ borderRadius: '0 0 36px 36px', background: 'rgba(239,68,68,0.18)', animation: `red-pulse ${redPulseSpeed} ease-in-out infinite` }} />
         )}
         {PARTICLES.map((p, i) => (
           <span key={i} className="absolute pointer-events-none select-none" style={{
@@ -792,20 +799,24 @@ export default function HomeScreen() {
             '--ry': `${p.ry}px`,
           }}>{p.e}</span>
         ))}
-        <div className="flex items-center justify-between mb-3">
-          <button onClick={() => navigate('settings')}
-            className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-xl"
-            aria-label="הגדרות">⚙️</button>
+        <div className="flex items-center justify-between mb-4">
+          <button onClick={() => navigate('settings')} aria-label="הגדרות"
+            className="w-11 h-11 flex items-center justify-center text-xl active:scale-90 transition-all"
+            style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
+            ⚙️
+          </button>
           {children.length > 0 && (
-            <button onClick={() => setShowLottery(true)}
-              className="flex items-center gap-1.5 px-4 py-2 rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-sm font-bold text-white"
-              aria-label="הגרלה">
-              🎱 <span>הגרלה</span>
+            <button onClick={() => setShowLottery(true)} aria-label="הגרלה"
+              className="flex items-center gap-1.5 px-5 py-2.5 text-sm font-black text-white active:scale-95 transition-all"
+              style={{ borderRadius: 20, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.4)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 14px rgba(0,0,0,0.15)', letterSpacing: '0.01em' }}>
+              🎯 <span>הגרלה</span>
             </button>
           )}
-          <button onClick={() => showModal('addChild')}
-            className="w-11 h-11 flex items-center justify-center rounded-2xl bg-white/20 hover:bg-white/30 active:scale-90 transition-all text-2xl font-bold leading-none"
-            aria-label="הוסף ילד">+</button>
+          <button onClick={() => showModal('addChild')} aria-label="הוסף ילד"
+            className="w-11 h-11 flex items-center justify-center text-2xl font-bold leading-none active:scale-90 transition-all"
+            style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
+            +
+          </button>
         </div>
 
         {/* Hero — interactive pig */}
@@ -850,13 +861,22 @@ export default function HomeScreen() {
             )}
 
             <div
-              className="relative w-16 h-16 rounded-full bg-white/20 flex items-center justify-center shadow-inner cursor-pointer select-none overflow-hidden active:scale-90 transition-transform"
-              style={pigRingStyle}
+              className="relative flex items-center justify-center cursor-pointer select-none active:scale-90 transition-transform overflow-hidden"
+              style={{
+                width: 80, height: 80,
+                borderRadius: '50%',
+                background: 'rgba(255,255,255,0.25)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: '3px solid rgba(255,255,255,0.6)',
+                boxShadow: 'inset 0 3px 10px rgba(255,255,255,0.25), inset 0 -3px 8px rgba(0,0,0,0.12), 0 8px 28px rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.1)',
+                ...pigRingStyle,
+              }}
               onClick={handlePigClick}
               title="לחץ עלי 🐷"
             >
               <span
-                className={`text-4xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
+                className={`text-5xl relative z-10 ${!isBursting && pigClicks === 0 ? 'animate-float' : ''}`}
                 style={pigClicks >= 3 && !isBursting ? { animation: 'pig-shake 0.35s ease-in-out' } : {}}
               >
                 {showPigFloat ? '' : isBursting && countdown === null ? '💥' : isBursting && countdown !== null ? '' : '🐷'}
@@ -864,12 +884,15 @@ export default function HomeScreen() {
               <PigCracks level={isBursting ? 0 : pigClicks} />
             </div>
           </div>
-          <h1 className="text-lg font-bold tracking-tight">הארנק שלי</h1>
+          <h1 className="font-black text-xl tracking-tight mt-1"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.2)', letterSpacing: '-0.02em' }}>
+            הארנק שלי 🐷
+          </h1>
         </div>
       </header>
 
       {/* Content */}
-      <main className="flex-1 px-4 py-5 -mt-4"
+      <main className="flex-1 px-4 py-5 -mt-2"
             style={pigPrank
               ? { animation: 'prank-in 0.55s cubic-bezier(0.68,-0.55,0.27,1.55) forwards' }
               : { transform: 'rotate(0deg) scale(1)', transition: 'transform 0.7s ease-out' }
