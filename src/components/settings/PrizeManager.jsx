@@ -88,17 +88,25 @@ export default function PrizeManager() {
           editId === prize.id ? (
             <PrizeForm form={form} onChange={setForm} onSave={submitForm} onCancel={cancelEdit} emojis={PRIZE_EMOJIS} />
           ) : (
-            <div className="flex items-center gap-2 bg-purple-50 rounded-2xl px-3 py-3">
+            <div
+              className="flex items-center gap-2 rounded-2xl px-3 py-3 mb-1.5"
+              style={{
+                background: 'rgba(245,243,255,0.9)',
+                border: '1.5px solid rgba(139,92,246,0.2)',
+                boxShadow: '0 3px 10px rgba(139,92,246,0.1), inset 0 1px 1px rgba(255,255,255,0.9)',
+              }}
+            >
               <span className="text-2xl">{prize.emoji}</span>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-gray-800 text-sm truncate">{prize.name}</p>
-                <p className="text-xs text-purple-600 font-bold">{prize.starCost}⭐</p>
+                <p className="text-xs font-bold" style={{ color: '#7c3aed' }}>{prize.starCost}⭐</p>
               </div>
               {(() => {
                 const count = redemptionCount(prize)
                 return count > 0 ? (
                   <span
-                    className="text-xs font-black bg-purple-200 text-purple-700 rounded-full px-2 py-0.5 leading-none flex-shrink-0"
+                    className="text-xs font-black rounded-full px-2 py-0.5 leading-none flex-shrink-0"
+                    style={{ background: 'rgba(139,92,246,0.15)', color: '#6d28d9' }}
                     title="פעמים שמומש"
                   >
                     ×{count}
@@ -106,9 +114,11 @@ export default function PrizeManager() {
                 ) : null
               })()}
               <button type="button" onClick={() => startEdit(prize)}
-                className="text-gray-400 hover:text-gray-600 text-sm px-2 py-1 active:scale-90">✏️</button>
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-purple-500 text-sm active:scale-90 transition-colors"
+                style={{ background: 'rgba(243,244,246,0.8)' }}>✏️</button>
               <button type="button" onClick={() => deletePrize(prize.id)}
-                className="text-gray-400 hover:text-red-500 text-sm px-2 py-1 active:scale-90">🗑️</button>
+                className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 text-sm active:scale-90 transition-colors"
+                style={{ background: 'rgba(243,244,246,0.8)' }}>🗑️</button>
               {dragHandle}
             </div>
           )
@@ -129,7 +139,8 @@ export default function PrizeManager() {
 
 function PrizeForm({ form, onChange, onSave, onCancel, emojis }) {
   return (
-    <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-3 space-y-3">
+    <div className="rounded-2xl p-3 space-y-3 mb-1.5"
+      style={{ background: 'rgba(245,243,255,0.95)', border: '1.5px solid rgba(139,92,246,0.25)', boxShadow: '0 4px 14px rgba(139,92,246,0.12), inset 0 1px 1px rgba(255,255,255,0.9)' }}>
       {/* Emoji picker */}
       <div className="flex flex-wrap gap-1.5">
         {emojis.map((e) => (

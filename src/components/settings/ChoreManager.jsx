@@ -4,6 +4,12 @@ import Button from '../ui/Button.jsx'
 import SortableList from '../ui/SortableList.jsx'
 import { CHORE_EMOJIS } from '../../lib/defaults.js'
 
+const CLAY_CARD = {
+  background: 'rgba(238,242,255,0.9)',
+  border: '1.5px solid rgba(99,102,241,0.2)',
+  boxShadow: '0 4px 14px rgba(99,102,241,0.1), inset 0 1px 1px rgba(255,255,255,0.9)',
+}
+
 function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
   const [editing, setEditing] = useState(false)
   const [emoji, setEmoji]   = useState(chore.emoji || '⭐')
@@ -12,8 +18,7 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
 
   if (editing) {
     return (
-      <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 my-1 space-y-2">
-        {/* Emoji picker */}
+      <div className="rounded-2xl p-3 my-1 space-y-2" style={CLAY_CARD}>
         <div className="flex flex-wrap gap-1">
           {CHORE_EMOJIS.map((e) => (
             <button
@@ -30,7 +35,7 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
           type="text"
           value={name}
           onChange={(e) => setName(e.target.value)}
-          className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+          className="w-full rounded-xl border-2 border-indigo-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
           autoFocus
         />
         <div className="flex items-center gap-2">
@@ -40,7 +45,7 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
             step="0.5"
             value={stars}
             onChange={(e) => setStars(e.target.value)}
-            className="w-20 rounded-xl border-2 border-gray-200 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none text-center"
+            className="w-20 rounded-xl border-2 border-indigo-200 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none text-center"
             dir="ltr"
           />
           <span className="text-sm text-gray-500">⭐</span>
@@ -65,14 +70,29 @@ function ChoreRow({ chore, onSave, onDelete, dragHandle }) {
   }
 
   return (
-    <div className="flex items-center gap-2 py-2.5 border-b border-gray-100 last:border-0">
+    <div
+      className="flex items-center gap-2 py-2.5"
+      style={{ borderBottom: '1px solid rgba(229,231,235,0.5)' }}
+    >
       <span className="text-xl w-7 text-center flex-shrink-0">{chore.emoji || '⭐'}</span>
-      <span className="text-amber-500 font-bold text-sm w-8 text-center flex-shrink-0" dir="ltr">
+      <span
+        className="font-black text-sm w-8 text-center flex-shrink-0 rounded-full px-1 py-0.5"
+        style={{ color: '#d97706', background: 'rgba(251,191,36,0.15)' }}
+        dir="ltr"
+      >
         {chore.defaultStars}⭐
       </span>
       <span className="flex-1 font-medium text-gray-800 text-sm">{chore.name}</span>
-      <button onClick={() => setEditing(true)} className="text-gray-400 hover:text-indigo-500 transition-colors px-1">✏️</button>
-      <button onClick={() => onDelete(chore.id)} className="text-gray-400 hover:text-red-500 transition-colors px-1">🗑️</button>
+      <button
+        onClick={() => setEditing(true)}
+        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-indigo-500 transition-colors active:scale-90 text-sm"
+        style={{ background: 'rgba(243,244,246,0.8)' }}
+      >✏️</button>
+      <button
+        onClick={() => onDelete(chore.id)}
+        className="w-7 h-7 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 transition-colors active:scale-90 text-sm"
+        style={{ background: 'rgba(243,244,246,0.8)' }}
+      >🗑️</button>
       {dragHandle}
     </div>
   )
@@ -104,8 +124,7 @@ export default function ChoreManager({ hideTitle = false }) {
       </div>
 
       {showAdd && (
-        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-2xl p-3 mb-3 space-y-2">
-          {/* Emoji picker */}
+        <div className="rounded-2xl p-3 mb-3 space-y-2" style={CLAY_CARD}>
           <div className="flex flex-wrap gap-1">
             {CHORE_EMOJIS.map((e) => (
               <button
@@ -123,7 +142,7 @@ export default function ChoreManager({ hideTitle = false }) {
             value={newName}
             onChange={(e) => setNewName(e.target.value)}
             placeholder="שם המטלה"
-            className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+            className="w-full rounded-xl border-2 border-indigo-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
             autoFocus
             onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
           />
@@ -134,7 +153,7 @@ export default function ChoreManager({ hideTitle = false }) {
               step="0.5"
               value={newStars}
               onChange={(e) => setNewStars(e.target.value)}
-              className="w-20 rounded-xl border-2 border-gray-200 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none text-center"
+              className="w-20 rounded-xl border-2 border-indigo-200 px-2 py-2 text-sm focus:border-indigo-400 focus:outline-none text-center"
               dir="ltr"
             />
             <span className="text-sm text-gray-500">⭐</span>
@@ -145,7 +164,15 @@ export default function ChoreManager({ hideTitle = false }) {
         </div>
       )}
 
-      <div className="bg-white rounded-2xl shadow-sm overflow-hidden px-3">
+      <div
+        className="rounded-[22px] overflow-hidden px-3"
+        style={{
+          background: 'rgba(255,255,255,0.82)',
+          backdropFilter: 'blur(10px)',
+          border: '1.5px solid rgba(255,255,255,0.75)',
+          boxShadow: '0 6px 20px rgba(0,0,0,0.06), inset 0 1px 2px rgba(255,255,255,0.95)',
+        }}
+      >
         {chores.length === 0 ? (
           <p className="text-center text-gray-400 py-6 text-sm">אין מטלות — לחץ הוסף</p>
         ) : (

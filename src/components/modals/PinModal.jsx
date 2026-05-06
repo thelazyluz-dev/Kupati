@@ -102,7 +102,12 @@ export default function PinModal() {
               key={d}
               type="button"
               onClick={() => addDigit(String(d))}
-              className="h-14 rounded-2xl bg-gray-100 hover:bg-gray-200 active:scale-90 transition-all text-xl font-bold text-gray-800"
+              className="h-14 rounded-2xl active:scale-90 transition-all text-xl font-bold text-gray-800 cursor-pointer"
+              style={{
+                background: 'rgba(255,255,255,0.9)',
+                border: '1.5px solid rgba(229,231,235,0.8)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,1)',
+              }}
             >
               {d}
             </button>
@@ -111,14 +116,24 @@ export default function PinModal() {
           <button
             type="button"
             onClick={() => addDigit('0')}
-            className="h-14 rounded-2xl bg-gray-100 hover:bg-gray-200 active:scale-90 transition-all text-xl font-bold text-gray-800"
+            className="h-14 rounded-2xl active:scale-90 transition-all text-xl font-bold text-gray-800 cursor-pointer"
+            style={{
+              background: 'rgba(255,255,255,0.9)',
+              border: '1.5px solid rgba(229,231,235,0.8)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,1)',
+            }}
           >
             0
           </button>
           <button
             type="button"
             onClick={backspace}
-            className="h-14 rounded-2xl bg-gray-100 hover:bg-gray-200 active:scale-90 transition-all text-xl text-gray-600"
+            className="h-14 rounded-2xl active:scale-90 transition-all text-xl text-gray-500 cursor-pointer"
+            style={{
+              background: 'rgba(249,250,251,0.9)',
+              border: '1.5px solid rgba(229,231,235,0.8)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,1)',
+            }}
           >
             ⌫
           </button>

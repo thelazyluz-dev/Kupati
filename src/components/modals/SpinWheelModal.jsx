@@ -124,25 +124,29 @@ export default function SpinWheelModal() {
         {/* Zone 1: top info */}
         <div className="w-full max-w-sm flex-shrink-0">
           {result ? (
-            <div className="bg-white/10 rounded-2xl px-4 py-2.5 text-center animate-bounce-in">
+            <div className="rounded-2xl px-4 py-2.5 text-center animate-bounce-in"
+              style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)', boxShadow: '0 4px 16px rgba(0,0,0,0.2), inset 0 1px 1px rgba(255,255,255,0.2)' }}>
               <p className="text-lg font-black leading-tight">🎉 {childName || 'ילד'} זכה ב-{rewardLabel}!</p>
               <p className="text-xs font-bold text-emerald-300 mt-0.5">💵 הכסף נוסף לחשבון!</p>
             </div>
           ) : freeSpins > 0 ? (
-            <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl px-3 py-2 flex items-center gap-2 text-white shadow-md animate-pop">
+            <div className="rounded-2xl px-3 py-2 flex items-center gap-2 text-white animate-pop"
+              style={{ background: 'linear-gradient(135deg,#fbbf24,#f97316)', boxShadow: '0 6px 20px rgba(251,191,36,0.5), inset 0 1px 1px rgba(255,255,255,0.3)' }}>
               <span className="text-lg">🎁</span>
               <p className="font-black text-sm flex-1">{freeSpins > 1 ? `${freeSpins} סיבובים חינמיים!` : 'סיבוב מתנה על 5 מטלות!'}</p>
               <span className="text-xs font-black bg-white/25 rounded-full w-6 h-6 flex items-center justify-center">×{freeSpins}</span>
             </div>
           ) : (
             <div className="flex gap-2">
-              <div className="flex-1 bg-amber-50 border border-amber-200 rounded-xl px-2 py-1.5 text-center">
-                <div className="text-[10px] font-semibold text-amber-500">יתרת כוכבים</div>
-                <div className="text-sm font-black text-amber-700">⭐ {formatNumber(balance)}</div>
+              <div className="flex-1 rounded-xl px-2 py-1.5 text-center"
+                style={{ background: 'rgba(254,243,199,0.15)', border: '1px solid rgba(251,191,36,0.3)', boxShadow: '0 2px 8px rgba(251,191,36,0.2), inset 0 1px 1px rgba(255,255,255,0.1)' }}>
+                <div className="text-[10px] font-semibold text-amber-300">יתרת כוכבים</div>
+                <div className="text-sm font-black text-amber-200">⭐ {formatNumber(balance)}</div>
               </div>
-              <div className={`flex-1 rounded-xl px-2 py-1.5 text-center border ${isFree ? 'bg-green-50 border-green-200' : 'bg-violet-100 border-violet-300'}`}>
-                <div className={`text-[10px] font-semibold ${isFree ? 'text-green-600' : 'text-violet-600'}`}>עלות סיבוב</div>
-                <div className={`text-sm font-black ${isFree ? 'text-green-700' : 'text-violet-700'}`}>{isFree ? '🎁 חינם!' : `⭐ ${SPIN_COST}`}</div>
+              <div className="flex-1 rounded-xl px-2 py-1.5 text-center"
+                style={{ background: isFree ? 'rgba(209,250,229,0.15)' : 'rgba(221,214,254,0.15)', border: `1px solid ${isFree ? 'rgba(52,211,153,0.3)' : 'rgba(167,139,250,0.35)'}`, boxShadow: `0 2px 8px ${isFree ? 'rgba(52,211,153,0.2)' : 'rgba(139,92,246,0.2)'}` }}>
+                <div className={`text-[10px] font-semibold ${isFree ? 'text-emerald-300' : 'text-violet-300'}`}>עלות סיבוב</div>
+                <div className={`text-sm font-black ${isFree ? 'text-emerald-200' : 'text-violet-200'}`}>{isFree ? '🎁 חינם!' : `⭐ ${SPIN_COST}`}</div>
               </div>
             </div>
           )}
