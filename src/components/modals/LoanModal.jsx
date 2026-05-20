@@ -5,12 +5,16 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function LoanModal() {
-  const { closeModal, modalData, loanMoney, repayLoan, requirePin } = useApp()
-  const { childId, child } = modalData || {}
+  const { closeModal, modalData, children, loanMoney, repayLoan, requirePin } = useApp()
+  const { childId } = modalData || {}
+
+  // Use live child from context so list updates immediately after repayment
+  const child = children.find((c) => c.id === childId)
 
   const [amount,      setAmount]      = useState('')
   const [description, setDescription] = useState('')
   const [confirmId,   setConfirmId]   = useState(null)
+  const [repaidName,  setRepaidName]  = useState(null) // success flash
 
   if (!child) return null
 
@@ -28,11 +32,14 @@ export default function LoanModal() {
     })
   }
 
-  function handleRepay(loanId) {
-    if (confirmId !== loanId) { setConfirmId(loanId); return }
+  function handleRepay(loan) {
+    if (confirmId !== loan.id) { setConfirmId(loan.id); return }
     requirePin(() => {
-      repayLoan(childId, loanId)
+      repayLoan(childId, loan.id)
       setConfirmId(null)
+      setRepaidName(loan.description || 'הלוואה')
+      // Clear success flash after 2.5s
+      setTimeout(() => setRepaidName(null), 2500)
     })
   }
 
@@ -40,12 +47,38 @@ export default function LoanModal() {
     <Modal title="💳 הלוואה" onClose={closeModal} headerColor="from-cyan-500 to-teal-600">
       <div className="space-y-5">
 
+        {/* Repayment success flash */}
+        {repaidName && (
+          <div
+            className="rounded-2xl px-4 py-3 flex items-center gap-3 animate-bounce-in"
+            style={{
+              background: 'linear-gradient(135deg,rgba(209,250,229,0.9),rgba(167,243,208,0.9))',
+              border: '1.5px solid rgba(16,185,129,0.35)',
+              boxShadow: '0 4px 16px rgba(16,185,129,0.2)',
+            }}
+          >
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="font-black text-emerald-800 text-sm">ההלוואה נפרעה!</p>
+              <p className="text-xs text-emerald-600 font-semibold">{repaidName}</p>
+            </div>
+          </div>
+        )}
+
         {/* Active loans */}
-        {activeLoans.length > 0 && (
+        {activeLoans.length > 0 ? (
           <div className="space-y-2">
             <h3 className="font-bold text-gray-700 text-sm">הלוואות פתוחות</h3>
             {activeLoans.map((loan) => (
-              <div key={loan.id} className="bg-cyan-50 border border-cyan-200 rounded-2xl p-3 flex items-center gap-3">
+              <div
+                key={loan.id}
+                className="rounded-2xl p-3 flex items-center gap-3"
+                style={{
+                  background: 'rgba(236,254,255,0.9)',
+                  border: '1.5px solid rgba(6,182,212,0.3)',
+                  boxShadow: '0 4px 12px rgba(6,182,212,0.1), inset 0 1px 1px rgba(255,255,255,0.8)',
+                }}
+              >
                 <div className="flex-1 min-w-0">
                   <p className="font-bold text-gray-800 text-sm truncate">{loan.description || 'הלוואה'}</p>
                   <p className="text-xl font-black text-cyan-700">{formatNumber(loan.amount)}₪</p>
@@ -54,15 +87,17 @@ export default function LoanModal() {
                   <div className="flex gap-1.5 flex-shrink-0">
                     <button
                       type="button"
-                      onClick={() => handleRepay(loan.id)}
-                      className="bg-teal-500 hover:bg-teal-600 active:scale-95 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all"
+                      onClick={() => handleRepay(loan)}
+                      className="active:scale-95 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}
                     >
-                      ✅ אשר
+                      ✅ אשר פרעון
                     </button>
                     <button
                       type="button"
                       onClick={() => setConfirmId(null)}
-                      className="bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-600 rounded-xl px-3 py-2 text-xs font-bold transition-all"
+                      className="active:scale-95 text-gray-600 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
+                      style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(209,213,219,0.6)' }}
                     >
                       ביטול
                     </button>
@@ -70,14 +105,20 @@ export default function LoanModal() {
                 ) : (
                   <button
                     type="button"
-                    onClick={() => handleRepay(loan.id)}
-                    className="flex-shrink-0 bg-teal-500 hover:bg-teal-600 active:scale-95 text-white rounded-xl px-4 py-2 text-sm font-bold transition-all shadow-sm"
+                    onClick={() => handleRepay(loan)}
+                    className="flex-shrink-0 active:scale-95 text-white rounded-xl px-4 py-2 text-sm font-bold transition-all cursor-pointer"
+                    style={{ background: 'linear-gradient(135deg,#06b6d4,#0891b2)', boxShadow: '0 3px 10px rgba(6,182,212,0.4)' }}
                   >
                     פרע
                   </button>
                 )}
               </div>
             ))}
+          </div>
+        ) : !repaidName && (
+          <div className="text-center py-4 text-gray-400">
+            <div className="text-4xl mb-2">✅</div>
+            <p className="font-semibold text-sm">אין הלוואות פתוחות</p>
           </div>
         )}
 
