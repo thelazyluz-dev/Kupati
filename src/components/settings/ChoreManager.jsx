@@ -174,7 +174,13 @@ export default function ChoreManager({ hideTitle = false }) {
         }}
       >
         {chores.length === 0 ? (
-          <p className="text-center text-gray-400 py-6 text-sm">אין מטלות — לחץ הוסף</p>
+          <div className="flex flex-col items-center gap-2 py-8 text-center">
+            <div className="text-5xl mb-1">📋</div>
+            <p className="font-bold text-gray-700 text-sm">עוד לא הוספת מטלות</p>
+            <p className="text-xs text-gray-400 leading-relaxed max-w-[200px]">
+              הוסף מטלות — הילדים יוכלו לסמן ולהרוויח כוכבים
+            </p>
+          </div>
         ) : (
           <SortableList
             items={chores}

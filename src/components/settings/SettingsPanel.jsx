@@ -1,4 +1,4 @@
-import { useState, useContext } from 'react'
+import { useState, useContext, useCallback } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { exportAll } from '../../lib/storage.js'
 import Button from '../ui/Button.jsx'
@@ -7,6 +7,7 @@ import ChildrenManager from './ChildrenManager.jsx'
 import PrizeManager from './PrizeManager.jsx'
 import SyncSettings from './SyncSettings.jsx'
 import { AuthContext } from '../../context/AuthContext.jsx'
+import { useSwipeBack } from '../../hooks/useSwipeBack.js'
 
 // Safe — returns null values when AuthProvider isn't above us in the tree
 function useAuthSafe() {
@@ -129,6 +130,7 @@ export default function SettingsPanel() {
   const { navigate, resetAllData, requirePin, showModal } = useApp()
   const { user, signOut } = (useAuthSafe())
   const [confirmReset, setConfirmReset] = useState(false)
+  useSwipeBack(useCallback(() => navigate('home'), [navigate]))
 
   async function handleForceUpdate() {
     try {

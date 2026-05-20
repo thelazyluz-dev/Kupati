@@ -10,6 +10,7 @@ import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import HintBanner from './ui/HintBanner.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_PRIZES } from '../lib/defaults.js'
+import { useSwipeBack } from '../hooks/useSwipeBack.js'
 
 // Long-press hook: fires onLong after holdMs, onTap on quick release.
 // Cancels entirely if finger moves >8px (i.e. the user is scrolling).
@@ -167,6 +168,8 @@ export default function ChildDashboard({ childId }) {
   useEffect(() => {
     if (!child) navigate('home')
   }, [child, navigate])
+
+  useSwipeBack(useCallback(() => navigate('home'), [navigate]))
 
   useEffect(() => {
     if (!child?.birthday) return
