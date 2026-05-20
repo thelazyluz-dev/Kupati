@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useContext } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { exportAll } from '../../lib/storage.js'
 import Button from '../ui/Button.jsx'
@@ -6,6 +6,13 @@ import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import PrizeManager from './PrizeManager.jsx'
 import SyncSettings from './SyncSettings.jsx'
+import { AuthContext } from '../../context/AuthContext.jsx'
+
+// Safe — returns null values when AuthProvider isn't above us in the tree
+function useAuthSafe() {
+  const ctx = useContext(AuthContext)
+  return ctx ?? { user: null, signOut: null }
+}
 
 function SectionHeader({ icon, label, color }) {
   return (
@@ -120,6 +127,7 @@ function PinSettings() {
 
 export default function SettingsPanel() {
   const { navigate, resetAllData, requirePin, showModal } = useApp()
+  const { user, signOut } = (useAuthSafe())
   const [confirmReset, setConfirmReset] = useState(false)
 
   async function handleForceUpdate() {
@@ -258,6 +266,30 @@ export default function SettingsPanel() {
             )}
           </div>
         </section>
+
+        {/* Signed-in account + sign out */}
+        {user && signOut && (
+          <div
+            className="rounded-[20px] px-4 py-3 flex items-center gap-3"
+            style={{ background: 'rgba(243,244,246,0.85)', border: '1.5px solid rgba(209,213,219,0.6)' }}
+          >
+            {user.photoURL && (
+              <img src={user.photoURL} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
+            )}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-800 truncate">{user.displayName || 'משתמש'}</p>
+              <p className="text-xs text-gray-400 truncate">{user.email}</p>
+            </div>
+            <button
+              type="button"
+              onClick={signOut}
+              className="text-xs font-bold text-red-500 px-3 py-1.5 rounded-xl active:scale-95 transition-all flex-shrink-0"
+              style={{ background: 'rgba(254,226,226,0.8)', border: '1px solid rgba(252,165,165,0.5)' }}
+            >
+              התנתק
+            </button>
+          </div>
+        )}
 
         <div className="text-center text-xs text-gray-400 pb-8">
           <p>הארנק שלי 🐷 · גרסה 1.4</p>

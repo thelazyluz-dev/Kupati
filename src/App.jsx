@@ -1,9 +1,11 @@
 import { Component } from 'react'
 import { AppProvider, useApp } from './context/AppContext.jsx'
+import { AuthProvider, useAuth } from './context/AuthContext.jsx'
 import HomeScreen from './components/HomeScreen.jsx'
 import ChildDashboard from './components/ChildDashboard.jsx'
 import SettingsPanel from './components/settings/SettingsPanel.jsx'
 import ModalRouter from './components/modals/ModalRouter.jsx'
+import LoginScreen from './components/auth/LoginScreen.jsx'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -49,12 +51,29 @@ function AppInner() {
   )
 }
 
+function AuthGate() {
+  const { user } = useAuth()
+
+  // Still determining auth state — blank screen (avoids flash)
+  if (user === undefined) return null
+
+  // Not logged in — show login screen
+  if (user === null) return <LoginScreen />
+
+  // Logged in — show the full app
+  return (
+    <AppProvider>
+      <AppInner />
+    </AppProvider>
+  )
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
-      <AppProvider>
-        <AppInner />
-      </AppProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
     </ErrorBoundary>
   )
 }

@@ -89,6 +89,11 @@
     background-size: 22px 22px;
   }
 
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) rotate(0deg); }
+    50%       { transform: translateY(-12px) rotate(4deg); }
+  }
+
   /* Stars shooting upward in SuccessOverlay */
   @keyframes shoot-up {
     0%   { transform: translateY(0)     scale(1)   rotate(0deg);   opacity: 1;   }
