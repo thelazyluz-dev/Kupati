@@ -14,8 +14,17 @@ export default function LoginScreen() {
     try {
       await signInWithGoogle()
     } catch (e) {
-      if (e.code !== 'auth/popup-closed-by-user') {
-        setError('הכניסה נכשלה. נסה שוב.')
+      console.error('[login] error:', e.code, e.message)
+      if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
+        // User dismissed — no message needed
+      } else if (e.code === 'auth/popup-blocked') {
+        setError('הדפדפן חסם את החלון. אפשר חלונות קופצים ונסה שוב.')
+      } else if (e.code === 'auth/unauthorized-domain') {
+        setError('הדומיין לא מורשה ב-Firebase. הוסף אותו תחת Authentication → Authorized domains.')
+      } else if (e.code === 'auth/operation-not-allowed') {
+        setError('כניסה עם Google לא מופעלת בפרויקט Firebase.')
+      } else {
+        setError(`שגיאה: ${e.code || e.message}`)
       }
       setLoading(false)
     }
@@ -74,9 +83,9 @@ export default function LoginScreen() {
         {/* Features */}
         <div className="w-full space-y-2">
           {[
-            { icon: '⭐', text: 'מעקב כוכבים ומשכורת' },
-            { icon: '📱', text: 'סנכרון בין מכשירים' },
-            { icon: '👨‍👩‍👧‍👦', text: 'נתונים נפרדים לכל משפחה' },
+            { icon: '🧠', text: 'חינוך פיננסי מגיל קטן' },
+            { icon: '✅', text: 'מוטיבציה לביצוע מטלות הבית' },
+            { icon: '👨‍👩‍👧‍👦', text: 'סינכרון בין כל המשפחה' },
           ].map(({ icon, text }) => (
             <div
               key={text}
