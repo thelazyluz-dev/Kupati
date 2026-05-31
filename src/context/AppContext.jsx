@@ -10,6 +10,7 @@ import { useRecurringAllowance } from '../hooks/useRecurringAllowance.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore } from '../lib/notifications.js'
+import { calculateStreak } from '../lib/utils.js'
 
 const AppContext = createContext(null)
 
@@ -78,15 +79,38 @@ export function AppProvider({ children: reactChildren }) {
       // Notify on chore
       if (txData.type === 'chore') notifyChore(child.name, txData.description)
 
-      // Free spin: every 5 chores in a calendar day
+      // Free spin + streak bonus
       if (txData.type === 'chore') {
         const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
         const todayChores = projected.filter(
           (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
-        ).length
-          if (todayChores > 0 && todayChores % 5 === 0) {
+        )
+
+        // Free spin every 5 chores in a day
+        if (todayChores.length > 0 && todayChores.length % 5 === 0) {
           childrenApi.grantFreeSpin(childId)
           setPendingFreeSpin({ childId })
+        }
+
+        // Streak bonus: check on FIRST chore of the day only
+        if (todayChores.length === 1) {
+          const streak = calculateStreak(projected)
+          const bonus  = child.streakBonus
+          if (bonus?.enabled && streak > 0 && streak % (bonus.threshold || 7) === 0) {
+            const bonusStars = parseInt(bonus.stars) || 0
+            if (bonusStars > 0) {
+              childrenApi.addStars(childId, bonusStars)
+              transactionsApi.addTransaction(childId, {
+                type: 'streak_bonus', amount: bonusStars, currency: 'stars',
+                description: `🔥 בונוס רצף ${streak} ימים! +${bonusStars}⭐`,
+                timestamp: Date.now(),
+              })
+            }
+            if (bonus.freeSpin) {
+              childrenApi.grantFreeSpin(childId)
+              setPendingFreeSpin({ childId })
+            }
+          }
         }
       }
     }

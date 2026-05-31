@@ -133,6 +133,12 @@ export default function EditChildModal() {
   const [allowancePeriod, setAllowancePeriod]   = useState(initAllowance.period || 'weekly')
   // Penalty
   const [penaltyEnabled, setPenaltyEnabled] = useState(child?.penaltyEnabled !== false)
+  // Streak bonus
+  const initStreak = child?.streakBonus || {}
+  const [streakEnabled,   setStreakEnabled]   = useState(!!initStreak.enabled)
+  const [streakThreshold, setStreakThreshold] = useState(initStreak.threshold || 7)
+  const [streakStars,     setStreakStars]     = useState(String(initStreak.stars ?? 10))
+  const [streakFreeSpin,  setStreakFreeSpin]  = useState(initStreak.freeSpin !== false)
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0]
@@ -159,6 +165,12 @@ export default function EditChildModal() {
         lastPaid: child.allowance?.lastPaid || null,
       },
       penaltyEnabled,
+      streakBonus: {
+        enabled:   streakEnabled,
+        threshold: streakThreshold,
+        stars:     parseInt(streakStars) || 0,
+        freeSpin:  streakFreeSpin,
+      },
     }
     if (avatarImage !== undefined) updates.avatarImage = avatarImage  // null removes it
     updateChild(child.id, updates)
@@ -317,6 +329,51 @@ export default function EditChildModal() {
           >
             <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${penaltyEnabled ? 'left-6' : 'left-0.5'}`} />
           </button>
+        </div>
+
+        {/* Streak bonus */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm font-semibold text-gray-600">🔥 בונוס רצף מטלות</label>
+            <button
+              type="button"
+              onClick={() => setStreakEnabled(v => !v)}
+              className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${streakEnabled ? 'bg-orange-500' : 'bg-gray-300'}`}
+              aria-label="הפעל/כבה בונוס רצף"
+            >
+              <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${streakEnabled ? 'left-6' : 'left-0.5'}`} />
+            </button>
+          </div>
+          {streakEnabled && (
+            <div className="space-y-3 bg-orange-50 border border-orange-100 rounded-2xl p-3">
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1.5">בונוס כל כמה ימים ברצף</label>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[3, 5, 7, 10].map(n => (
+                    <button key={n} type="button" onClick={() => setStreakThreshold(n)}
+                      className={`py-2 rounded-xl font-bold text-sm transition-all active:scale-90 ${streakThreshold === n ? 'bg-orange-500 text-white shadow-md' : 'bg-gray-100 text-gray-600'}`}>
+                      {n}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-gray-500 block mb-1">⭐ כוכבי בונוס (0 = ללא)</label>
+                <input type="number" min="0" value={streakStars}
+                  onChange={e => setStreakStars(e.target.value)}
+                  placeholder="10"
+                  className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-base focus:border-orange-400 focus:outline-none"
+                  dir="ltr" />
+              </div>
+              <div className="flex items-center justify-between py-0.5">
+                <label className="text-xs font-semibold text-gray-500">🎰 גם סיבוב חינם בגלגל המזל</label>
+                <button type="button" onClick={() => setStreakFreeSpin(v => !v)}
+                  className={`w-11 h-5 rounded-full transition-colors relative flex-shrink-0 ${streakFreeSpin ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                  <span className={`absolute top-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${streakFreeSpin ? 'left-6' : 'left-0.5'}`} />
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         <Button type="submit" fullWidth size="lg" disabled={!name.trim()}>

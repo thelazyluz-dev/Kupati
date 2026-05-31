@@ -315,19 +315,62 @@ export default function ChildDashboard({ childId }) {
               ✏️
             </button>
             <button
-              onClick={() => {
-                const text = [
-                  `🐷 ${child.name}`,
-                  `⭐ כוכבים: ${formatNumber(child.starBalance)}`,
-                  `💵 שקלים: ${formatNumber(child.shekelBalance)}`,
-                  streak >= 2 ? `🔥 ${streak} ימים ברצף!` : null,
-                ].filter(Boolean).join('\n')
-                if (navigator.share) {
-                  navigator.share({ title: 'הארנק שלי', text }).catch(() => {})
-                } else {
-                  navigator.clipboard?.writeText(text).catch(() => {})
-                  setHint('📋 הועתק ללוח!')
-                }
+              onClick={async () => {
+                try {
+                  const colorOpt = COLOR_OPTIONS.find(o => o.key === child.colorKey)
+                  const from = colorOpt?.from || '#6366f1'
+                  const to   = colorOpt?.to   || '#8b5cf6'
+
+                  const canvas = document.createElement('canvas')
+                  canvas.width = 360; canvas.height = 220
+                  const ctx = canvas.getContext('2d')
+
+                  // Background
+                  const grad = ctx.createLinearGradient(0, 0, 360, 220)
+                  grad.addColorStop(0, from); grad.addColorStop(1, to)
+                  ctx.fillStyle = grad
+                  ctx.beginPath()
+                  const rr = 24
+                  ctx.moveTo(rr,0); ctx.lineTo(360-rr,0); ctx.quadraticCurveTo(360,0,360,rr)
+                  ctx.lineTo(360,220-rr); ctx.quadraticCurveTo(360,220,360-rr,220)
+                  ctx.lineTo(rr,220); ctx.quadraticCurveTo(0,220,0,220-rr)
+                  ctx.lineTo(0,rr); ctx.quadraticCurveTo(0,0,rr,0)
+                  ctx.closePath(); ctx.fill()
+                  ctx.fillStyle = 'rgba(255,255,255,0.12)'; ctx.fill()
+
+                  ctx.fillStyle = 'white'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'
+                  let y = 55
+                  if (child.avatarImage) {
+                    const img = new Image(); img.src = child.avatarImage
+                    await new Promise(r => { img.onload = r; img.onerror = r })
+                    ctx.save(); ctx.beginPath(); ctx.arc(180, y, 32, 0, Math.PI * 2); ctx.clip()
+                    ctx.drawImage(img, 148, y-32, 64, 64); ctx.restore(); y += 42
+                  } else {
+                    ctx.font = '48px serif'; ctx.fillText(child.avatar || '🐷', 180, y); y += 38
+                  }
+                  ctx.font = 'bold 21px system-ui,sans-serif'; ctx.fillText(child.name, 180, y+10); y += 30
+                  ctx.font = '16px system-ui,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.9)'
+                  ctx.fillText(`⭐ ${formatNumber(child.starBalance)}   •   ${formatNumber(child.shekelBalance)}₪`, 180, y+10); y += 26
+                  if (streak >= 2) {
+                    ctx.font = 'bold 14px system-ui,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.75)'
+                    ctx.fillText(`🔥 ${streak} ימים ברצף`, 180, y+8)
+                  }
+                  ctx.font = '12px system-ui,sans-serif'; ctx.fillStyle = 'rgba(255,255,255,0.45)'
+                  ctx.fillText('הארנק שלי 🐷', 180, 208)
+
+                  const blob = await new Promise(res => canvas.toBlob(res, 'image/png'))
+                  const file = new File([blob], `${child.name}.png`, { type: 'image/png' })
+                  if (navigator.canShare?.({ files: [file] })) {
+                    await navigator.share({ files: [file], title: `הארנק של ${child.name}` })
+                  } else if (navigator.share) {
+                    const text = [`🐷 ${child.name}`, `⭐ ${child.starBalance}`, `💵 ${child.shekelBalance}₪`, streak >= 2 ? `🔥 ${streak} ימים` : null].filter(Boolean).join('\n')
+                    await navigator.share({ title: 'הארנק שלי', text })
+                  } else {
+                    const url = URL.createObjectURL(blob)
+                    const a = document.createElement('a'); a.href = url; a.download = `${child.name}.png`; a.click()
+                    URL.revokeObjectURL(url)
+                  }
+                } catch {}
               }}
               className="w-10 h-10 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-lg transition-colors active:scale-90"
               aria-label="שתף"

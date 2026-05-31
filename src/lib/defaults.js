@@ -1,3 +1,16 @@
+export const DEFAULT_WHEEL_PRIZES = [
+  { id: 'wp_1',  shekels: 3,  emoji: '💵' },
+  { id: 'wp_2',  shekels: 5,  emoji: '💵' },
+  { id: 'wp_3',  shekels: 5,  emoji: '💵' },
+  { id: 'wp_4',  shekels: 10, emoji: '💸' },
+  { id: 'wp_5',  shekels: 7,  emoji: '💵' },
+  { id: 'wp_6',  shekels: 50, emoji: '🤑' },
+  { id: 'wp_7',  shekels: 5,  emoji: '💵' },
+  { id: 'wp_8',  shekels: 20, emoji: '💸' },
+  { id: 'wp_9',  shekels: 8,  emoji: '💵' },
+  { id: 'wp_10', shekels: 3,  emoji: '💵' },
+]
+
 export const DEFAULT_SETTINGS = {
   globalExchangeRate: 2,
   confettiThreshold: 5,

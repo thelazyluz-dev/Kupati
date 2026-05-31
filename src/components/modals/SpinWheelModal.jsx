@@ -4,40 +4,22 @@ import Button from '../ui/Button.jsx'
 import { sounds } from '../../lib/sounds.js'
 import { celebrateGoal } from '../../lib/confetti.js'
 import { formatNumber } from '../../lib/utils.js'
+import { DEFAULT_WHEEL_PRIZES } from '../../lib/defaults.js'
 
 const SPIN_COST = 70
+const CX = 170, CY = 170, R = 160
 
-const SEGMENTS = [
-  { shekels: 3,  color: '#0ea5e9', emoji: '💵', label: '3'  },
-  { shekels: 5,  color: '#059669', emoji: '💵', label: '5'  },
-  { shekels: 5,  color: '#0891b2', emoji: '💵', label: '5'  },
-  { shekels: 10, color: '#0e7490', emoji: '💸', label: '10' },
-  { shekels: 7,  color: '#06b6d4', emoji: '💵', label: '7'  },
-  { shekels: 50, color: '#7c3aed', emoji: '🤑', label: '50' },
-  { shekels: 5,  color: '#0d9488', emoji: '💵', label: '5'  },
-  { shekels: 20, color: '#15803d', emoji: '💸', label: '20' },
-  { shekels: 8,  color: '#047857', emoji: '💵', label: '8'  },
-  { shekels: 3,  color: '#0369a1', emoji: '💵', label: '3'  },
+const WHEEL_COLORS = [
+  '#0ea5e9','#059669','#0891b2','#0e7490','#06b6d4',
+  '#7c3aed','#0d9488','#15803d','#047857','#0369a1',
+  '#8b5cf6','#d97706',
 ]
-const N   = SEGMENTS.length   // 10
-const DEG = 360 / N           // 36°
-const CX  = 170, CY = 170, R = 160
 
 function polarR(deg, r) {
   const rad = ((deg - 90) * Math.PI) / 180
   return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) }
 }
 function polar(deg) { return polarR(deg, R) }
-
-function segPath(i) {
-  const s = polar(i * DEG)
-  const e = polar((i + 1) * DEG)
-  return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${R},${R},0,0,1,${e.x.toFixed(2)},${e.y.toFixed(2)} Z`
-}
-function labelPos(i) {
-  const a = polarR(i * DEG + DEG / 2, R)
-  return { x: CX + (a.x - CX) * 0.62, y: CY + (a.y - CY) * 0.62 }
-}
 
 function scheduleWheelSounds(onDone, totalMs = 3600) {
   const ids = []
@@ -55,8 +37,22 @@ function scheduleWheelSounds(onDone, totalMs = 3600) {
 }
 
 export default function SpinWheelModal() {
-  const { children, closeModal, modalData, adjustStars, adjustShekels, addTransaction, consumeFreeSpin } = useApp()
+  const { children, closeModal, modalData, adjustStars, adjustShekels, addTransaction, consumeFreeSpin, settings } = useApp()
   const { childId, childName } = modalData || {}
+
+  const prizes   = (settings.wheelPrizes?.length >= 2 ? settings.wheelPrizes : DEFAULT_WHEEL_PRIZES)
+  const segments = prizes.map((p, i) => ({ ...p, color: WHEEL_COLORS[i % WHEEL_COLORS.length], label: String(p.shekels) }))
+  const N   = segments.length
+  const DEG = 360 / N
+
+  function segPath(i) {
+    const s = polar(i * DEG); const e = polar((i + 1) * DEG)
+    return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${R},${R},0,0,1,${e.x.toFixed(2)},${e.y.toFixed(2)} Z`
+  }
+  function labelPos(i) {
+    const a = polarR(i * DEG + DEG / 2, R)
+    return { x: CX + (a.x - CX) * 0.62, y: CY + (a.y - CY) * 0.62 }
+  }
 
   const child     = children.find((c) => c.id === childId)
   const balance   = child?.starBalance ?? 0
@@ -89,7 +85,7 @@ export default function SpinWheelModal() {
       el.style.transition = 'transform 3.5s cubic-bezier(0.08, 0.4, 0.12, 1)'
       el.style.transform  = `rotate(${finalAngle}deg)`
     }
-    tickIds.current = scheduleWheelSounds(() => { setSpinning(false); setResult(SEGMENTS[winner]) })
+    tickIds.current = scheduleWheelSounds(() => { setSpinning(false); setResult(segments[winner]) })
   }
 
   function handleClaim() {
@@ -167,7 +163,7 @@ export default function SpinWheelModal() {
             <svg ref={wheelRef} width={340} height={340} style={{ display: 'block', willChange: 'transform', marginTop: 14 }}>
 
               {/* Layer 1 — segment fills */}
-              {SEGMENTS.map((seg, i) => (
+              {segments.map((seg, i) => (
                 <path key={`f${i}`} d={segPath(i)} fill={seg.color} />
               ))}
 
@@ -178,7 +174,7 @@ export default function SpinWheelModal() {
               })}
 
               {/* Layer 3 — labels: big emoji + amount below */}
-              {SEGMENTS.map((seg, i) => {
+              {segments.map((seg, i) => {
                 const lp = labelPos(i)
                 return (
                   <g key={`l${i}`} style={{ pointerEvents: 'none', userSelect: 'none' }}>
