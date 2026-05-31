@@ -8,6 +8,13 @@ import { DEFAULT_WHEEL_PRIZES } from '../../lib/defaults.js'
 
 const CX = 170, CY = 170, R = 160
 
+// Phase 1: fast spin to overshoot position
+// Phase 2: ease back to winner
+// PAUSE: dramatic silence while result is hidden
+const PHASE1_MS = 3500
+const PHASE2_MS = 500
+const PAUSE_MS  = 800
+
 const WHEEL_COLORS = [
   '#0ea5e9','#059669','#0891b2','#0e7490','#06b6d4',
   '#7c3aed','#0d9488','#15803d','#047857','#0369a1',
@@ -20,18 +27,39 @@ function polarR(deg, r) {
 }
 function polar(deg) { return polarR(deg, R) }
 
-function scheduleWheelSounds(onDone, totalMs = 3600) {
+function scheduleWheelSounds(onDone) {
   const ids = []
   let t = 0
   let interval = 65
-  while (t < totalMs - 500) {
+
+  // Ticks with progressive haptic intensity as wheel slows
+  while (t < PHASE1_MS - 400) {
     const delay = t
-    ids.push(setTimeout(() => sounds.wheelTick(), delay))
+    const vi = interval > 200 ? [28] : [12]
+    ids.push(setTimeout(() => {
+      sounds.wheelTick()
+      try { navigator.vibrate?.(vi) } catch {}
+    }, delay))
     t += interval
-    interval = Math.min(65 + Math.pow(t / (totalMs - 500), 2.2) * 320, 380)
+    interval = Math.min(65 + Math.pow(t / (PHASE1_MS - 400), 2.2) * 320, 380)
   }
-  ids.push(setTimeout(() => sounds.wheelSuspense(), totalMs - 450))
-  ids.push(setTimeout(() => { sounds.wheelReveal(); celebrateGoal(); onDone() }, totalMs))
+
+  // Impact thud at the overshoot moment (wheel hits max and starts bouncing back)
+  ids.push(setTimeout(() => {
+    sounds.lotteryPop()
+    try { navigator.vibrate?.([70, 20, 90]) } catch {}
+  }, PHASE1_MS + 80))
+
+  // Rising suspense swoop during the bounce-back
+  ids.push(setTimeout(() => sounds.wheelSuspense(), PHASE1_MS + 300))
+
+  // Grand reveal after dramatic silence
+  ids.push(setTimeout(() => {
+    sounds.wheelReveal()
+    celebrateGoal()
+    onDone()
+  }, PHASE1_MS + PHASE2_MS + PAUSE_MS))
+
   return ids
 }
 
@@ -62,8 +90,40 @@ export default function SpinWheelModal() {
 
   const [spinning, setSpinning] = useState(false)
   const [result,   setResult]   = useState(null)
-  const wheelRef = useRef(null)
-  const tickIds  = useRef([])
+  const wheelRef     = useRef(null)
+  const highlightRef = useRef(null)
+  const tickIds      = useRef([])
+  const rafRef       = useRef(null)
+
+  // Start rAF loop that reads current wheel rotation and highlights the segment under the pointer.
+  // Uses direct DOM mutation to avoid React re-renders at 60fps.
+  function startHighlight() {
+    const hl = highlightRef.current
+    if (hl) hl.setAttribute('fill', 'rgba(255,255,255,0.28)')
+    function frame() {
+      const el = wheelRef.current
+      if (!el || !highlightRef.current) return
+      try {
+        const m = new DOMMatrix(window.getComputedStyle(el).transform)
+        const deg = ((Math.atan2(m.m12, m.m11) * 180 / Math.PI) + 360) % 360
+        const idx = Math.floor(((360 - deg) % 360) / DEG) % N
+        highlightRef.current.setAttribute('d', segPath(idx))
+      } catch {}
+      rafRef.current = requestAnimationFrame(frame)
+    }
+    rafRef.current = requestAnimationFrame(frame)
+  }
+
+  // Stop rAF and leave highlight locked on the winning segment.
+  function stopHighlight(winnerIdx) {
+    cancelAnimationFrame(rafRef.current)
+    rafRef.current = null
+    const hl = highlightRef.current
+    if (hl) {
+      hl.setAttribute('d', segPath(winnerIdx))
+      hl.setAttribute('fill', 'rgba(255,255,255,0.32)')
+    }
+  }
 
   function spin() {
     if (spinning || result || !canSpin) return
@@ -74,18 +134,35 @@ export default function SpinWheelModal() {
       adjustStars(childId, -SPIN_COST)
       addTransaction(childId, { type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: `🎰 גלגל המזל — עלות סיבוב` })
     }
+
     const winner     = Math.floor(Math.random() * N)
     const segCenter  = winner * DEG + DEG / 2
     const finalAngle = 360 * 6 + (360 - segCenter)
+    // Near-miss: overshoot 18–32° into the next segment, then ease back
+    const overshoot  = 18 + Math.random() * 14
+
     const el = wheelRef.current
     if (el) {
       el.style.transition = 'none'
       el.style.transform  = 'rotate(0deg)'
       void el.getBoundingClientRect()
-      el.style.transition = 'transform 3.5s cubic-bezier(0.08, 0.4, 0.12, 1)'
-      el.style.transform  = `rotate(${finalAngle}deg)`
+      // Phase 1: fast spin to overshoot position
+      el.style.transition = `transform ${PHASE1_MS}ms cubic-bezier(0.08, 0.4, 0.12, 1)`
+      el.style.transform  = `rotate(${finalAngle + overshoot}deg)`
+      // Phase 2: ease back to the actual winner
+      setTimeout(() => {
+        el.style.transition = `transform ${PHASE2_MS}ms cubic-bezier(0.25, 0.46, 0.45, 0.94)`
+        el.style.transform  = `rotate(${finalAngle}deg)`
+      }, PHASE1_MS)
     }
-    tickIds.current = scheduleWheelSounds(() => { setSpinning(false); setResult(segments[winner]) })
+
+    startHighlight()
+
+    tickIds.current = scheduleWheelSounds(() => {
+      stopHighlight(winner)
+      setSpinning(false)
+      setResult(segments[winner])
+    })
   }
 
   function handleClaim() {
@@ -96,7 +173,11 @@ export default function SpinWheelModal() {
     closeModal()
   }
 
-  function handleClose() { tickIds.current.forEach(clearTimeout); closeModal() }
+  function handleClose() {
+    tickIds.current.forEach(clearTimeout)
+    cancelAnimationFrame(rafRef.current)
+    closeModal()
+  }
 
   const rewardLabel = result ? `${result.shekels}₪` : null
 
@@ -167,13 +248,16 @@ export default function SpinWheelModal() {
                 <path key={`f${i}`} d={segPath(i)} fill={seg.color} />
               ))}
 
-              {/* Layer 2 — white dividers */}
+              {/* Layer 2 — active segment highlight (driven by rAF, no React re-renders) */}
+              <path ref={highlightRef} d="" fill="rgba(255,255,255,0)" />
+
+              {/* Layer 3 — white dividers */}
               {Array.from({ length: N }, (_, i) => {
                 const p = polar(i * DEG)
                 return <line key={`d${i}`} x1={CX} y1={CY} x2={p.x.toFixed(2)} y2={p.y.toFixed(2)} stroke="white" strokeWidth={2.5} />
               })}
 
-              {/* Layer 3 — labels: big emoji + amount below */}
+              {/* Layer 4 — labels: big emoji + amount below */}
               {segments.map((seg, i) => {
                 const lp = labelPos(i)
                 return (
