@@ -6,7 +6,6 @@ import { celebrateGoal } from '../../lib/confetti.js'
 import { formatNumber } from '../../lib/utils.js'
 import { DEFAULT_WHEEL_PRIZES } from '../../lib/defaults.js'
 
-const SPIN_COST = 70
 const CX = 170, CY = 170, R = 160
 
 const WHEEL_COLORS = [
@@ -40,6 +39,7 @@ export default function SpinWheelModal() {
   const { children, closeModal, modalData, adjustStars, adjustShekels, addTransaction, consumeFreeSpin, settings } = useApp()
   const { childId, childName } = modalData || {}
 
+  const SPIN_COST = settings.wheelSpinCost ?? 70
   const prizes   = (settings.wheelPrizes?.length >= 2 ? settings.wheelPrizes : DEFAULT_WHEEL_PRIZES)
   const segments = prizes.map((p, i) => ({ ...p, color: WHEEL_COLORS[i % WHEEL_COLORS.length], label: String(p.shekels) }))
   const N   = segments.length

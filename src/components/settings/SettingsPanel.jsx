@@ -159,8 +159,27 @@ function WheelPrizeManager() {
     setNewAmt('')
   }
 
+  const spinCost = settings.wheelSpinCost ?? 70
+
   return (
     <div className="space-y-3">
+
+      {/* Spin cost */}
+      <div className="flex items-center justify-between bg-violet-50 rounded-2xl px-4 py-3">
+        <div>
+          <p className="text-sm font-bold text-gray-700">עלות סיבוב</p>
+          <p className="text-xs text-gray-400">כוכבים לסיבוב אחד</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-base">⭐</span>
+          <input
+            type="number" min="1" max="999" value={spinCost}
+            onChange={e => updateSettings({ wheelSpinCost: Math.max(1, parseInt(e.target.value) || 1) })}
+            dir="ltr"
+            className="w-16 text-center font-bold text-sm rounded-xl border-2 border-violet-200 py-1.5 focus:border-violet-400 focus:outline-none bg-white"
+          />
+        </div>
+      </div>
 
       {/* Prize grid */}
       <div className="grid grid-cols-2 gap-2">

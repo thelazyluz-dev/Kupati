@@ -17,6 +17,7 @@ export const DEFAULT_SETTINGS = {
   soundEnabled: true,
   pin: '',
   familyCode: '',
+  wheelSpinCost: 70,
 }
 
 export const DEFAULT_PRIZES = [
