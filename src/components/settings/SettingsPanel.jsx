@@ -210,18 +210,20 @@ function WheelPrizeManager() {
           <p className="text-xs font-bold text-gray-400 text-center">+ הוסף פרס חדש</p>
           <div className="flex gap-2">
             <select value={newEmoji} onChange={e => setNewEmoji(e.target.value)}
-              className="text-xl bg-white border-2 border-gray-200 rounded-xl px-2 py-2 cursor-pointer outline-none focus:border-violet-400 flex-shrink-0">
+              className="w-14 text-center text-xl bg-white border-2 border-gray-200 rounded-xl py-2 cursor-pointer outline-none focus:border-violet-400 flex-shrink-0">
               {PRIZE_EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
             </select>
             <input type="number" min="1" value={newAmt}
               onChange={e => setNewAmt(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && addPrize()}
               placeholder="סכום ₪" dir="ltr"
-              className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm font-bold focus:border-violet-400 focus:outline-none" />
-            <button onClick={addPrize} disabled={!(parseFloat(newAmt) > 0)}
-              className="text-white font-bold text-sm px-4 py-2 rounded-xl flex-shrink-0 active:scale-95 disabled:opacity-40 transition-all"
-              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>הוסף</button>
+              className="flex-1 min-w-0 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm font-bold focus:border-violet-400 focus:outline-none" />
           </div>
+          <button onClick={addPrize} disabled={!(parseFloat(newAmt) > 0)}
+            className="w-full text-white font-bold text-sm py-2.5 rounded-xl active:scale-95 disabled:opacity-40 transition-all"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            + הוסף לגלגל
+          </button>
         </div>
       )}
 
