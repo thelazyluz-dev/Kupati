@@ -53,14 +53,8 @@ function AppInner() {
 
 function AuthGate() {
   const { user } = useAuth()
-
-  // Still determining auth state — blank screen (avoids flash)
   if (user === undefined) return null
-
-  // Not logged in — show login screen
   if (user === null) return <LoginScreen />
-
-  // Logged in — show the full app
   return (
     <AppProvider>
       <AppInner />

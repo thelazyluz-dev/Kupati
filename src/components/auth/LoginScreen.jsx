@@ -16,7 +16,7 @@ export default function LoginScreen() {
     } catch (e) {
       console.error('[login] error:', e.code, e.message)
       if (e.code === 'auth/popup-closed-by-user' || e.code === 'auth/cancelled-popup-request') {
-        // User dismissed — no message needed
+        // dismissed — no message
       } else if (e.code === 'auth/popup-blocked') {
         setError('הדפדפן חסם את החלון. אפשר חלונות קופצים ונסה שוב.')
       } else if (e.code === 'auth/unauthorized-domain') {
@@ -35,11 +35,8 @@ export default function LoginScreen() {
       className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden"
       style={{ background: 'linear-gradient(160deg, #f0f4ff 0%, #fff7ed 55%, #f0fdf4 100%)' }}
     >
-      {/* Decorative floating emojis */}
       {COINS.map((c, i) => (
-        <div
-          key={i}
-          className="absolute pointer-events-none select-none"
+        <div key={i} className="absolute pointer-events-none select-none"
           style={{
             fontSize: 28 + (i % 3) * 14,
             left:  `${[8, 80, 20, 72, 12, 85][i]}%`,
@@ -47,11 +44,9 @@ export default function LoginScreen() {
             opacity: 0.18,
             animation: `float ${4 + i * 0.8}s ease-in-out ${i * 0.6}s infinite`,
             transform: `rotate(${[-15, 10, 20, -8, 5, -20][i]}deg)`,
-          }}
-        >{c}</div>
+          }}>{c}</div>
       ))}
 
-      {/* Card */}
       <div
         className="relative w-full max-w-sm mx-5 flex flex-col items-center gap-6 px-7 py-10"
         style={{
@@ -63,7 +58,6 @@ export default function LoginScreen() {
           boxShadow: '0 20px 60px rgba(99,102,241,0.14), 0 4px 16px rgba(0,0,0,0.06), inset 0 1px 2px rgba(255,255,255,1)',
         }}
       >
-        {/* Logo */}
         <div className="flex flex-col items-center gap-1">
           <div
             className="w-24 h-24 rounded-[28px] flex items-center justify-center text-5xl mb-1"
@@ -73,14 +67,10 @@ export default function LoginScreen() {
               border: '2.5px solid rgba(255,255,255,0.6)',
             }}
           >🪙</div>
-          <h1
-            className="text-4xl font-black tracking-tight"
-            style={{ color: '#1e1b4b' }}
-          >קופתי</h1>
+          <h1 className="text-4xl font-black tracking-tight" style={{ color: '#1e1b4b' }}>קופתי</h1>
           <p className="text-sm font-semibold text-gray-500">ניהול כסף חכם לילדים</p>
         </div>
 
-        {/* Features */}
         <div className="w-full space-y-2">
           {[
             { icon: '🧠', text: 'חינוך פיננסי מגיל קטן' },
@@ -90,10 +80,7 @@ export default function LoginScreen() {
             <div
               key={text}
               className="flex items-center gap-3 px-4 py-2.5 rounded-2xl"
-              style={{
-                background: 'rgba(243,244,246,0.8)',
-                border: '1.5px solid rgba(229,231,235,0.7)',
-              }}
+              style={{ background: 'rgba(243,244,246,0.8)', border: '1.5px solid rgba(229,231,235,0.7)' }}
             >
               <span className="text-lg">{icon}</span>
               <span className="text-sm font-semibold text-gray-700">{text}</span>
@@ -101,52 +88,32 @@ export default function LoginScreen() {
           ))}
         </div>
 
-        {/* Error */}
-        {error && (
-          <p className="text-sm font-semibold text-red-500 text-center animate-pop">{error}</p>
-        )}
+        {error && <p className="text-sm font-semibold text-red-500 text-center animate-pop">{error}</p>}
 
-        {/* Google Sign-In button */}
         <button
           onClick={handleSignIn}
           disabled={loading}
           className="w-full flex items-center justify-center gap-3 py-4 rounded-2xl font-black text-base transition-all active:scale-95 disabled:opacity-60"
           style={{
-            background: loading
-              ? 'rgba(243,244,246,0.9)'
-              : 'linear-gradient(135deg, #4285f4, #1a73e8)',
-            color: 'white',
-            boxShadow: loading
-              ? 'none'
-              : '0 6px 22px rgba(66,133,244,0.45), inset 0 1px 1px rgba(255,255,255,0.25)',
+            background: loading ? 'rgba(243,244,246,0.9)' : 'linear-gradient(135deg, #4285f4, #1a73e8)',
+            color: loading ? '#9ca3af' : 'white',
+            boxShadow: loading ? 'none' : '0 6px 22px rgba(66,133,244,0.45), inset 0 1px 1px rgba(255,255,255,0.25)',
             border: '2px solid rgba(255,255,255,0.3)',
           }}
         >
           {loading ? (
-            <>
-              <span className="animate-spin text-xl">⏳</span>
-              <span className="text-gray-500">מתחבר...</span>
-            </>
+            <><span className="animate-spin text-xl">⏳</span><span>מתחבר...</span></>
           ) : (
-            <>
-              <GoogleIcon />
-              התחבר עם Google
-            </>
+            <><GoogleIcon />התחבר עם Google</>
           )}
         </button>
 
-        <p
-          className="text-[11px] text-center font-medium"
-          style={{ color: 'rgba(107,114,128,0.7)' }}
-        >
+        <p className="text-[11px] text-center font-medium" style={{ color: 'rgba(107,114,128,0.7)' }}>
           הנתונים שלך מאובטחים ומסונכרנים עם חשבון Google שלך
         </p>
       </div>
 
-      {/* Footer */}
-      <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">
-        made by illouzman
-      </p>
+      <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
     </div>
   )
 }

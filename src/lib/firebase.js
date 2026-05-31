@@ -2,8 +2,6 @@ import { initializeApp } from 'firebase/app'
 import { getFirestore } from 'firebase/firestore'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
 
-// Firebase API keys for web are public by design — security is via Firestore Rules.
-// Env vars override the hard-coded values (useful for future project changes).
 const firebaseConfig = {
   apiKey:            import.meta.env.VITE_FIREBASE_API_KEY            || 'AIzaSyDv8bbR1KHqkXLOZNHKeis_Mr75Oxx4DmQ',
   authDomain:        import.meta.env.VITE_FIREBASE_AUTH_DOMAIN        || 'kupati-family-66874.firebaseapp.com',

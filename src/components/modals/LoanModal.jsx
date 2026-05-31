@@ -5,20 +5,23 @@ import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function LoanModal() {
-  const { closeModal, modalData, children, loanMoney, repayLoan, requirePin } = useApp()
+  const { closeModal, modalData, children, loanMoney, repayLoan, deleteLoan, undoRepayLoan, requirePin } = useApp()
   const { childId } = modalData || {}
 
-  // Use live child from context so list updates immediately after repayment
   const child = children.find((c) => c.id === childId)
 
   const [amount,      setAmount]      = useState('')
   const [description, setDescription] = useState('')
-  const [confirmId,   setConfirmId]   = useState(null)
-  const [repaidName,  setRepaidName]  = useState(null) // success flash
+  const [confirmId,   setConfirmId]   = useState(null)   // repay confirm
+  const [deleteId,    setDeleteId]    = useState(null)   // delete confirm
+  const [repaidName,  setRepaidName]  = useState(null)   // success flash
+  const [showRepaid,  setShowRepaid]  = useState(false)  // toggle repaid section
 
   if (!child) return null
 
-  const activeLoans  = (child.loans || []).filter((l) => !l.repaid)
+  const allLoans    = child.loans || []
+  const activeLoans = allLoans.filter((l) => !l.repaid)
+  const repaidLoans = allLoans.filter((l) => l.repaid)
   const parsedAmount = parseFloat(amount) || 0
 
   function handleGive(e) {
@@ -28,18 +31,30 @@ export default function LoanModal() {
       loanMoney(childId, { amount: parsedAmount, description: description.trim() })
       setAmount('')
       setDescription('')
-      closeModal()
     })
   }
 
   function handleRepay(loan) {
-    if (confirmId !== loan.id) { setConfirmId(loan.id); return }
+    if (confirmId !== loan.id) { setConfirmId(loan.id); setDeleteId(null); return }
     requirePin(() => {
       repayLoan(childId, loan.id)
       setConfirmId(null)
       setRepaidName(loan.description || 'הלוואה')
-      // Clear success flash after 2.5s
       setTimeout(() => setRepaidName(null), 2500)
+    })
+  }
+
+  function handleDelete(loan) {
+    if (deleteId !== loan.id) { setDeleteId(loan.id); setConfirmId(null); return }
+    requirePin(() => {
+      deleteLoan(childId, loan.id)
+      setDeleteId(null)
+    })
+  }
+
+  function handleUndoRepay(loan) {
+    requirePin(() => {
+      undoRepayLoan(childId, loan.id)
     })
   }
 
@@ -83,34 +98,48 @@ export default function LoanModal() {
                   <p className="font-bold text-gray-800 text-sm truncate">{loan.description || 'הלוואה'}</p>
                   <p className="text-xl font-black text-cyan-700">{formatNumber(loan.amount)}₪</p>
                 </div>
+
+                {/* Confirm repay */}
                 {confirmId === loan.id ? (
                   <div className="flex gap-1.5 flex-shrink-0">
-                    <button
-                      type="button"
-                      onClick={() => handleRepay(loan)}
+                    <button type="button" onClick={() => handleRepay(loan)}
                       className="active:scale-95 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
-                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}
-                    >
-                      ✅ אשר פרעון
+                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}>
+                      ✅ אשר
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setConfirmId(null)}
+                    <button type="button" onClick={() => setConfirmId(null)}
                       className="active:scale-95 text-gray-600 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
-                      style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(209,213,219,0.6)' }}
-                    >
+                      style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(209,213,219,0.6)' }}>
+                      ביטול
+                    </button>
+                  </div>
+                /* Confirm delete */
+                ) : deleteId === loan.id ? (
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button type="button" onClick={() => handleDelete(loan)}
+                      className="active:scale-95 text-white rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg,#ef4444,#dc2626)', boxShadow: '0 3px 10px rgba(239,68,68,0.4)' }}>
+                      🗑️ מחק
+                    </button>
+                    <button type="button" onClick={() => setDeleteId(null)}
+                      className="active:scale-95 text-gray-600 rounded-xl px-3 py-2 text-xs font-bold transition-all cursor-pointer"
+                      style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(209,213,219,0.6)' }}>
                       ביטול
                     </button>
                   </div>
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => handleRepay(loan)}
-                    className="flex-shrink-0 active:scale-95 text-white rounded-xl px-4 py-2 text-sm font-bold transition-all cursor-pointer"
-                    style={{ background: 'linear-gradient(135deg,#06b6d4,#0891b2)', boxShadow: '0 3px 10px rgba(6,182,212,0.4)' }}
-                  >
-                    פרע
-                  </button>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button type="button" onClick={() => handleRepay(loan)}
+                      className="flex-shrink-0 active:scale-95 text-white rounded-xl px-4 py-2 text-sm font-bold transition-all cursor-pointer"
+                      style={{ background: 'linear-gradient(135deg,#06b6d4,#0891b2)', boxShadow: '0 3px 10px rgba(6,182,212,0.4)' }}>
+                      פרע
+                    </button>
+                    <button type="button" onClick={() => handleDelete(loan)}
+                      className="w-9 h-9 flex items-center justify-center rounded-xl text-gray-400 hover:text-red-500 active:scale-90 transition-colors flex-shrink-0"
+                      style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(209,213,219,0.6)' }}>
+                      🗑️
+                    </button>
+                  </div>
                 )}
               </div>
             ))}
@@ -119,6 +148,43 @@ export default function LoanModal() {
           <div className="text-center py-4 text-gray-400">
             <div className="text-4xl mb-2">✅</div>
             <p className="font-semibold text-sm">אין הלוואות פתוחות</p>
+          </div>
+        )}
+
+        {/* Repaid loans (collapsible) */}
+        {repaidLoans.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowRepaid(v => !v)}
+              className="text-xs font-bold text-gray-400 flex items-center gap-1 active:scale-95 transition-all"
+            >
+              {showRepaid ? '▲' : '▼'} הלוואות שנפרעו ({repaidLoans.length})
+            </button>
+            {showRepaid && (
+              <div className="space-y-2 mt-2">
+                {repaidLoans.map((loan) => (
+                  <div
+                    key={loan.id}
+                    className="rounded-2xl p-3 flex items-center gap-3 opacity-60"
+                    style={{
+                      background: 'rgba(243,244,246,0.9)',
+                      border: '1.5px solid rgba(209,213,219,0.5)',
+                    }}
+                  >
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-gray-600 text-sm truncate line-through">{loan.description || 'הלוואה'}</p>
+                      <p className="text-base font-black text-gray-400">{formatNumber(loan.amount)}₪</p>
+                    </div>
+                    <button type="button" onClick={() => handleUndoRepay(loan)}
+                      className="text-xs font-bold text-amber-600 px-3 py-1.5 rounded-xl active:scale-95 transition-all flex-shrink-0"
+                      style={{ background: 'rgba(254,243,199,0.9)', border: '1px solid rgba(251,191,36,0.4)' }}>
+                      ↩️ בטל פרעון
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

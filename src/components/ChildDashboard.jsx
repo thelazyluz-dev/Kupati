@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
+import { useSwipeBack } from '../hooks/useSwipeBack.js'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'

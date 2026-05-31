@@ -234,6 +234,37 @@ export function useChildren() {
     )
   }
 
+  function deleteLoan(childId, loanId) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        const loan = (c.loans || []).find((l) => l.id === loanId)
+        if (!loan) return c
+        return {
+          ...c,
+          // If not yet repaid, reverse the original credit
+          shekelBalance: loan.repaid ? c.shekelBalance : Math.max(0, c.shekelBalance - loan.amount),
+          loans: c.loans.filter((l) => l.id !== loanId),
+        }
+      })
+    )
+  }
+
+  function undoRepayLoan(childId, loanId) {
+    setChildren((prev) =>
+      prev.map((c) => {
+        if (c.id !== childId) return c
+        const loan = (c.loans || []).find((l) => l.id === loanId)
+        if (!loan || !loan.repaid) return c
+        return {
+          ...c,
+          shekelBalance: c.shekelBalance + loan.amount,
+          loans: c.loans.map((l) => l.id === loanId ? { ...l, repaid: false } : l),
+        }
+      })
+    )
+  }
+
   // ── Memories ────────────────────────────────────────────
   function addMemory(childId, { text, date }) {
     const memory = { id: generateId(), text, date, timestamp: Date.now() }
@@ -282,6 +313,8 @@ export function useChildren() {
     consumeFreeSpin,
     addLoan,
     repayLoan,
+    deleteLoan,
+    undoRepayLoan,
     addMemory,
     deleteMemory,
     transferStars,

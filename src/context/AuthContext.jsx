@@ -10,8 +10,7 @@ const LS_EVENT  = 'kupati-storage'
 export const AuthContext = createContext(null)
 
 export function AuthProvider({ children }) {
-  // undefined = still checking, null = not logged in, User = logged in
-  const [user, setUser]           = useState(undefined)
+  const [user, setUser]             = useState(undefined)
   const [syncStatus, setSyncStatus] = useState('idle')
   const debounce = useRef({})
   const uidRef   = useRef(null)
@@ -20,7 +19,6 @@ export function AuthProvider({ children }) {
     const unsub = onAuthStateChanged(auth, async (u) => {
       setUser(u ?? null)
       uidRef.current = u?.uid ?? null
-
       if (u) {
         await attachUser(u.uid, setSyncStatus)
       } else {
@@ -31,23 +29,17 @@ export function AuthProvider({ children }) {
     return () => { unsub(); detachUser() }
   }, [])
 
-  // Push any local change to Firestore (debounced 500ms)
   useEffect(() => {
     function handler(e) {
       const key = e.detail?.key
       const uid = uidRef.current
       if (!key || !uid || !DATA_KEYS.includes(key)) return
       if (isUserSuppressed(key)) return
-
       clearTimeout(debounce.current[key])
       debounce.current[key] = setTimeout(async () => {
         const value = get(key)
         if (value === null) return
-        try {
-          await pushUser(uid, key, value)
-        } catch (err) {
-          console.warn('[auth] push failed:', err)
-        }
+        try { await pushUser(uid, key, value) } catch (err) { console.warn('[auth] push failed:', err) }
       }, 500)
     }
     window.addEventListener(LS_EVENT, handler)
@@ -62,6 +54,7 @@ export function AuthProvider({ children }) {
   async function signOut() {
     detachUser()
     await fbSignOut(auth)
+    // Do NOT clear localStorage — data stays for next sign-in
   }
 
   return (

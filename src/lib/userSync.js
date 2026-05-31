@@ -1,9 +1,3 @@
-/**
- * userSync — mirrors localStorage to Firestore under users/{uid}/data/{key}.
- * One document per data key, private to the authenticated user.
- * On first login: if Firestore is empty, migrates existing localStorage data up.
- */
-
 import { db } from './firebase.js'
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { get, set } from './storage.js'
@@ -84,15 +78,12 @@ export async function attachUser(uid, onStatus) {
 
   try {
     const childrenSnap = await getDoc(dataDocRef(uid, 'children'))
-
     if (childrenSnap.exists()) {
-      // Cloud data exists — pull it all in
       for (const key of DATA_KEYS) {
         const snap = await getDoc(dataDocRef(uid, key))
         if (snap.exists()) applyRemoteData(key, snap.data().payload)
       }
     } else {
-      // No cloud data yet — migrate existing localStorage data up
       for (const key of DATA_KEYS) {
         const val = get(key)
         if (val !== null) await pushUser(uid, key, val)
@@ -104,7 +95,6 @@ export async function attachUser(uid, onStatus) {
     return
   }
 
-  // Real-time listeners (multi-device sync)
   for (const key of DATA_KEYS) {
     const unsub = onSnapshot(
       dataDocRef(uid, key),
@@ -127,5 +117,3 @@ export function detachUser() {
   unsubscribers = []
   _uid = null
 }
-
-export function getCurrentUid() { return _uid }

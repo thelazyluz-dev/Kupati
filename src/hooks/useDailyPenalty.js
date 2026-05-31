@@ -1,13 +1,17 @@
 import { useEffect } from 'react'
 
+function toLocalDateStr(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
+}
+
 export function useDailyPenalty(childrenApi, transactionsApi) {
   useEffect(() => {
     const now = new Date()
-    const todayStr = now.toISOString().slice(0, 10)
+    const todayStr = toLocalDateStr(now)
     const pastNoon = now.getHours() >= 12
 
     const todayStart   = new Date(todayStr + 'T00:00:00')
-    const yesterdayStr = new Date(todayStart.getTime() - 86400000).toISOString().slice(0, 10)
+    const yesterdayStr = toLocalDateStr(new Date(todayStart.getTime() - 86400000))
 
     childrenApi.children.forEach(child => {
       const pc = child.penaltyCheck || { lastDate: yesterdayStr, streak: 0 }
@@ -22,7 +26,7 @@ export function useDailyPenalty(childrenApi, transactionsApi) {
       const cursor = new Date(pc.lastDate + 'T00:00:00')
       cursor.setDate(cursor.getDate() + 1)
       while (cursor < todayStart) {
-        daysSet.add(cursor.toISOString().slice(0, 10))
+        daysSet.add(toLocalDateStr(cursor))
         cursor.setDate(cursor.getDate() + 1)
       }
       daysSet.add(yesterdayStr)           // always check yesterday

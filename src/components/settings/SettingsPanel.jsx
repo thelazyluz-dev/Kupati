@@ -1,15 +1,14 @@
 import { useState, useContext, useCallback } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
+import { AuthContext } from '../../context/AuthContext.jsx'
 import { exportAll } from '../../lib/storage.js'
 import Button from '../ui/Button.jsx'
 import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import PrizeManager from './PrizeManager.jsx'
 import SyncSettings from './SyncSettings.jsx'
-import { AuthContext } from '../../context/AuthContext.jsx'
 import { useSwipeBack } from '../../hooks/useSwipeBack.js'
 
-// Safe — returns null values when AuthProvider isn't above us in the tree
 function useAuthSafe() {
   const ctx = useContext(AuthContext)
   return ctx ?? { user: null, signOut: null }
@@ -33,7 +32,7 @@ function SettingsSection({ icon, label, iconColor, accent, children, collapsible
       {collapsible ? (
         <button
           type="button"
-          className="flex items-center gap-2 mb-2 w-full active:opacity-70 cursor-pointer"
+          className="flex items-center gap-2 mb-2 w-full active:opacity-70"
           onClick={() => setOpen((v) => !v)}
         >
           <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-base flex-shrink-0 ${iconColor}`}>
@@ -49,15 +48,7 @@ function SettingsSection({ icon, label, iconColor, accent, children, collapsible
         <SectionHeader icon={icon} label={label} color={iconColor} />
       )}
       {(!collapsible || open) && (
-        <div
-          className="rounded-[24px] p-4"
-          style={{
-            background: 'rgba(255,255,255,0.82)',
-            backdropFilter: 'blur(10px)',
-            border: '1.5px solid rgba(255,255,255,0.75)',
-            boxShadow: '0 6px 20px rgba(0,0,0,0.06), inset 0 1px 2px rgba(255,255,255,0.95)',
-          }}
-        >
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-sm ring-1 ring-white/50 p-4">
           {children}
         </div>
       )}
@@ -128,9 +119,9 @@ function PinSettings() {
 
 export default function SettingsPanel() {
   const { navigate, resetAllData, requirePin, showModal } = useApp()
-  const { user, signOut } = (useAuthSafe())
-  const [confirmReset, setConfirmReset] = useState(false)
+  const { user, signOut } = useAuthSafe()
   useSwipeBack(useCallback(() => navigate('home'), [navigate]))
+  const [confirmReset, setConfirmReset] = useState(false)
 
   async function handleForceUpdate() {
     try {
@@ -155,7 +146,7 @@ export default function SettingsPanel() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #ede9fe 0%, #dbeafe 100%)', backgroundAttachment: 'fixed' }}>
-      <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white" style={{ borderRadius: '0 0 36px 36px', boxShadow: '0 8px 32px rgba(99,102,241,0.35), 0 2px 8px rgba(0,0,0,0.12)' }}>
+      <header className="bg-gradient-to-br from-indigo-500 to-violet-600 px-5 pt-8 pb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="invisible flex items-center gap-1 pl-3 pr-2 py-2 text-sm font-bold">
             חזרה ›
@@ -237,7 +228,7 @@ export default function SettingsPanel() {
         {/* Danger zone */}
         <section>
           <SectionHeader icon="⚠️" label="אזור מסוכן" color="bg-red-100 text-red-600" />
-          <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(10px)', border: '1.5px solid rgba(252,165,165,0.5)', borderRight: '4px solid #f87171', boxShadow: '0 6px 20px rgba(239,68,68,0.08), inset 0 1px 2px rgba(255,255,255,0.95)' }}>
+          <div className="bg-white rounded-2xl shadow-sm p-4 border-r-4 border-red-400">
             {confirmReset ? (
               <div className="space-y-3">
                 <p className="text-sm text-red-600 font-semibold text-center">
@@ -269,25 +260,17 @@ export default function SettingsPanel() {
           </div>
         </section>
 
-        {/* Signed-in account + sign out */}
         {user && signOut && (
-          <div
-            className="rounded-[20px] px-4 py-3 flex items-center gap-3"
-            style={{ background: 'rgba(243,244,246,0.85)', border: '1.5px solid rgba(209,213,219,0.6)' }}
-          >
-            {user.photoURL && (
-              <img src={user.photoURL} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />
-            )}
+          <div className="rounded-[20px] px-4 py-3 flex items-center gap-3"
+            style={{ background: 'rgba(243,244,246,0.85)', border: '1.5px solid rgba(209,213,219,0.6)' }}>
+            {user.photoURL && <img src={user.photoURL} alt="" className="w-9 h-9 rounded-full flex-shrink-0" />}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-800 truncate">{user.displayName || 'משתמש'}</p>
               <p className="text-xs text-gray-400 truncate">{user.email}</p>
             </div>
-            <button
-              type="button"
-              onClick={signOut}
+            <button type="button" onClick={signOut}
               className="text-xs font-bold text-red-500 px-3 py-1.5 rounded-xl active:scale-95 transition-all flex-shrink-0"
-              style={{ background: 'rgba(254,226,226,0.8)', border: '1px solid rgba(252,165,165,0.5)' }}
-            >
+              style={{ background: 'rgba(254,226,226,0.8)', border: '1px solid rgba(252,165,165,0.5)' }}>
               התנתק
             </button>
           </div>

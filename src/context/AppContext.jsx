@@ -214,6 +214,14 @@ export function AppProvider({ children: reactChildren }) {
     })
   }
 
+  function deleteLoan(childId, loanId) {
+    childrenApi.deleteLoan(childId, loanId)
+  }
+
+  function undoRepayLoan(childId, loanId) {
+    childrenApi.undoRepayLoan(childId, loanId)
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
@@ -227,6 +235,8 @@ export function AppProvider({ children: reactChildren }) {
     doTransferMoney,
     loanMoney,
     repayLoan,        // override childrenApi.repayLoan with tx-logging version
+    deleteLoan,
+    undoRepayLoan,
     requirePin,
     resetChildData,
     pendingBadge,
