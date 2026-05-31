@@ -131,6 +131,8 @@ export default function EditChildModal() {
   const [allowanceEnabled, setAllowanceEnabled] = useState(!!initAllowance.enabled)
   const [allowanceAmount, setAllowanceAmount]   = useState(String(initAllowance.amount || ''))
   const [allowancePeriod, setAllowancePeriod]   = useState(initAllowance.period || 'weekly')
+  // Penalty
+  const [penaltyEnabled, setPenaltyEnabled] = useState(child?.penaltyEnabled !== false)
 
   async function handlePhotoChange(e) {
     const file = e.target.files?.[0]
@@ -156,6 +158,7 @@ export default function EditChildModal() {
         period: allowancePeriod,
         lastPaid: child.allowance?.lastPaid || null,
       },
+      penaltyEnabled,
     }
     if (avatarImage !== undefined) updates.avatarImage = avatarImage  // null removes it
     updateChild(child.id, updates)
@@ -300,7 +303,23 @@ export default function EditChildModal() {
           )}
         </div>
 
-<Button type="submit" fullWidth size="lg" disabled={!name.trim()}>
+        {/* Penalty toggle */}
+        <div className="flex items-center justify-between py-1">
+          <div className="flex-1 min-w-0 ml-3">
+            <p className="text-sm font-semibold text-gray-600">⚡ קנס על אי-ביצוע מטלה</p>
+            <p className="text-xs text-gray-400 mt-0.5">כבה בחגים, חופשות או מחלה</p>
+          </div>
+          <button
+            type="button"
+            onClick={() => setPenaltyEnabled((v) => !v)}
+            className={`w-12 h-6 rounded-full transition-colors relative flex-shrink-0 ${penaltyEnabled ? 'bg-amber-500' : 'bg-gray-300'}`}
+            aria-label="הפעל/כבה קנס"
+          >
+            <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${penaltyEnabled ? 'left-6' : 'left-0.5'}`} />
+          </button>
+        </div>
+
+        <Button type="submit" fullWidth size="lg" disabled={!name.trim()}>
           💾 שמור שינויים
         </Button>
 

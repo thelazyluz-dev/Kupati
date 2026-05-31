@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { notifyPenalty } from '../lib/notifications.js'
 
 function toLocalDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
@@ -14,6 +15,8 @@ export function useDailyPenalty(childrenApi, transactionsApi) {
     const yesterdayStr = toLocalDateStr(new Date(todayStart.getTime() - 86400000))
 
     childrenApi.children.forEach(child => {
+      if (child.penaltyEnabled === false) return
+
       const pc = child.penaltyCheck || { lastDate: yesterdayStr, streak: 0 }
 
       const alreadyCheckedToday = pc.lastDate === todayStr && pc.todayChecked
@@ -61,6 +64,7 @@ export function useDailyPenalty(childrenApi, transactionsApi) {
             description: `⚡ קנס יומי — לא בוצעה מטלה (${dayStr})`,
             timestamp: Math.min(dayEnd - 1000, now.getTime()),
           })
+          notifyPenalty(child.name, amount, dayStr)
         }
       })
 

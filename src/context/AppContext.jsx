@@ -6,8 +6,10 @@ import { useTransactions } from '../hooks/useTransactions.js'
 import { useSyncEngine } from '../hooks/useSyncEngine.js'
 import { useLearning } from '../hooks/useLearning.js'
 import { useDailyPenalty } from '../hooks/useDailyPenalty.js'
+import { useRecurringAllowance } from '../hooks/useRecurringAllowance.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
+import { notifyChore } from '../lib/notifications.js'
 
 const AppContext = createContext(null)
 
@@ -19,6 +21,7 @@ export function AppProvider({ children: reactChildren }) {
   const { status: syncStatus } = useSyncEngine(settingsApi.settings.familyCode || '')
   const learningApi = useLearning()
   useDailyPenalty(childrenApi, transactionsApi)
+  useRecurringAllowance(childrenApi, transactionsApi)
 
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
@@ -71,6 +74,9 @@ export function AppProvider({ children: reactChildren }) {
       const newBadges = checkBadges(child, projected)
       newBadges.forEach((badge) => childrenApi.awardBadge(childId, badge))
       if (newBadges.length > 0) setPendingBadge({ ...newBadges[0], childId })
+
+      // Notify on chore
+      if (txData.type === 'chore') notifyChore(child.name, txData.description)
 
       // Free spin: every 5 chores in a calendar day
       if (txData.type === 'chore') {

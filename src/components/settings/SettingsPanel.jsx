@@ -2,6 +2,7 @@ import { useState, useContext, useCallback } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { AuthContext } from '../../context/AuthContext.jsx'
 import { exportAll } from '../../lib/storage.js'
+import { getPermission, requestPermission } from '../../lib/notifications.js'
 import Button from '../ui/Button.jsx'
 import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
@@ -117,6 +118,51 @@ function PinSettings() {
   )
 }
 
+function NotificationSettings() {
+  const [permission, setPermission] = useState(getPermission)
+
+  async function handleRequest() {
+    const result = await requestPermission()
+    setPermission(result)
+  }
+
+  if (permission === 'unsupported') {
+    return <p className="text-xs text-gray-400 text-center">הדפדפן לא תומך בהתראות</p>
+  }
+
+  if (permission === 'granted') {
+    return (
+      <div className="flex items-center gap-2.5 text-green-700">
+        <span className="text-xl">✅</span>
+        <div>
+          <p className="text-sm font-bold">התראות מופעלות</p>
+          <p className="text-xs text-gray-400">מטלות, קנסות וקצבות</p>
+        </div>
+      </div>
+    )
+  }
+
+  if (permission === 'denied') {
+    return (
+      <div className="space-y-1 text-center">
+        <p className="text-sm text-red-500 font-semibold">התראות חסומות בדפדפן</p>
+        <p className="text-xs text-gray-400">פתח הגדרות דפדפן ← אתרים ← אפשר התראות</p>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <Button variant="secondary" fullWidth onClick={handleRequest}>
+        🔔 אפשר התראות
+      </Button>
+      <p className="text-xs text-gray-400 text-center">
+        כשמסמנים מטלה, כשנוצר קנס יומי, וכשקצבה מופקדת
+      </p>
+    </div>
+  )
+}
+
 export default function SettingsPanel() {
   const { navigate, resetAllData, requirePin, showModal } = useApp()
   const { user, signOut } = useAuthSafe()
@@ -187,6 +233,10 @@ export default function SettingsPanel() {
 
         <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">
           <SoundToggle />
+        </SettingsSection>
+
+        <SettingsSection icon="🔔" label="התראות" iconColor="bg-amber-100 text-amber-600" accent="border-amber-400">
+          <NotificationSettings />
         </SettingsSection>
 
         <SettingsSection icon="🔒" label="קוד הורים" iconColor="bg-slate-100 text-slate-600" accent="border-slate-400">
