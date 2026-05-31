@@ -136,78 +136,96 @@ function WheelPrizeManager() {
   const [newAmt,    setNewAmt]    = useState('')
   const [newEmoji,  setNewEmoji]  = useState('💵')
 
+  function save(next) { updateSettings({ wheelPrizes: next }) }
+
   function startEdit(p) { setEditId(p.id); setEditAmt(String(p.shekels)); setEditEmoji(p.emoji) }
 
   function saveEdit() {
     const amt = parseFloat(editAmt)
     if (!(amt > 0)) return
-    updateSettings('wheelPrizes', prizes.map(p => p.id === editId ? { ...p, shekels: amt, emoji: editEmoji } : p))
+    save(prizes.map(p => p.id === editId ? { ...p, shekels: amt, emoji: editEmoji } : p))
     setEditId(null)
   }
 
   function deletePrize(id) {
     if (prizes.length <= 2) return
-    updateSettings('wheelPrizes', prizes.filter(p => p.id !== id))
+    save(prizes.filter(p => p.id !== id))
   }
 
   function addPrize() {
     const amt = parseFloat(newAmt)
     if (!(amt > 0) || prizes.length >= 12) return
-    updateSettings('wheelPrizes', [...prizes, { id: generateId(), shekels: amt, emoji: newEmoji }])
+    save([...prizes, { id: generateId(), shekels: amt, emoji: newEmoji }])
     setNewAmt('')
   }
 
   return (
-    <div className="space-y-2">
-      {prizes.map((p, i) => {
-        const color = WHEEL_COLORS[i % WHEEL_COLORS.length]
-        return (
-          <div key={p.id} className="flex items-center gap-2 rounded-xl px-3 py-2"
-            style={{ background: color + '18', border: `1.5px solid ${color}40` }}>
-            {editId === p.id ? (
-              <>
-                <select value={editEmoji} onChange={e => setEditEmoji(e.target.value)}
-                  className="text-xl bg-white border border-gray-200 rounded-lg p-1 cursor-pointer outline-none flex-shrink-0">
-                  {PRIZE_EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
-                </select>
-                <input type="number" min="1" value={editAmt} onChange={e => setEditAmt(e.target.value)}
-                  className="w-20 rounded-lg border-2 border-gray-200 px-2 py-1.5 text-sm font-bold text-center focus:outline-none focus:border-indigo-400"
-                  dir="ltr" placeholder="₪" />
-                <button onClick={saveEdit}
-                  className="text-white text-xs font-bold px-2.5 py-1.5 rounded-lg flex-shrink-0"
-                  style={{ background: '#10b981' }}>שמור</button>
-                <button onClick={() => setEditId(null)}
-                  className="text-gray-500 text-xs font-bold px-2 py-1.5 rounded-lg bg-gray-100 flex-shrink-0">ביטול</button>
-              </>
-            ) : (
-              <>
-                <span className="text-xl flex-shrink-0">{p.emoji}</span>
-                <span className="font-bold text-sm text-gray-700 flex-1">{p.shekels}₪</span>
-                <button onClick={() => startEdit(p)}
-                  className="text-xs text-indigo-600 font-bold px-2 py-1 rounded-lg bg-indigo-50 flex-shrink-0">ערוך</button>
-                <button onClick={() => deletePrize(p.id)} disabled={prizes.length <= 2}
-                  className="text-xs text-red-400 font-bold px-2 py-1 rounded-lg bg-red-50 flex-shrink-0 disabled:opacity-30">🗑️</button>
-              </>
-            )}
-          </div>
-        )
-      })}
+    <div className="space-y-3">
 
+      {/* Prize grid */}
+      <div className="grid grid-cols-2 gap-2">
+        {prizes.map((p, i) => {
+          const color = WHEEL_COLORS[i % WHEEL_COLORS.length]
+          return (
+            <div key={p.id} className="rounded-2xl overflow-hidden"
+              style={{ border: `2px solid ${color}55` }}>
+              {editId === p.id ? (
+                /* ── Edit mode ── */
+                <div className="p-2 space-y-1.5" style={{ background: color + '18' }}>
+                  <select value={editEmoji} onChange={e => setEditEmoji(e.target.value)}
+                    className="w-full text-center text-xl bg-white border border-gray-200 rounded-xl py-1 cursor-pointer outline-none">
+                    {PRIZE_EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
+                  </select>
+                  <input type="number" min="1" value={editAmt}
+                    onChange={e => setEditAmt(e.target.value)}
+                    className="w-full rounded-xl border-2 border-gray-200 px-2 py-1.5 text-sm font-bold text-center focus:outline-none focus:border-violet-400"
+                    dir="ltr" placeholder="₪" />
+                  <div className="flex gap-1">
+                    <button onClick={saveEdit}
+                      className="flex-1 text-white text-xs font-bold py-1.5 rounded-xl"
+                      style={{ background: '#10b981' }}>✓ שמור</button>
+                    <button onClick={() => setEditId(null)}
+                      className="flex-1 text-gray-500 text-xs font-bold py-1.5 rounded-xl bg-gray-100">ביטול</button>
+                  </div>
+                </div>
+              ) : (
+                /* ── View mode ── */
+                <div className="flex items-center gap-2 px-2.5 py-2" style={{ background: color + '12' }}>
+                  <span className="text-xl flex-shrink-0">{p.emoji}</span>
+                  <span className="font-black text-sm flex-1" style={{ color }}>{p.shekels}₪</span>
+                  <button onClick={() => startEdit(p)}
+                    className="text-[11px] font-bold text-gray-500 px-1.5 py-1 rounded-lg bg-white/70 active:scale-90">✏️</button>
+                  <button onClick={() => deletePrize(p.id)} disabled={prizes.length <= 2}
+                    className="text-[11px] font-bold text-red-400 px-1.5 py-1 rounded-lg bg-white/70 active:scale-90 disabled:opacity-25">🗑️</button>
+                </div>
+              )}
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Add new prize */}
       {prizes.length < 12 && (
-        <div className="flex items-center gap-2 pt-1 border-t border-gray-100">
-          <select value={newEmoji} onChange={e => setNewEmoji(e.target.value)}
-            className="text-xl bg-white border border-gray-200 rounded-xl p-2 cursor-pointer outline-none flex-shrink-0">
-            {PRIZE_EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
-          </select>
-          <input type="number" min="1" value={newAmt} onChange={e => setNewAmt(e.target.value)}
-            placeholder="סכום ₪" dir="ltr"
-            className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none" />
-          <button onClick={addPrize} disabled={!(parseFloat(newAmt) > 0)}
-            className="text-white font-bold text-sm px-3 py-2 rounded-xl flex-shrink-0 disabled:opacity-40"
-            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>+ הוסף</button>
+        <div className="rounded-2xl border-2 border-dashed border-gray-200 p-3 space-y-2">
+          <p className="text-xs font-bold text-gray-400 text-center">+ הוסף פרס חדש</p>
+          <div className="flex gap-2">
+            <select value={newEmoji} onChange={e => setNewEmoji(e.target.value)}
+              className="text-xl bg-white border-2 border-gray-200 rounded-xl px-2 py-2 cursor-pointer outline-none focus:border-violet-400 flex-shrink-0">
+              {PRIZE_EMOJIS.map(e => <option key={e} value={e}>{e}</option>)}
+            </select>
+            <input type="number" min="1" value={newAmt}
+              onChange={e => setNewAmt(e.target.value)}
+              onKeyDown={e => e.key === 'Enter' && addPrize()}
+              placeholder="סכום ₪" dir="ltr"
+              className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 text-sm font-bold focus:border-violet-400 focus:outline-none" />
+            <button onClick={addPrize} disabled={!(parseFloat(newAmt) > 0)}
+              className="text-white font-bold text-sm px-4 py-2 rounded-xl flex-shrink-0 active:scale-95 disabled:opacity-40 transition-all"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>הוסף</button>
+          </div>
         </div>
       )}
-      <p className="text-xs text-gray-400 text-center">{prizes.length}/12 פרסים · מינימום 2</p>
+
+      <p className="text-xs text-gray-400 text-center">{prizes.length} / 12 פרסים</p>
     </div>
   )
 }
