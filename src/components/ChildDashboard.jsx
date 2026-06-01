@@ -160,25 +160,30 @@ function BalanceGraph({ transactions, currentBalance }) {
   const maxBal    = Math.max(...points.map(p => p.balance))
   if (maxBal === 0) return null
 
-  const W = 300, H = 64
-  const PT = 8, PB = 20, PX = 4
-  const iW = W - PX * 2, iH = H - PT - PB
+  const W = 300, H = 72
+  const PT = 8, PB = 22, PX_L = 34, PX_R = 4
+  const iW = W - PX_L - PX_R, iH = H - PT - PB
   const minBal = Math.min(...points.map(p => p.balance))
   const range  = Math.max(maxBal - minBal, 1)
-  const N = points.length
+  const N      = points.length
   const bottom = PT + iH
 
-  const px = i => (PX + (i / (N - 1)) * iW).toFixed(1)
+  const px = i => (PX_L + (i / (N - 1)) * iW).toFixed(1)
   const py = b  => (PT + iH - ((b - minBal) / range) * iH).toFixed(1)
 
   const pts     = points.map((p, i) => `${px(i)},${py(p.balance)}`)
   const lineStr = pts.join(' ')
   const areaStr = `M${px(0)},${bottom} ${pts.map(pt => `L${pt}`).join(' ')} L${px(N-1)},${bottom} Z`
 
-  const last = points[N - 1]
+  const last  = points[N - 1]
   const first = points[0]
   const diff  = last.balance - first.balance
   const isUp  = diff >= 0
+
+  // 3 Y-axis reference levels (deduplicated when range is tiny)
+  const gridLevels = range > 2
+    ? [maxBal, (maxBal + minBal) / 2, minBal]
+    : [maxBal]
 
   return (
     <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)' }}>
@@ -213,8 +218,32 @@ function BalanceGraph({ transactions, currentBalance }) {
             <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
           </linearGradient>
         </defs>
+
+        {/* Y-axis gridlines + labels */}
+        {gridLevels.map((v, i) => (
+          <g key={i}>
+            <line x1={PX_L} y1={py(v)} x2={W - PX_R} y2={py(v)}
+                  stroke="rgba(148,163,184,0.22)" strokeWidth="1" strokeDasharray="4,3" />
+            <text x={PX_L - 3} y={py(v)} textAnchor="end" dominantBaseline="middle"
+                  fontSize="8" fill="#94a3b8">
+              {Math.round(v)}₪
+            </text>
+          </g>
+        ))}
+
+        {/* Area fill */}
         <path d={areaStr} fill="url(#balGrad)" />
+
+        {/* Line */}
         <polyline points={lineStr} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+
+        {/* Opening dot + value */}
+        <circle cx={px(0)} cy={py(first.balance)} r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
+        <text x={Number(px(0)) + 4} y={Number(py(first.balance)) - 5} textAnchor="start" fontSize="8" fill="#6b7280">
+          {Math.round(first.balance)}₪
+        </text>
+
+        {/* Today dot + value */}
         <circle cx={px(N-1)} cy={py(last.balance)} r="3.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
         <text x={Number(px(N-1)) - 4} y={Number(py(last.balance)) - 6} textAnchor="end" fontSize="9" fill="#059669" fontWeight="bold">
           {formatNumber(last.balance)}₪
@@ -222,7 +251,7 @@ function BalanceGraph({ transactions, currentBalance }) {
       </svg>
 
       {/* Date labels — first, mid, today */}
-      <div className="flex justify-between mt-1 px-1">
+      <div className="flex justify-between mt-1" style={{ paddingRight: PX_R, paddingLeft: PX_L }}>
         {[0, Math.floor(N / 2), N - 1].map(i => (
           <span key={i} className="text-[10px] text-gray-400 font-medium">
             {i === N - 1 ? 'היום' : fmtGraphLabel(points[i].date, days)}
