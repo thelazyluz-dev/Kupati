@@ -12,6 +12,8 @@ export default function Modal({ title, onClose, children, size = 'md', headerCol
   }
 
   useEffect(() => {
+    // Reset horizontal scroll so the modal is always centred on screen
+    window.scrollTo(0, window.scrollY)
     document.body.style.overflow = 'hidden'
     return () => { document.body.style.overflow = '' }
   }, [])

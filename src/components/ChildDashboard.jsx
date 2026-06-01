@@ -437,7 +437,7 @@ export default function ChildDashboard({ childId }) {
   const firstGoal = goals[0] ?? null
 
   return (
-    <div className="min-h-screen flex flex-col" style={{ background: `linear-gradient(180deg, ${bgTop} 0%, ${bgFade} 55%, ${bgFade} 100%)` }}>
+    <div className="min-h-screen flex flex-col overflow-x-hidden" style={{ background: `linear-gradient(180deg, ${bgTop} 0%, ${bgFade} 55%, ${bgFade} 100%)` }}>
       {/* Flying star trail */}
       {flyingStar && (
         <div
@@ -573,7 +573,7 @@ export default function ChildDashboard({ childId }) {
               {activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}
             </div>
             {(child.shekelBalancePeak || 0) > 0 && (
-              <div className="relative text-xs opacity-60 mt-0.5">
+              <div className="relative text-xs opacity-60 mt-0.5 truncate">
                 {child.shekelBalance >= (child.shekelBalancePeak || 0)
                   ? '🌟 שיא חדש!'
                   : `🏆 שיא: ${formatNumber(child.shekelBalancePeak)}₪`}
@@ -600,7 +600,7 @@ export default function ChildDashboard({ childId }) {
             </div>
             <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
             {(child.starBalancePeak || 0) > 0 && (
-              <div className="relative text-xs opacity-60 mt-0.5">
+              <div className="relative text-xs opacity-60 mt-0.5 truncate">
                 {child.starBalance >= (child.starBalancePeak || 0)
                   ? '🌟 שיא חדש!'
                   : `🏆 שיא: ${formatNumber(child.starBalancePeak)}⭐`}
