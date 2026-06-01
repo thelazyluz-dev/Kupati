@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
-import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
+import { getGoals, getGoalProgress, getTotalValue, formatNumber, daysUntilBirthday, calculateStreak, getLevel } from '../lib/utils.js'
 
 const MEDALS = ['🥇', '🥈', '🥉']
 
@@ -22,6 +22,11 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
 
   const transactions = getTransactions(child.id)
   const streak = useMemo(() => calculateStreak(transactions), [transactions])
+  const totalStarsEarned = useMemo(() =>
+    transactions.filter(tx => tx.type === 'chore' && tx.currency === 'stars').reduce((s, tx) => s + tx.amount, 0),
+    [transactions]
+  )
+  const level = getLevel(totalStarsEarned)
 
   const missedYesterday = useMemo(() => {
     const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0)
@@ -131,23 +136,25 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
             ))}
           </div>
 
-          {/* Streak + birthday chips */}
-          {(streak >= 2 || showBirthdayChip) && (
-            <div className="flex gap-1.5 flex-wrap">
-              {streak >= 2 && (
-                <div className="flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-black"
-                     style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.6)' }}>
-                  🔥 {streak} ימים
-                </div>
-              )}
-              {showBirthdayChip && (
-                <div className={`flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-semibold ${birthdayDays <= 7 ? 'animate-pulse' : ''}`}
-                     style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)' }}>
-                  🎂 {birthdayDays} ימים
-                </div>
-              )}
+          {/* Streak + birthday + level chips */}
+          <div className="flex gap-1.5 flex-wrap">
+            {streak >= 2 && (
+              <div className="flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-black"
+                   style={{ background: 'rgba(255,255,255,0.35)', border: '1px solid rgba(255,255,255,0.6)' }}>
+                🔥 {streak} ימים
+              </div>
+            )}
+            {showBirthdayChip && (
+              <div className={`flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-semibold ${birthdayDays <= 7 ? 'animate-pulse' : ''}`}
+                   style={{ background: 'rgba(255,255,255,0.25)', border: '1px solid rgba(255,255,255,0.45)' }}>
+                🎂 {birthdayDays} ימים
+              </div>
+            )}
+            <div className="flex items-center gap-1 rounded-xl px-2 py-0.5 text-xs font-bold"
+                 style={{ background: 'rgba(255,255,255,0.28)', border: '1px solid rgba(255,255,255,0.5)' }}>
+              {level.emoji} {level.name}
             </div>
-          )}
+          </div>
 
           {/* Goal progress */}
           {firstGoal && (

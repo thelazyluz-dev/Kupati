@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
 import { useSwipeBack } from '../hooks/useSwipeBack.js'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel, buildBalanceHistory } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
@@ -133,6 +133,66 @@ function MonthlySummary({ transactions }) {
   )
 }
 
+function BalanceGraph({ transactions, currentBalance }) {
+  const points = buildBalanceHistory(transactions, currentBalance, 14)
+  const maxBal = Math.max(...points.map(p => p.balance))
+  if (maxBal === 0) return null
+
+  const W = 300, H = 64
+  const PT = 8, PB = 20, PX = 4
+  const iW = W - PX * 2, iH = H - PT - PB
+  const minBal = Math.min(...points.map(p => p.balance))
+  const range  = Math.max(maxBal - minBal, 1)
+  const N = points.length
+  const bottom = PT + iH
+
+  const px = i => (PX + (i / (N - 1)) * iW).toFixed(1)
+  const py = b  => (PT + iH - ((b - minBal) / range) * iH).toFixed(1)
+
+  const pts = points.map((p, i) => `${px(i)},${py(p.balance)}`)
+  const lineStr = pts.join(' ')
+  const areaStr = `M${px(0)},${bottom} ${pts.map(pt => `L${pt}`).join(' ')} L${px(N-1)},${bottom} Z`
+
+  const last = points[N - 1]
+  const first = points[0]
+  const diff = last.balance - first.balance
+  const isUp = diff >= 0
+
+  return (
+    <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-black text-gray-800 text-sm">📈 יתרה — 14 ימים</h3>
+        {diff !== 0 && (
+          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
+            {isUp ? '▲' : '▼'} {formatNumber(Math.abs(diff))}₪
+          </span>
+        )}
+      </div>
+      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+        <defs>
+          <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        <path d={areaStr} fill="url(#balGrad)" />
+        <polyline points={lineStr} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={px(N-1)} cy={py(last.balance)} r="3.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
+        <text x={Number(px(N-1)) - 4} y={Number(py(last.balance)) - 6} textAnchor="end" fontSize="9" fill="#059669" fontWeight="bold">
+          {formatNumber(last.balance)}₪
+        </text>
+      </svg>
+      <div className="flex justify-between mt-1 px-1">
+        {[0, Math.floor(N / 2), N - 1].map(i => {
+          const d = points[i].date
+          const label = i === N - 1 ? 'היום' : `${d.getDate()}/${d.getMonth() + 1}`
+          return <span key={i} className="text-[10px] text-gray-400 font-medium">{label}</span>
+        })}
+      </div>
+    </div>
+  )
+}
+
 function StarIconCloud({ count }) {
   const n = Math.min(Math.round(count), 50)
   return <IconCloud icons={Array.from({ length: n }, () => '⭐')} />
@@ -157,7 +217,8 @@ export default function ChildDashboard({ childId }) {
   const [hint, setHint] = useState(null)
   const [flyingStar, setFlyingStar] = useState(false)
 
-  const backBtnRef = useRef(null)
+  const backBtnRef   = useRef(null)
+  const prevLevelRef = useRef(null)
 
   const child = children.find((c) => c.id === childId)
 
@@ -289,6 +350,18 @@ export default function ChildDashboard({ childId }) {
   const outstandingLoans = (child.loans || []).filter((l) => !l.repaid)
   const outstandingTotal = outstandingLoans.reduce((s, l) => s + l.amount, 0)
 
+  const level = getLevel(totalStarsEarned)
+
+  // Detect level-up: compare to previous level on re-renders where totalStarsEarned changed
+  useEffect(() => {
+    if (prevLevelRef.current !== null && prevLevelRef.current.min < level.min) {
+      setHint(`${level.emoji} עלית לרמה "${level.name}"! 🎉`)
+      sounds.goal()
+      celebrateGoal()
+    }
+    prevLevelRef.current = level
+  }, [totalStarsEarned]) // eslint-disable-line
+
   const birthdayDays = daysUntilBirthday(child.birthday)
   const showBirthday = birthdayDays !== null
 
@@ -395,14 +468,17 @@ export default function ChildDashboard({ childId }) {
                 {birthdayDays === 0 ? '🎂 יום הולדת שמח! 🎉' : `🎂 עוד ${birthdayDays} ימים!`}
               </div>
             )}
-            {/* Streak chip only */}
-            {streak >= 2 && (
-              <div className="flex items-center justify-center mt-1.5">
+            {/* Streak + level chips */}
+            <div className="flex items-center justify-center gap-2 mt-1.5 flex-wrap">
+              {streak >= 2 && (
                 <div className="bg-white/25 rounded-full px-3 py-0.5 text-sm font-bold">
                   🔥 {streak} ימים ברצף!
                 </div>
+              )}
+              <div className="bg-white/20 rounded-full px-3 py-0.5 text-sm font-semibold">
+                {level.emoji} {level.name}
               </div>
-            )}
+            </div>
           </div>
 
           <button
@@ -649,6 +725,8 @@ export default function ChildDashboard({ childId }) {
         </div>
 
         <WeeklySummary transactions={transactions} />
+
+        <BalanceGraph transactions={transactions} currentBalance={child.shekelBalance} />
 
         <MonthlySummary transactions={transactions} />
 

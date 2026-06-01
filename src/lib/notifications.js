@@ -17,3 +17,4 @@ function notify(title, body) {
 export const notifyChore     = (childName, desc)        => notify(`✅ ${childName}`, desc || 'מטלה הושלמה')
 export const notifyPenalty   = (childName, amount, day) => notify(`⚡ קנס — ${childName}`, `-${amount}⭐ (${day})`)
 export const notifyAllowance = (childName, amount)      => notify(`💰 קצבה — ${childName}`, `+${amount}₪ הופקדו`)
+export const notifyWeeklySummary = (childName, body)    => notify(`📊 סיכום שבועי — ${childName}`, body)

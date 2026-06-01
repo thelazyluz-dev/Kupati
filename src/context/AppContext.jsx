@@ -7,6 +7,7 @@ import { useSyncEngine } from '../hooks/useSyncEngine.js'
 import { useLearning } from '../hooks/useLearning.js'
 import { useDailyPenalty } from '../hooks/useDailyPenalty.js'
 import { useRecurringAllowance } from '../hooks/useRecurringAllowance.js'
+import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore } from '../lib/notifications.js'
@@ -23,6 +24,7 @@ export function AppProvider({ children: reactChildren }) {
   const learningApi = useLearning()
   useDailyPenalty(childrenApi, transactionsApi)
   useRecurringAllowance(childrenApi, transactionsApi)
+  useWeeklySummary(childrenApi, transactionsApi)
 
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)

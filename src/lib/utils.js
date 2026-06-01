@@ -116,6 +116,27 @@ export function getLevel(totalStarsEarned) {
   return STAR_LEVELS[0]
 }
 
+// Reconstruct daily shekel balance history by working backwards from current balance.
+// Returns [{date, balance}] oldest→newest, numDays long.
+export function buildBalanceHistory(transactions, currentBalance, numDays = 14) {
+  const now = new Date()
+  now.setHours(0, 0, 0, 0)
+  const DEBIT = new Set(['expense', 'savings_open', 'money_transfer_out', 'loan_repay'])
+  const shekelTx = transactions.filter(tx => tx.currency === 'shekels')
+  const points = []
+  let bal = currentBalance
+  for (let d = 0; d < numDays; d++) {
+    const dayStart = new Date(now)
+    dayStart.setDate(now.getDate() - d)
+    const s = dayStart.getTime(), e = s + 86400000
+    points.unshift({ date: new Date(dayStart), balance: Math.max(0, Math.round(bal * 10) / 10) })
+    shekelTx.filter(tx => tx.timestamp >= s && tx.timestamp < e).forEach(tx => {
+      bal = DEBIT.has(tx.type) ? bal + tx.amount : bal - tx.amount
+    })
+  }
+  return points
+}
+
 // Returns days until next birthday, 0 if today, null if no birthday set
 export function daysUntilBirthday(birthdayMMDD) {
   if (!birthdayMMDD) return null
