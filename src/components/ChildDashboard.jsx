@@ -133,9 +133,31 @@ function MonthlySummary({ transactions }) {
   )
 }
 
+const GRAPH_PERIODS = [
+  { days: 30,  label: 'חודש'    },
+  { days: 180, label: 'חצי שנה' },
+  { days: 365, label: 'שנה'     },
+]
+
+// Evenly sample maxN points, always including first and last
+function samplePoints(pts, maxN) {
+  if (pts.length <= maxN) return pts
+  return Array.from({ length: maxN }, (_, i) =>
+    pts[Math.round(i * (pts.length - 1) / (maxN - 1))]
+  )
+}
+
+function fmtGraphLabel(date, days) {
+  if (days <= 30) return `${date.getDate()}/${date.getMonth() + 1}`
+  return new Intl.DateTimeFormat('he', { month: 'short' }).format(date)
+}
+
 function BalanceGraph({ transactions, currentBalance }) {
-  const points = buildBalanceHistory(transactions, currentBalance, 14)
-  const maxBal = Math.max(...points.map(p => p.balance))
+  const [days, setDays] = useState(30)
+
+  const allPoints = buildBalanceHistory(transactions, currentBalance, days)
+  const points    = samplePoints(allPoints, 30)
+  const maxBal    = Math.max(...points.map(p => p.balance))
   if (maxBal === 0) return null
 
   const W = 300, H = 64
@@ -149,26 +171,42 @@ function BalanceGraph({ transactions, currentBalance }) {
   const px = i => (PX + (i / (N - 1)) * iW).toFixed(1)
   const py = b  => (PT + iH - ((b - minBal) / range) * iH).toFixed(1)
 
-  const pts = points.map((p, i) => `${px(i)},${py(p.balance)}`)
+  const pts     = points.map((p, i) => `${px(i)},${py(p.balance)}`)
   const lineStr = pts.join(' ')
   const areaStr = `M${px(0)},${bottom} ${pts.map(pt => `L${pt}`).join(' ')} L${px(N-1)},${bottom} Z`
 
   const last = points[N - 1]
   const first = points[0]
-  const diff = last.balance - first.balance
-  const isUp = diff >= 0
+  const diff  = last.balance - first.balance
+  const isUp  = diff >= 0
 
   return (
     <div className="rounded-[24px] p-4" style={{ background: 'rgba(255,255,255,0.85)', backdropFilter: 'blur(8px)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 8px 24px rgba(0,0,0,0.07), inset 0 1px 2px rgba(255,255,255,0.9)' }}>
+      {/* Header + period toggle */}
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-black text-gray-800 text-sm">📈 יתרה — 14 ימים</h3>
-        {diff !== 0 && (
-          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
-            {isUp ? '▲' : '▼'} {formatNumber(Math.abs(diff))}₪
-          </span>
-        )}
+        <div className="flex items-center gap-2">
+          <h3 className="font-black text-gray-800 text-sm">📈 יתרה</h3>
+          {diff !== 0 && (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
+              {isUp ? '▲' : '▼'} {formatNumber(Math.abs(diff))}₪
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5 p-0.5 rounded-xl"
+             style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(229,231,235,0.6)' }}>
+          {GRAPH_PERIODS.map(p => (
+            <button key={p.days} onClick={() => setDays(p.days)}
+              className="text-[11px] font-bold px-2 py-1 rounded-[10px] transition-all duration-200 cursor-pointer"
+              style={days === p.days
+                ? { background: 'white', color: '#059669', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }
+                : { color: '#9ca3af' }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+
+      <svg key={days} viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
         <defs>
           <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
@@ -182,12 +220,14 @@ function BalanceGraph({ transactions, currentBalance }) {
           {formatNumber(last.balance)}₪
         </text>
       </svg>
+
+      {/* Date labels — first, mid, today */}
       <div className="flex justify-between mt-1 px-1">
-        {[0, Math.floor(N / 2), N - 1].map(i => {
-          const d = points[i].date
-          const label = i === N - 1 ? 'היום' : `${d.getDate()}/${d.getMonth() + 1}`
-          return <span key={i} className="text-[10px] text-gray-400 font-medium">{label}</span>
-        })}
+        {[0, Math.floor(N / 2), N - 1].map(i => (
+          <span key={i} className="text-[10px] text-gray-400 font-medium">
+            {i === N - 1 ? 'היום' : fmtGraphLabel(points[i].date, days)}
+          </span>
+        ))}
       </div>
     </div>
   )
