@@ -8,6 +8,7 @@ import { useLearning } from '../hooks/useLearning.js'
 import { useDailyPenalty } from '../hooks/useDailyPenalty.js'
 import { useRecurringAllowance } from '../hooks/useRecurringAllowance.js'
 import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
+import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore } from '../lib/notifications.js'
@@ -22,6 +23,7 @@ export function AppProvider({ children: reactChildren }) {
   const transactionsApi = useTransactions()
   const { status: syncStatus } = useSyncEngine(settingsApi.settings.familyCode || '')
   const learningApi = useLearning()
+  const pendingChoresApi = usePendingChores()
   useDailyPenalty(childrenApi, transactionsApi)
   useRecurringAllowance(childrenApi, transactionsApi)
   useWeeklySummary(childrenApi, transactionsApi)
@@ -254,6 +256,24 @@ export function AppProvider({ children: reactChildren }) {
     childrenApi.undoRepayLoan(childId, loanId)
   }
 
+  function approvePendingChore(choreReqId) {
+    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === choreReqId)
+    if (!req || req.status !== 'pending') return
+    pendingChoresApi.setPendingChoreStatus(choreReqId, 'approved')
+    childrenApi.addStars(req.childId, req.amount)
+    addTransaction(req.childId, {
+      type: 'chore',
+      amount: req.amount,
+      currency: req.currency,
+      description: `${req.choreEmoji || '✅'} ${req.choreName} (אושר)`,
+      timestamp: req.timestamp,
+    })
+  }
+
+  function rejectPendingChore(choreReqId) {
+    pendingChoresApi.setPendingChoreStatus(choreReqId, 'rejected')
+  }
+
   const value = {
     ...childrenApi,
     ...choresApi,
@@ -280,6 +300,9 @@ export function AppProvider({ children: reactChildren }) {
       setCoinInFlight(childId)
       setTimeout(() => setCoinInFlight(null), durationMs)
     },
+    pendingChores: pendingChoresApi.pendingChores,
+    approvePendingChore,
+    rejectPendingChore,
     getChildLearning:       learningApi.getChildLearning,
     startLearningSession:   learningApi.startSession,
     answerLearningQuestion: learningApi.answerQuestion,

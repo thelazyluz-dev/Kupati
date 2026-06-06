@@ -281,7 +281,8 @@ export default function ChildDashboard({ childId }) {
           adjustShekels, adjustStars, deleteGoal, addTransaction, finishSavings,
           addMoney, updateChild,
           pendingBadge, clearPendingBadge,
-          pendingFreeSpin, clearPendingFreeSpin } = useApp()
+          pendingFreeSpin, clearPendingFreeSpin,
+          pendingChores, approvePendingChore, rejectPendingChore } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
   const [flyingStar, setFlyingStar] = useState(false)
@@ -629,6 +630,46 @@ export default function ChildDashboard({ childId }) {
             ))}
           </div>
         )}
+
+        {/* Pending chore requests */}
+        {(() => {
+          const myPending = (pendingChores || []).filter((pc) => pc.childId === childId && pc.status === 'pending')
+          if (myPending.length === 0) return null
+          return (
+            <div className="rounded-[22px] p-4 space-y-3 animate-slide-up"
+              style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 4px 16px rgba(245,158,11,0.12), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
+              <div className="flex items-center gap-2">
+                <span className="text-base">📝</span>
+                <p className="text-sm font-black text-amber-800">בקשות מטלה מהילד</p>
+                <span className="mr-auto text-xs font-black bg-amber-500 text-white rounded-full px-2 py-0.5">{myPending.length}</span>
+              </div>
+              {myPending.map((req) => (
+                <div key={req.id} className="flex items-center justify-between gap-2 bg-white/60 rounded-2xl px-3 py-2.5">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-700 truncate">{req.choreName}</p>
+                      <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
+                    </div>
+                  </div>
+                  <div className="flex gap-1.5 flex-shrink-0">
+                    <button
+                      onClick={() => approvePendingChore(req.id)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-black text-white active:scale-90 transition-all"
+                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
+                      ✓ אשר
+                    </button>
+                    <button
+                      onClick={() => rejectPendingChore(req.id)}
+                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 active:scale-90 transition-all">
+                      ✗
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Parent note card */}
         {child.parentNote ? (

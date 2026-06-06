@@ -15,7 +15,7 @@ import { get, set } from './storage.js'
 
 const LS_EVENT  = 'kupati-storage'
 const DEVICE_KEY = 'kupati_device_id'
-const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings']
+const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings', 'pendingChores']
 
 // ── device ID ──────────────────────────────────────────────────────────────
 function getDeviceId() {
@@ -47,6 +47,22 @@ function sanitizeSettings(s) {
 }
 
 /**
+ * Merge remote pendingChores into local ones.
+ * Remote wins for higher-priority statuses (approved/rejected > pending).
+ */
+function mergePendingChores(local, remote) {
+  const priority = { approved: 2, rejected: 2, pending: 1 }
+  const map = new Map()
+  for (const item of [...(local || []), ...(remote || [])]) {
+    const existing = map.get(item.id)
+    if (!existing || (priority[item.status] || 0) > (priority[existing.status] || 0)) {
+      map.set(item.id, item)
+    }
+  }
+  return [...map.values()].sort((a, b) => b.timestamp - a.timestamp)
+}
+
+/**
  * Merge remote transactions into local ones (append-only by tx id).
  * Both parents can add transactions concurrently — we never lose either.
  */
@@ -75,6 +91,9 @@ function applyRemoteData(key, payload) {
     } else if (key === 'all_transactions') {
       const local  = get('all_transactions') ?? {}
       set('all_transactions', mergeTransactions(local, payload))
+    } else if (key === 'pendingChores') {
+      const local  = get('pendingChores') ?? []
+      set('pendingChores', mergePendingChores(local, payload))
     } else {
       set(key, payload)
     }

@@ -6,6 +6,9 @@ import ChildDashboard from './components/ChildDashboard.jsx'
 import SettingsPanel from './components/settings/SettingsPanel.jsx'
 import ModalRouter from './components/modals/ModalRouter.jsx'
 import LoginScreen from './components/auth/LoginScreen.jsx'
+import ChildModeApp from './components/ChildModeApp.jsx'
+import OnboardingFlow from './components/onboarding/OnboardingFlow.jsx'
+import { get } from './lib/storage.js'
 
 class ErrorBoundary extends Component {
   constructor(props) {
@@ -34,7 +37,11 @@ class ErrorBoundary extends Component {
 }
 
 function AppInner() {
-  const { screen, activeChildId } = useApp()
+  const { screen, activeChildId, settings } = useApp()
+
+  if (!settings.onboardingDone) {
+    return <OnboardingFlow onDone={() => {}} />
+  }
 
   return (
     <div className="min-h-screen">
@@ -63,6 +70,15 @@ function AuthGate() {
 }
 
 export default function App() {
+  // Child mode bypasses all authentication
+  if (get('childMode')) {
+    return (
+      <ErrorBoundary>
+        <ChildModeApp />
+      </ErrorBoundary>
+    )
+  }
+
   return (
     <ErrorBoundary>
       <AuthProvider>

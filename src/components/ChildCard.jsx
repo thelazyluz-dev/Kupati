@@ -18,7 +18,7 @@ const GRADIENT_SHADOWS = [
 ]
 
 export default function ChildCard({ child, index, rank, totalChildren }) {
-  const { navigate, settings, getTransactions } = useApp()
+  const { navigate, settings, getTransactions, pendingChores } = useApp()
 
   const transactions = getTransactions(child.id)
   const streak = useMemo(() => calculateStreak(transactions), [transactions])
@@ -48,6 +48,7 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
   const goalReached      = firstGoal != null && totalValue >= firstGoal.targetAmount
   const showMedal        = totalChildren >= 2 && rank <= 3
   const showBirthdayChip = child.birthday && !birthdayToday && birthdayDays <= 60
+  const pendingCount     = (pendingChores || []).filter((pc) => pc.childId === child.id && pc.status === 'pending').length
 
   return (
     <button
@@ -85,6 +86,14 @@ export default function ChildCard({ child, index, rank, totalChildren }) {
           {goalReached      && <span className="text-base leading-none animate-pulse"  title="הגעת למטרה!">🎉</span>}
           {hasActiveSavings && <span className="text-base leading-none"                title="חסכון פעיל">🏦</span>}
           {missedYesterday  && <span className="text-base leading-none"                title="לא בוצעה מטלה אתמול">🚩</span>}
+          {pendingCount > 0 && (
+            <span className="relative">
+              <span className="text-base leading-none" title="בקשות מטלה ממתינות">📝</span>
+              <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-black flex items-center justify-center leading-none">
+                {pendingCount}
+              </span>
+            </span>
+          )}
         </div>
       )}
 

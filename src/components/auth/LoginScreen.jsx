@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from '../../context/AuthContext.jsx'
+import ChildLogin from './ChildLogin.jsx'
 
 const COINS = ['🪙','💰','⭐','🎯','💎','🏆']
 
@@ -7,6 +8,7 @@ export default function LoginScreen() {
   const { signInWithGoogle } = useAuth()
   const [loading, setLoading] = useState(false)
   const [error,   setError]   = useState('')
+  const [childMode, setChildMode] = useState(false)
 
   async function handleSignIn() {
     setLoading(true)
@@ -28,6 +30,16 @@ export default function LoginScreen() {
       }
       setLoading(false)
     }
+  }
+
+  if (childMode) {
+    return (
+      <div className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden px-4"
+        style={{ background: 'linear-gradient(160deg, #f0f4ff 0%, #fff7ed 55%, #f0fdf4 100%)' }}>
+        <ChildLogin onBack={() => setChildMode(false)} />
+        <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
+      </div>
+    )
   }
 
   return (
@@ -111,6 +123,21 @@ export default function LoginScreen() {
         <p className="text-[11px] text-center font-medium" style={{ color: 'rgba(107,114,128,0.7)' }}>
           הנתונים שלך מאובטחים ומסונכרנים עם חשבון Google שלך
         </p>
+
+        <div className="w-full flex items-center gap-3">
+          <div className="flex-1 h-px bg-gray-200" />
+          <span className="text-xs text-gray-400 font-medium">או</span>
+          <div className="flex-1 h-px bg-gray-200" />
+        </div>
+
+        <button
+          onClick={() => setChildMode(true)}
+          className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl font-bold text-indigo-600 text-sm transition-all active:scale-95"
+          style={{ background: 'rgba(238,242,255,0.9)', border: '2px solid rgba(99,102,241,0.25)' }}
+        >
+          <span className="text-base">👶</span>
+          כניסה כילד
+        </button>
       </div>
 
       <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
