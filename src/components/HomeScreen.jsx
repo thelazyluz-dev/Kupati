@@ -544,7 +544,7 @@ const ONBOARDING_FEATURES = [
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const { children, navigate, showModal, getTransactions, coinInFlight } = useApp()
+  const { children, navigate, showModal, getTransactions, coinInFlight, pendingChores } = useApp()
 
   // Pig Easter Egg state
   const [pigClicks,     setPigClicks]     = useState(0)
@@ -718,6 +718,10 @@ export default function HomeScreen() {
   const redPulseOn   = heatLevel >= 3
   const redPulseSpeed = heatLevel >= 4 ? '0.4s' : '0.9s'
 
+  const totalPending = (pendingChores || []).filter(
+    (pc) => pc.status === 'pending' || (pc.source === 'parent' && pc.status === 'done')
+  ).length
+
   const todayStart = (() => { const d = new Date(); d.setHours(0,0,0,0); return d.getTime() })()
   const weekStart  = (() => { const d = new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate() - d.getDay()); return d.getTime() })()
 
@@ -800,11 +804,19 @@ export default function HomeScreen() {
           }}>{p.e}</span>
         ))}
         <div className="flex items-center justify-between mb-4">
-          <button onClick={() => navigate('settings')} aria-label="הגדרות"
-            className="w-11 h-11 flex items-center justify-center text-xl active:scale-90 transition-all"
-            style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
-            ⚙️
-          </button>
+          <div className="relative">
+            <button onClick={() => navigate('settings')} aria-label="הגדרות"
+              className="w-11 h-11 flex items-center justify-center text-xl active:scale-90 transition-all"
+              style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
+              ⚙️
+            </button>
+            {totalPending > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black text-white rounded-full px-1 animate-pop"
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#f97316)', boxShadow: '0 2px 6px rgba(245,158,11,0.5)' }}>
+                {totalPending}
+              </span>
+            )}
+          </div>
           {children.length > 0 && (
             <button onClick={() => setShowLottery(true)} aria-label="הגרלה"
               className="flex items-center justify-center w-10 h-10 text-xl active:scale-95 transition-all"

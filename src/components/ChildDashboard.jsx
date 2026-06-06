@@ -10,7 +10,7 @@ import TransactionList from './TransactionList.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
 import Button from './ui/Button.jsx'
 import HintBanner from './ui/HintBanner.jsx'
-import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_PRIZES } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_PRIZES, DEFAULT_CHORES } from '../lib/defaults.js'
 
 // Long-press hook: fires onLong after holdMs, onTap on quick release.
 // Cancels entirely if finger moves >8px (i.e. the user is scrolling).
@@ -276,7 +276,7 @@ function PendingChoresCard({ requests, onApprove, onReject }) {
       style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 4px 16px rgba(245,158,11,0.12), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
       <div className="flex items-center gap-2">
         <span className="text-base">📝</span>
-        <p className="text-sm font-black text-amber-800">בקשות מטלה מהילד</p>
+        <p className="text-sm font-black text-amber-800">ממתינות לאישור</p>
         <span className="mr-auto text-xs font-black bg-amber-500 text-white rounded-full px-2 py-0.5 animate-pop">
           {requests.length}
         </span>
@@ -288,6 +288,9 @@ function PendingChoresCard({ requests, onApprove, onReject }) {
             <div className="flex-1 min-w-0">
               <p className="text-sm font-bold text-gray-800 truncate">{req.choreName}</p>
               <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
+              {req.source === 'parent' && req.status === 'done' && (
+                <p className="text-[10px] text-indigo-500 font-semibold">📌 משימה שהוקצתה — הילד סיים</p>
+              )}
             </div>
           </div>
           <div className="flex gap-2">
@@ -317,6 +320,83 @@ function PendingChoresCard({ requests, onApprove, onReject }) {
   )
 }
 
+function AssignChorePanel({ childId, chores, addAssignedChore }) {
+  const [open, setOpen] = useState(false)
+  const { pendingChores } = useApp()
+  const choreList = chores?.length ? chores : DEFAULT_CHORES
+
+  function handleAssign(chore) {
+    addAssignedChore(childId, {
+      choreId: chore.id,
+      choreName: chore.name,
+      choreEmoji: chore.emoji,
+      amount: chore.defaultStars,
+      currency: 'stars',
+    })
+    sounds.send()
+    navigator.vibrate?.([20, 10, 30])
+  }
+
+  const assignedIds = new Set(
+    (pendingChores || [])
+      .filter((pc) => pc.childId === childId && pc.source === 'parent' && (pc.status === 'assigned' || pc.status === 'done'))
+      .map((pc) => pc.choreId)
+  )
+
+  return (
+    <div className="rounded-[22px] overflow-hidden animate-slide-up"
+      style={{ background: 'rgba(238,242,255,0.9)', border: '1.5px solid rgba(99,102,241,0.2)', boxShadow: '0 4px 16px rgba(99,102,241,0.1)' }}>
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center justify-between px-4 py-3.5 active:scale-[0.98] transition-all"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-base">📌</span>
+          <span className="text-sm font-black text-indigo-800">שלח מטלה לילד</span>
+          {assignedIds.size > 0 && (
+            <span className="text-xs font-black bg-indigo-500 text-white rounded-full px-2 py-0.5">
+              {assignedIds.size}
+            </span>
+          )}
+        </div>
+        <span className="text-indigo-400 text-lg leading-none transition-transform duration-200"
+              style={{ transform: open ? 'rotate(90deg)' : 'none' }}>›</span>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-1 border-t border-indigo-100/60">
+          {choreList.map((chore) => {
+            const isAssigned = assignedIds.has(chore.id)
+            return (
+              <div key={chore.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
+                <div className="flex items-center gap-2 min-w-0">
+                  <span className="text-xl flex-shrink-0">{chore.emoji}</span>
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold text-gray-700 truncate">{chore.name}</p>
+                    <p className="text-xs text-amber-600 font-bold">+{chore.defaultStars}⭐</p>
+                  </div>
+                </div>
+                {isAssigned ? (
+                  <span className="text-xs font-bold text-indigo-500 bg-indigo-50 border border-indigo-200 px-3 py-1.5 rounded-full flex-shrink-0">
+                    📌 הוקצה
+                  </span>
+                ) : (
+                  <button
+                    onClick={() => handleAssign(chore)}
+                    className="text-xs font-black text-white px-4 py-1.5 rounded-full active:scale-90 transition-all flex-shrink-0"
+                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 8px rgba(99,102,241,0.35)' }}
+                  >
+                    שלח 📌
+                  </button>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StarIconCloud({ count }) {
   const n = Math.min(Math.round(count), 50)
   return <IconCloud icons={Array.from({ length: n }, () => '⭐')} />
@@ -332,12 +412,12 @@ function ShekelIconCloud({ balance }) {
 }
 
 export default function ChildDashboard({ childId }) {
-  const { children, navigate, showModal, settings, getTransactions,
+  const { children, chores: allChores, navigate, showModal, settings, getTransactions,
           adjustShekels, adjustStars, deleteGoal, addTransaction, finishSavings,
           addMoney, updateChild,
           pendingBadge, clearPendingBadge,
           pendingFreeSpin, clearPendingFreeSpin,
-          pendingChores, approvePendingChore, rejectPendingChore } = useApp()
+          pendingChores, addAssignedChore, approvePendingChore, rejectPendingChore } = useApp()
   const transactions = getTransactions(childId)
   const [hint, setHint] = useState(null)
   const [flyingStar, setFlyingStar] = useState(false)
@@ -686,9 +766,14 @@ export default function ChildDashboard({ childId }) {
           </div>
         )}
 
-        {/* Pending chore requests */}
+        {/* Pending chore requests (child-initiated) + parent-assigned tasks marked done */}
         {(() => {
-          const myPending = (pendingChores || []).filter((pc) => pc.childId === childId && pc.status === 'pending')
+          const myPending = (pendingChores || []).filter(
+            (pc) => pc.childId === childId && (
+              pc.status === 'pending' ||
+              (pc.source === 'parent' && pc.status === 'done')
+            )
+          )
           if (myPending.length === 0) return null
           return (
             <PendingChoresCard
@@ -698,6 +783,9 @@ export default function ChildDashboard({ childId }) {
             />
           )
         })()}
+
+        {/* Parent assigns chore to child */}
+        <AssignChorePanel childId={childId} chores={allChores} addAssignedChore={addAssignedChore} />
 
         {/* Parent note card */}
         {child.parentNote ? (

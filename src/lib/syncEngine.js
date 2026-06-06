@@ -51,7 +51,8 @@ function sanitizeSettings(s) {
  * Remote wins for higher-priority statuses (approved/rejected > pending).
  */
 function mergePendingChores(local, remote) {
-  const priority = { approved: 2, rejected: 2, pending: 1 }
+  // approved/rejected = terminal (2) > done (1.5) > pending (1) > assigned (0.5)
+  const priority = { approved: 2, rejected: 2, done: 1.5, pending: 1, assigned: 0.5 }
   const map = new Map()
   for (const item of [...(local || []), ...(remote || [])]) {
     const existing = map.get(item.id)

@@ -272,9 +272,13 @@ export function AppProvider({ children: reactChildren }) {
     prevPendingRef.current = current
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
 
+  function addAssignedChore(childId, { choreId, choreName, choreEmoji, amount, currency = 'stars' }) {
+    return pendingChoresApi.addPendingChore({ childId, choreId, choreName, choreEmoji, amount, currency, source: 'parent' })
+  }
+
   function approvePendingChore(choreReqId) {
     const req = pendingChoresApi.pendingChores.find((pc) => pc.id === choreReqId)
-    if (!req || req.status !== 'pending') return
+    if (!req || (req.status !== 'pending' && req.status !== 'done')) return
     pendingChoresApi.setPendingChoreStatus(choreReqId, 'approved')
     childrenApi.addStars(req.childId, req.amount)
     addTransaction(req.childId, {
@@ -317,6 +321,7 @@ export function AppProvider({ children: reactChildren }) {
       setTimeout(() => setCoinInFlight(null), durationMs)
     },
     pendingChores: pendingChoresApi.pendingChores,
+    addAssignedChore,
     approvePendingChore,
     rejectPendingChore,
     getChildLearning:       learningApi.getChildLearning,

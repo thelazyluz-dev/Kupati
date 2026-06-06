@@ -1,10 +1,122 @@
 import { useState, useEffect, useRef } from 'react'
 import { get, remove } from '../lib/storage.js'
 import { fetchFamilyData, subscribeFamilyData, pushFamilyData } from '../lib/childSync.js'
-import { generateId, formatNumber, getGoals, getGoalProgress, getLevel } from '../lib/utils.js'
+import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected } from '../lib/notifications.js'
+
+const GRAPH_PERIODS = [
+  { days: 30,  label: 'חודש'    },
+  { days: 180, label: 'חצי שנה' },
+  { days: 365, label: 'שנה'     },
+]
+
+function samplePoints(pts, maxN) {
+  if (pts.length <= maxN) return pts
+  return Array.from({ length: maxN }, (_, i) =>
+    pts[Math.round(i * (pts.length - 1) / (maxN - 1))]
+  )
+}
+
+function fmtGraphLabel(date, days) {
+  if (days <= 30) return `${date.getDate()}/${date.getMonth() + 1}`
+  return new Intl.DateTimeFormat('he', { month: 'short' }).format(date)
+}
+
+function BalanceGraph({ transactions, currentBalance }) {
+  const [days, setDays] = useState(30)
+
+  const allPoints = buildBalanceHistory(transactions, currentBalance, days)
+  const points    = samplePoints(allPoints, 30)
+  const maxBal    = Math.max(...points.map(p => p.balance))
+  if (maxBal === 0) return null
+
+  const W = 300, H = 72
+  const PT = 8, PB = 22, PX_L = 34, PX_R = 4
+  const iW = W - PX_L - PX_R, iH = H - PT - PB
+  const minBal = Math.min(...points.map(p => p.balance))
+  const range  = Math.max(maxBal - minBal, 1)
+  const N      = points.length
+  const bottom = PT + iH
+
+  const px = i => (PX_L + (i / (N - 1)) * iW).toFixed(1)
+  const py = b  => (PT + iH - ((b - minBal) / range) * iH).toFixed(1)
+
+  const pts     = points.map((p, i) => `${px(i)},${py(p.balance)}`)
+  const lineStr = pts.join(' ')
+  const areaStr = `M${px(0)},${bottom} ${pts.map(pt => `L${pt}`).join(' ')} L${px(N-1)},${bottom} Z`
+
+  const last  = points[N - 1]
+  const first = points[0]
+  const diff  = last.balance - first.balance
+  const isUp  = diff >= 0
+
+  const gridLevels = range > 2
+    ? [maxBal, (maxBal + minBal) / 2, minBal]
+    : [maxBal]
+
+  return (
+    <div className="rounded-[22px] p-4"
+      style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <h3 className="font-black text-gray-800 text-sm">📈 יתרה</h3>
+          {diff !== 0 && (
+            <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${isUp ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-600'}`}>
+              {isUp ? '▲' : '▼'} {formatNumber(Math.abs(diff))}₪
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-0.5 p-0.5 rounded-xl"
+             style={{ background: 'rgba(243,244,246,0.9)', border: '1px solid rgba(229,231,235,0.6)' }}>
+          {GRAPH_PERIODS.map(p => (
+            <button key={p.days} onClick={() => setDays(p.days)}
+              className="text-[11px] font-bold px-2 py-1 rounded-[10px] transition-all duration-200 cursor-pointer"
+              style={days === p.days
+                ? { background: 'white', color: '#059669', boxShadow: '0 2px 6px rgba(0,0,0,0.1)' }
+                : { color: '#9ca3af' }}>
+              {p.label}
+            </button>
+          ))}
+        </div>
+      </div>
+      <svg key={days} viewBox={`0 0 ${W} ${H}`} className="w-full" style={{ height: H }}>
+        <defs>
+          <linearGradient id="balGradChild" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#10b981" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#10b981" stopOpacity="0.01" />
+          </linearGradient>
+        </defs>
+        {gridLevels.map((v, i) => (
+          <g key={i}>
+            <line x1={PX_L} y1={py(v)} x2={W - PX_R} y2={py(v)}
+                  stroke="rgba(148,163,184,0.22)" strokeWidth="1" strokeDasharray="4,3" />
+            <text x={PX_L - 3} y={py(v)} textAnchor="end" dominantBaseline="middle"
+                  fontSize="8" fill="#94a3b8">{Math.round(v)}₪</text>
+          </g>
+        ))}
+        <path d={areaStr} fill="url(#balGradChild)" />
+        <polyline points={lineStr} fill="none" stroke="#10b981" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+        <circle cx={px(0)} cy={py(first.balance)} r="3" fill="white" stroke="#10b981" strokeWidth="1.5" />
+        <text x={Number(px(0)) + 4} y={Number(py(first.balance)) - 5} textAnchor="start" fontSize="8" fill="#6b7280">
+          {Math.round(first.balance)}₪
+        </text>
+        <circle cx={px(N-1)} cy={py(last.balance)} r="3.5" fill="#10b981" stroke="white" strokeWidth="1.5" />
+        <text x={Number(px(N-1)) - 4} y={Number(py(last.balance)) - 6} textAnchor="end" fontSize="9" fill="#059669" fontWeight="bold">
+          {formatNumber(last.balance)}₪
+        </text>
+      </svg>
+      <div className="flex justify-between mt-1" style={{ paddingRight: PX_R, paddingLeft: PX_L }}>
+        {[0, Math.floor(N / 2), N - 1].map(i => (
+          <span key={i} className="text-[10px] text-gray-400 font-medium">
+            {i === N - 1 ? 'היום' : fmtGraphLabel(points[i].date, days)}
+          </span>
+        ))}
+      </div>
+    </div>
+  )
+}
 
 const TX_ICONS = {
   chore: '⭐', gift: '🎁', other: '💰', expense: '🛍️', allowance: '💰',
@@ -115,7 +227,9 @@ export default function ChildModeApp() {
     const myChores = pendingChores.filter((pc) => pc.childId === childId)
     myChores.forEach((pc) => {
       const prevPc = prev.find((p) => p.id === pc.id)
-      if (!prevPc || prevPc.status !== 'pending') return
+      if (!prevPc) return
+      const wasAwaitingApproval = prevPc.status === 'pending' || prevPc.status === 'done'
+      if (!wasAwaitingApproval) return
       if (pc.status === 'approved') {
         showHint(`✅ "${pc.choreName}" אושר! +${pc.amount}⭐`)
         sounds.approve()
@@ -130,6 +244,20 @@ export default function ChildModeApp() {
     })
     prevPendingRef.current = pendingChores
   }, [pendingChores, childId])
+
+  async function markAssignedDone(pc) {
+    sounds.send()
+    navigator.vibrate?.([20, 10, 30])
+    try {
+      const current = await fetchFamilyData(familyCode, 'pendingChores') || []
+      const updated = current.map((item) => item.id === pc.id ? { ...item, status: 'done' } : item)
+      await pushFamilyData(familyCode, 'pendingChores', updated)
+      setPendingChores(updated)
+      showHint('✅ סומן כהושלם — ממתין לאישור הורה')
+    } catch {
+      showHint('שגיאה בשליחה — נסה שוב')
+    }
+  }
 
   async function requestChore(chore) {
     setSubmitting(chore.id)
@@ -218,6 +346,7 @@ export default function ChildModeApp() {
   const firstGoal = goals[0] ?? null
   const choreList = chores?.length ? chores : DEFAULT_CHORES
   const myPending = pendingChores.filter((pc) => pc.childId === childId)
+  const myAssigned = myPending.filter((pc) => pc.source === 'parent' && pc.status === 'assigned')
   const recentTx  = transactions.slice(0, 8)
   const todayStart = Date.now() - 86400000
 
@@ -300,6 +429,36 @@ export default function ChildModeApp() {
           </div>
         )}
 
+        {/* Parent-assigned tasks */}
+        {myAssigned.length > 0 && (
+          <div className="rounded-[22px] p-4 space-y-2 animate-slide-up"
+            style={{ background: 'rgba(238,242,255,0.95)', border: '1.5px solid rgba(99,102,241,0.25)', boxShadow: '0 4px 16px rgba(99,102,241,0.12)' }}>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-base">📌</span>
+              <h3 className="text-sm font-black text-indigo-700">משימות מההורה</h3>
+              <span className="mr-auto text-xs font-black bg-indigo-500 text-white rounded-full px-2 py-0.5 animate-pop">
+                {myAssigned.length}
+              </span>
+            </div>
+            {myAssigned.map((pc) => (
+              <div key={pc.id} className="bg-white/70 rounded-2xl px-3 py-3 flex items-center gap-3">
+                <span className="text-xl flex-shrink-0">{pc.choreEmoji || '📌'}</span>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-bold text-gray-800 truncate">{pc.choreName}</p>
+                  <p className="text-xs text-amber-600 font-bold">+{pc.amount}⭐ אחרי אישור</p>
+                </div>
+                <button
+                  onClick={() => markAssignedDone(pc)}
+                  className="text-xs font-black text-white px-3 py-2 rounded-xl flex-shrink-0 active:scale-90 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}
+                >
+                  סיימתי! ✓
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         {/* Pending requests status */}
         {myPending.filter((pc) => pc.timestamp > todayStart).length > 0 && (
           <div className="rounded-[22px] p-4 space-y-2"
@@ -363,6 +522,9 @@ export default function ChildModeApp() {
             })}
           </div>
         </div>
+
+        {/* Balance graph */}
+        <BalanceGraph transactions={transactions} currentBalance={child.shekelBalance} />
 
         {/* Recent transactions */}
         <div className="rounded-[22px] p-4"
