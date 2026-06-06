@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 
+async function shareCode(code) {
+  const text = `קוד המשפחה שלנו בקופתי: ${code}\nפתח את האפליקציה ולחץ "כניסה כילד"`
+  if (navigator.share) {
+    try { await navigator.share({ text }) } catch {}
+    return 'shared'
+  }
+  try { await navigator.clipboard.writeText(code); return 'copied' } catch {}
+  return null
+}
+
 const STATUS_MAP = {
   idle:    { dot: 'bg-gray-300',                       label: 'כבוי'          },
   syncing: { dot: 'bg-yellow-400 animate-pulse',       label: 'מתחבר...'      },
@@ -15,6 +25,12 @@ export default function SyncSettings() {
 
   const [draft, setDraft]       = useState('')
   const [showCode, setShowCode] = useState(false)
+  const [shareMsg, setShareMsg] = useState('')
+
+  async function handleShare() {
+    const result = await shareCode(familyCode)
+    if (result === 'copied') { setShareMsg('הועתק!'); setTimeout(() => setShareMsg(''), 2000) }
+  }
 
   const st = STATUS_MAP[syncStatus] ?? STATUS_MAP.idle
 
@@ -56,8 +72,16 @@ export default function SyncSettings() {
             </button>
           </div>
           <p className="text-xs text-gray-400">
-            הזן את אותו הקוד בטלפון של אישתך כדי לסנכרן
+            הזן את אותו הקוד בכל המכשירים של ההורים — ובילדים שמשתמשים באפליקציית ילד
           </p>
+          <button
+            type="button"
+            onClick={handleShare}
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold text-indigo-600 active:scale-95 transition-all"
+            style={{ background: 'rgba(238,242,255,0.9)', border: '1.5px solid rgba(99,102,241,0.2)' }}
+          >
+            {shareMsg ? <><span>✅</span> {shareMsg}</> : <><span>📤</span> שלח קוד לילד</>}
+          </button>
           <button
             type="button"
             onClick={handleDisconnect}

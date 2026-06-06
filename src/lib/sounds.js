@@ -82,6 +82,21 @@ export const sounds = {
   // Subtle tap — UI feedback
   tap: () => beep({ freq: 440, duration: 0.05, gain: 0.12 }),
 
+  // "Send" whoosh — submitting a chore request
+  send: () => {
+    haptic([20, 10, 30])
+    beep({ freq: 587, type: 'triangle', duration: 0.12, gain: 0.22 })
+    beep({ freq: 880, type: 'triangle', duration: 0.22, delay: 0.11, gain: 0.18 })
+  },
+
+  // Approval chime — parent approves chore
+  approve: () => {
+    haptic([25, 10, 50])
+    beep({ freq: 659,  type: 'triangle', duration: 0.14, gain: 0.26 })
+    beep({ freq: 880,  type: 'triangle', duration: 0.18, delay: 0.13, gain: 0.24 })
+    beep({ freq: 1320, type: 'triangle', duration: 0.30, delay: 0.28, gain: 0.22 })
+  },
+
   // Error buzz
   error: () => {
     haptic([80])

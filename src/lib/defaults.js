@@ -18,6 +18,14 @@ export const DEFAULT_SETTINGS = {
   pin: '',
   familyCode: '',
   wheelSpinCost: 70,
+  notify: {
+    choreRequest:   true,
+    choreCompleted: true,
+    moneyAdded:     false,
+    penalty:        true,
+    allowance:      true,
+    weeklySummary:  true,
+  },
 }
 
 export const DEFAULT_PRIZES = [

@@ -251,28 +251,33 @@ function WheelPrizeManager() {
   )
 }
 
+const NOTIFY_EVENTS = [
+  { key: 'choreRequest',   icon: '📝', label: 'בקשת מטלה מילד',    desc: 'כשילד מבקש אישור מטלה' },
+  { key: 'choreCompleted', icon: '⭐', label: 'מטלה הושלמה',       desc: 'כשמסמנים מטלה ידנית' },
+  { key: 'moneyAdded',     icon: '💵', label: 'הפקדת כסף',         desc: 'כשמפקידים כסף לילד' },
+  { key: 'penalty',        icon: '⚡', label: 'קנס יומי',           desc: 'כשנוצר קנס על מטלה שלא בוצעה' },
+  { key: 'allowance',      icon: '💰', label: 'קצבה שבועית/חודשית', desc: 'כשמופקדת קצבה אוטומטית' },
+  { key: 'weeklySummary',  icon: '📊', label: 'סיכום שבועי',        desc: 'סיכום פעילות כל יום שישי' },
+]
+
 function NotificationSettings() {
-  const [permission, setPermission] = useState(getPermission)
+  const { settings, updateSettings } = useApp()
+  const [permission, setPermission]  = useState(getPermission)
+
+  const notifyPrefs = settings.notify ?? {}
 
   async function handleRequest() {
     const result = await requestPermission()
     setPermission(result)
   }
 
-  if (permission === 'unsupported') {
-    return <p className="text-xs text-gray-400 text-center">הדפדפן לא תומך בהתראות</p>
+  function togglePref(key) {
+    const current = notifyPrefs[key] !== false // default true
+    updateSettings({ notify: { ...notifyPrefs, [key]: !current } })
   }
 
-  if (permission === 'granted') {
-    return (
-      <div className="flex items-center gap-2.5 text-green-700">
-        <span className="text-xl">✅</span>
-        <div>
-          <p className="text-sm font-bold">התראות מופעלות</p>
-          <p className="text-xs text-gray-400">מטלות, קנסות וקצבות</p>
-        </div>
-      </div>
-    )
+  if (permission === 'unsupported') {
+    return <p className="text-xs text-gray-400 text-center">הדפדפן לא תומך בהתראות</p>
   }
 
   if (permission === 'denied') {
@@ -284,14 +289,48 @@ function NotificationSettings() {
     )
   }
 
+  if (permission !== 'granted') {
+    return (
+      <div className="space-y-2">
+        <Button variant="secondary" fullWidth onClick={handleRequest}>
+          🔔 אפשר התראות
+        </Button>
+        <p className="text-xs text-gray-400 text-center">
+          קבלו התראות על מטלות, כסף, קנסות ועוד
+        </p>
+      </div>
+    )
+  }
+
   return (
-    <div className="space-y-2">
-      <Button variant="secondary" fullWidth onClick={handleRequest}>
-        🔔 אפשר התראות
-      </Button>
-      <p className="text-xs text-gray-400 text-center">
-        כשמסמנים מטלה, כשנוצר קנס יומי, וכשקצבה מופקדת
-      </p>
+    <div className="space-y-1">
+      <div className="flex items-center gap-1.5 mb-3">
+        <span className="text-sm">✅</span>
+        <span className="text-xs font-semibold text-green-700">התראות מופעלות</span>
+      </div>
+      {NOTIFY_EVENTS.map(({ key, icon, label, desc }) => {
+        const enabled = notifyPrefs[key] !== false
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => togglePref(key)}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-2xl active:scale-98 transition-all"
+            style={{ background: enabled ? 'rgba(238,242,255,0.7)' : 'rgba(249,250,251,0.7)' }}
+          >
+            <span className="text-lg flex-shrink-0">{icon}</span>
+            <div className="flex-1 text-right min-w-0">
+              <p className="text-sm font-semibold text-gray-700">{label}</p>
+              <p className="text-[11px] text-gray-400 truncate">{desc}</p>
+            </div>
+            <div className="flex-shrink-0 w-10 h-6 rounded-full transition-all duration-200 relative"
+              style={{ background: enabled ? '#6366f1' : '#d1d5db' }}>
+              <div className="absolute top-0.5 w-5 h-5 bg-white rounded-full shadow-sm transition-all duration-200"
+                style={{ right: enabled ? 2 : 'auto', left: enabled ? 'auto' : 2 }} />
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }

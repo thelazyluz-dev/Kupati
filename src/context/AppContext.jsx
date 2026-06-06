@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useRef } from 'react'
+import { createContext, useContext, useState, useRef, useEffect } from 'react'
 import { useChildren } from '../hooks/useChildren.js'
 import { useChores } from '../hooks/useChores.js'
 import { useSettings } from '../hooks/useSettings.js'
@@ -11,7 +11,7 @@ import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
 import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
-import { notifyChore } from '../lib/notifications.js'
+import { notifyChore, notifyChoreRequest } from '../lib/notifications.js'
 import { calculateStreak } from '../lib/utils.js'
 
 const AppContext = createContext(null)
@@ -255,6 +255,22 @@ export function AppProvider({ children: reactChildren }) {
   function undoRepayLoan(childId, loanId) {
     childrenApi.undoRepayLoan(childId, loanId)
   }
+
+  // Notify parent when a new chore request arrives (via Firestore sync)
+  const prevPendingRef = useRef(null)
+  useEffect(() => {
+    const current = pendingChoresApi.pendingChores
+    if (prevPendingRef.current === null) { prevPendingRef.current = current; return }
+    const prev = prevPendingRef.current
+    const newReqs = current.filter(
+      (pc) => pc.status === 'pending' && !prev.find((p) => p.id === pc.id)
+    )
+    newReqs.forEach((pc) => {
+      const child = childrenApi.children.find((c) => c.id === pc.childId)
+      if (child) notifyChoreRequest(child.name, `${pc.choreEmoji || ''} ${pc.choreName}`.trim())
+    })
+    prevPendingRef.current = current
+  }, [pendingChoresApi.pendingChores]) // eslint-disable-line
 
   function approvePendingChore(choreReqId) {
     const req = pendingChoresApi.pendingChores.find((pc) => pc.id === choreReqId)

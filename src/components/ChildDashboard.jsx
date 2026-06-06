@@ -262,6 +262,61 @@ function BalanceGraph({ transactions, currentBalance }) {
   )
 }
 
+function PendingChoresCard({ requests, onApprove, onReject }) {
+  const [confirmReject, setConfirmReject] = useState(null)
+
+  useEffect(() => {
+    if (!confirmReject) return
+    const t = setTimeout(() => setConfirmReject(null), 3000)
+    return () => clearTimeout(t)
+  }, [confirmReject])
+
+  return (
+    <div className="rounded-[22px] p-4 space-y-3 animate-slide-up"
+      style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 4px 16px rgba(245,158,11,0.12), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
+      <div className="flex items-center gap-2">
+        <span className="text-base">📝</span>
+        <p className="text-sm font-black text-amber-800">בקשות מטלה מהילד</p>
+        <span className="mr-auto text-xs font-black bg-amber-500 text-white rounded-full px-2 py-0.5 animate-pop">
+          {requests.length}
+        </span>
+      </div>
+      {requests.map((req) => (
+        <div key={req.id} className="bg-white/70 rounded-2xl px-3 py-3 space-y-2.5">
+          <div className="flex items-center gap-2">
+            <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-800 truncate">{req.choreName}</p>
+              <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <button
+              onClick={() => onApprove(req.id)}
+              className="flex-1 py-2 rounded-xl text-sm font-black text-white active:scale-95 transition-all"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}>
+              ✅ אשר
+            </button>
+            {confirmReject === req.id ? (
+              <button
+                onClick={() => { onReject(req.id); setConfirmReject(null) }}
+                className="flex-1 py-2 rounded-xl text-sm font-black text-white bg-rose-500 active:scale-95 transition-all animate-pulse">
+                בטוח? ✗
+              </button>
+            ) : (
+              <button
+                onClick={() => setConfirmReject(req.id)}
+                className="px-4 py-2 rounded-xl text-sm font-bold text-rose-500 bg-rose-50 border-2 border-rose-200 active:scale-95 transition-all">
+                ❌ דחה
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function StarIconCloud({ count }) {
   const n = Math.min(Math.round(count), 50)
   return <IconCloud icons={Array.from({ length: n }, () => '⭐')} />
@@ -636,38 +691,11 @@ export default function ChildDashboard({ childId }) {
           const myPending = (pendingChores || []).filter((pc) => pc.childId === childId && pc.status === 'pending')
           if (myPending.length === 0) return null
           return (
-            <div className="rounded-[22px] p-4 space-y-3 animate-slide-up"
-              style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 4px 16px rgba(245,158,11,0.12), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
-              <div className="flex items-center gap-2">
-                <span className="text-base">📝</span>
-                <p className="text-sm font-black text-amber-800">בקשות מטלה מהילד</p>
-                <span className="mr-auto text-xs font-black bg-amber-500 text-white rounded-full px-2 py-0.5">{myPending.length}</span>
-              </div>
-              {myPending.map((req) => (
-                <div key={req.id} className="flex items-center justify-between gap-2 bg-white/60 rounded-2xl px-3 py-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-700 truncate">{req.choreName}</p>
-                      <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
-                    </div>
-                  </div>
-                  <div className="flex gap-1.5 flex-shrink-0">
-                    <button
-                      onClick={() => approvePendingChore(req.id)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-black text-white active:scale-90 transition-all"
-                      style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}>
-                      ✓ אשר
-                    </button>
-                    <button
-                      onClick={() => rejectPendingChore(req.id)}
-                      className="px-3 py-1.5 rounded-xl text-xs font-bold text-rose-600 bg-rose-50 border border-rose-200 active:scale-90 transition-all">
-                      ✗
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <PendingChoresCard
+              requests={myPending}
+              onApprove={(id) => { sounds.approve(); approvePendingChore(id) }}
+              onReject={rejectPendingChore}
+            />
           )
         })()}
 

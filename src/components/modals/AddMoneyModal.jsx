@@ -3,6 +3,7 @@ import { useApp } from '../../context/AppContext.jsx'
 import { celebrateGoal, celebrateSmall, celebrateMoney } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
 import { getGoalProgress, getGoals, formatNumber } from '../../lib/utils.js'
+import { notifyMoneyAdded } from '../../lib/notifications.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
@@ -30,6 +31,7 @@ export default function AddMoneyModal() {
 
     addMoney(childId, shekels)
     addTransaction(childId, { type, amount: shekels, currency: 'shekels', description: desc, note })
+    notifyMoneyAdded(child.name, shekels)
 
     if (getGoals(child).length > 0) {
       const updatedChild = { ...child, shekelBalance: child.shekelBalance + shekels }
