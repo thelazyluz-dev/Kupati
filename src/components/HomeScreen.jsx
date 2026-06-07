@@ -812,12 +812,6 @@ export default function HomeScreen() {
               style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
               ⚙️
             </button>
-            {totalPending > 0 && (
-              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black text-white rounded-full px-1 animate-pop"
-                    style={{ background: 'linear-gradient(135deg,#f59e0b,#f97316)', boxShadow: '0 2px 6px rgba(245,158,11,0.5)' }}>
-                {totalPending}
-              </span>
-            )}
           </div>
           {children.length > 0 && (
             <button onClick={() => setShowLottery(true)} aria-label="הגרלה"
@@ -832,10 +826,10 @@ export default function HomeScreen() {
               style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
               🔔
             </button>
-            {unreadActivityCount > 0 && (
+            {(unreadActivityCount + totalPending) > 0 && (
               <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black text-white rounded-full px-1 animate-pop"
-                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 6px rgba(99,102,241,0.5)' }}>
-                {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
+                    style={{ background: 'linear-gradient(135deg,#f59e0b,#f97316)', boxShadow: '0 2px 6px rgba(245,158,11,0.5)' }}>
+                {(unreadActivityCount + totalPending) > 9 ? '9+' : (unreadActivityCount + totalPending)}
               </span>
             )}
           </div>

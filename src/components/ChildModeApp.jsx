@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { get, remove } from '../lib/storage.js'
 import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity } from '../lib/childSync.js'
 import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
-import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected } from '../lib/notifications.js'
@@ -753,6 +753,299 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
   )
 }
 
+// ─── Prizes Modal (child requests a prize → parent approves) ─────────────────
+
+function ChildPrizesModal({ child, familyCode, childId, settings, pendingChores, onClose, showHint }) {
+  const [confirming, setConfirming] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const prizes = settings?.prizes?.length ? settings.prizes : DEFAULT_PRIZES
+  const myPendingPrizes = (pendingChores || []).filter(
+    (pc) => pc.childId === childId && pc.type === 'prize' && pc.status === 'pending'
+  )
+
+  async function handleRequest(prize) {
+    if (child.starBalance < prize.starCost) return
+    if (!confirming) { setConfirming(prize); return }
+    setBusy(true)
+    try {
+      const current = await fetchFamilyData(familyCode, 'pendingChores') || []
+      const newReq = {
+        id: generateId(),
+        childId,
+        choreId: prize.id,
+        choreName: prize.name,
+        choreEmoji: prize.emoji,
+        amount: prize.starCost,
+        currency: 'stars',
+        source: 'child',
+        type: 'prize',
+        prizeId: prize.id,
+        timestamp: Date.now(),
+        status: 'pending',
+      }
+      await pushFamilyData(familyCode, 'pendingChores', [...current, newReq])
+      await appendChildActivity(familyCode, {
+        id: generateId(), childId, childName: child.name, type: 'prize_redeem',
+        description: `${child.name} מבקש לממש פרס: ${prize.emoji} ${prize.name}`,
+        amount: prize.starCost, currency: 'stars', timestamp: Date.now(),
+      })
+      showHint(`🎁 בקשה נשלחה להורה לאישור!`)
+      setConfirming(null)
+      onClose()
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      style={{ background: 'linear-gradient(160deg,#faf5ff,#ede9fe)' }}>
+      <div className="flex items-center justify-between px-5 pt-10 pb-4 flex-shrink-0">
+        <h1 className="text-xl font-black text-purple-900">🎁 מימוש פרס</h1>
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center text-xl font-bold text-purple-700 active:scale-90">×</button>
+      </div>
+
+      <div className="flex-1 px-4 pb-8 space-y-4">
+        {/* Star balance */}
+        <div className="rounded-2xl py-3 text-center" style={{ background: 'rgba(255,255,255,0.85)' }}>
+          <span className="text-3xl font-black text-amber-600">{formatNumber(child.starBalance)}⭐</span>
+          <p className="text-xs text-amber-500 mt-0.5">יתרת כוכבים</p>
+        </div>
+
+        {/* Pending prize requests */}
+        {myPendingPrizes.length > 0 && (
+          <div className="rounded-2xl p-4 space-y-2" style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.25)' }}>
+            <p className="text-xs font-black text-amber-600">⏳ ממתינות לאישור</p>
+            {myPendingPrizes.map((req) => (
+              <div key={req.id} className="flex items-center gap-2 bg-white/70 rounded-xl px-3 py-2">
+                <span className="text-xl">{req.choreEmoji}</span>
+                <span className="text-sm font-semibold text-gray-700 flex-1">{req.choreName}</span>
+                <span className="text-xs text-amber-600 font-bold">{req.amount}⭐</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Confirm step */}
+        {confirming ? (
+          <div className="rounded-2xl p-5 text-center space-y-3" style={{ background: 'rgba(255,255,255,0.95)' }}>
+            <div className="text-6xl">{confirming.emoji}</div>
+            <p className="font-black text-gray-800 text-lg">{confirming.name}</p>
+            <p className="text-purple-600 font-bold">-{confirming.starCost}⭐ · ממתין לאישור הורה</p>
+            <p className="text-sm text-gray-500">ההורה יראה את הבקשה ויאשר</p>
+            <div className="flex gap-2">
+              <button onClick={() => handleRequest(confirming)} disabled={busy}
+                className="flex-1 py-3 rounded-2xl font-black text-white active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)' }}>
+                {busy ? '...' : '✅ שלח בקשה'}
+              </button>
+              <button onClick={() => setConfirming(null)}
+                className="flex-1 py-3 rounded-2xl font-bold text-gray-600 bg-gray-100 active:scale-95">ביטול</button>
+            </div>
+          </div>
+        ) : (
+          /* Prize grid */
+          <div className="grid grid-cols-2 gap-3">
+            {prizes.map((prize) => {
+              const canAfford = child.starBalance >= prize.starCost
+              const alreadyPending = myPendingPrizes.some((r) => r.prizeId === prize.id)
+              return (
+                <button key={prize.id} onClick={() => !alreadyPending && handleRequest(prize)}
+                  disabled={alreadyPending}
+                  className={`flex flex-col items-center gap-2 p-4 rounded-2xl border-2 text-center transition-all active:scale-95 ${
+                    alreadyPending ? 'bg-amber-50 border-amber-200 opacity-70' :
+                    canAfford ? 'bg-white border-purple-200 hover:border-purple-400' : 'bg-gray-50 border-gray-200 opacity-60'
+                  }`}>
+                  <span className="text-4xl">{prize.emoji}</span>
+                  <p className="font-bold text-gray-800 text-xs leading-tight">{prize.name}</p>
+                  <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${canAfford ? 'bg-purple-100 text-purple-700' : 'bg-gray-200 text-gray-500'}`}>
+                    {prize.starCost}⭐
+                  </span>
+                  <div className="w-full">
+                    <div className="w-full bg-gray-200 rounded-full h-1.5">
+                      <div className={`h-1.5 rounded-full ${canAfford ? 'bg-purple-500' : 'bg-amber-400'}`}
+                        style={{ width: `${Math.min(100, (child.starBalance / prize.starCost) * 100)}%` }} />
+                    </div>
+                    <p className={`text-[10px] mt-0.5 font-semibold ${canAfford ? 'text-purple-600' : 'text-gray-400'}`}>
+                      {alreadyPending ? '⏳ ממתין לאישור' : canAfford ? '✅ יש מספיק!' : `חסרים ${prize.starCost - child.starBalance}⭐`}
+                    </p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Goals Modal (child sets own savings goal) ────────────────────────────────
+
+function ChildGoalsModal({ child, familyCode, childId, onClose, onUpdate, showHint }) {
+  const [editing, setEditing] = useState(null)  // 'new' | goalId
+  const [emoji, setEmoji] = useState('🎯')
+  const [name, setName] = useState('')
+  const [target, setTarget] = useState('')
+  const [busy, setBusy] = useState(false)
+
+  const goals = Array.isArray(child.goals) ? child.goals
+    : child.goal ? [child.goal] : []
+  const parsedTarget = parseFloat(target) || 0
+
+  function startNew() { setEditing('new'); setEmoji('🎯'); setName(''); setTarget('') }
+  function startEdit(g) { setEditing(g.id); setEmoji(g.emoji || '🎯'); setName(g.name); setTarget(String(g.targetAmount)) }
+  function cancelEdit() { setEditing(null) }
+
+  async function handleSave() {
+    if (!name.trim() || parsedTarget <= 0) return
+    setBusy(true)
+    try {
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      const myChild = freshChildren.find((c) => c.id === childId)
+      if (!myChild) return
+      const existingGoals = Array.isArray(myChild.goals) ? myChild.goals : myChild.goal ? [myChild.goal] : []
+      let newGoals
+      if (editing === 'new') {
+        newGoals = [...existingGoals, { id: generateId(), emoji, name: name.trim(), targetAmount: parsedTarget, goalImage: null }]
+      } else {
+        newGoals = existingGoals.map((g) => g.id === editing ? { ...g, emoji, name: name.trim(), targetAmount: parsedTarget } : g)
+      }
+      const newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, goals: newGoals })
+      await pushFamilyData(familyCode, 'children', newChildren)
+      onUpdate(newChildren, null)
+      showHint(editing === 'new' ? '🎯 מטרה נוספה!' : '🎯 מטרה עודכנה!')
+      setEditing(null)
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  async function handleDelete(goalId) {
+    setBusy(goalId)
+    try {
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      const myChild = freshChildren.find((c) => c.id === childId)
+      if (!myChild) return
+      const existingGoals = Array.isArray(myChild.goals) ? myChild.goals : []
+      const newGoals = existingGoals.filter((g) => g.id !== goalId)
+      const newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, goals: newGoals })
+      await pushFamilyData(familyCode, 'children', newChildren)
+      onUpdate(newChildren, null)
+      showHint('🗑️ מטרה נמחקה')
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(null)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      style={{ background: 'linear-gradient(160deg,#eef2ff,#f5f3ff)' }}>
+      <div className="flex items-center justify-between px-5 pt-10 pb-4 flex-shrink-0">
+        <h1 className="text-xl font-black text-indigo-900">🎯 המטרות שלי</h1>
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center text-xl font-bold text-indigo-700 active:scale-90">×</button>
+      </div>
+
+      <div className="flex-1 px-4 pb-8 space-y-3">
+        {/* Existing goals */}
+        {goals.length === 0 && editing !== 'new' && (
+          <div className="text-center py-8">
+            <div className="text-5xl mb-3">🎯</div>
+            <p className="text-gray-500 font-semibold">אין מטרות עדיין</p>
+            <p className="text-gray-400 text-sm mt-1">הוסף את המטרה הראשונה שלך!</p>
+          </div>
+        )}
+
+        {goals.map((goal) => {
+          const pct = Math.min(1, child.shekelBalance / goal.targetAmount)
+          if (editing === goal.id) {
+            return (
+              <GoalEditForm key={goal.id} emoji={emoji} name={name} target={target} parsedTarget={parsedTarget}
+                setEmoji={setEmoji} setName={setName} setTarget={setTarget}
+                onSave={handleSave} onCancel={cancelEdit} busy={busy} />
+            )
+          }
+          return (
+            <div key={goal.id} className="rounded-2xl p-4"
+              style={{ background: 'rgba(255,255,255,0.9)', border: '1.5px solid rgba(99,102,241,0.2)' }}>
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-2xl">{goal.goalImage
+                  ? <img src={goal.goalImage} alt="" className="w-8 h-8 rounded-xl object-cover" />
+                  : goal.emoji || '🎯'}</span>
+                <span className="font-black text-gray-800 flex-1">{goal.name}</span>
+                <span className="text-sm font-bold text-gray-500">{formatNumber(goal.targetAmount)}₪</span>
+              </div>
+              <div className="w-full bg-gray-100 rounded-full h-2.5 mb-1 overflow-hidden">
+                <div className="h-full rounded-full transition-all duration-700"
+                  style={{ width: `${pct * 100}%`, background: 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
+              </div>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-gray-500">
+                  {pct >= 1 ? '🎉 הגעת למטרה!' : `${Math.round(pct * 100)}% — עוד ${formatNumber(Math.max(0, goal.targetAmount - child.shekelBalance))}₪`}
+                </p>
+                <div className="flex gap-1">
+                  <button onClick={() => startEdit(goal)} className="text-xs text-gray-400 px-2 py-1 rounded-lg bg-gray-50 active:scale-90">✏️</button>
+                  <button onClick={() => handleDelete(goal.id)} disabled={busy === goal.id}
+                    className="text-xs text-rose-400 px-2 py-1 rounded-lg bg-rose-50 active:scale-90 disabled:opacity-50">
+                    {busy === goal.id ? '...' : '🗑️'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        })}
+
+        {/* Add new goal form */}
+        {editing === 'new' ? (
+          <GoalEditForm emoji={emoji} name={name} target={target} parsedTarget={parsedTarget}
+            setEmoji={setEmoji} setName={setName} setTarget={setTarget}
+            onSave={handleSave} onCancel={cancelEdit} busy={busy} />
+        ) : (
+          <button onClick={startNew}
+            className="w-full py-4 rounded-2xl border-2 border-dashed border-indigo-300 text-indigo-500 font-black text-sm active:scale-95 transition-all"
+            style={{ background: 'rgba(238,242,255,0.6)' }}>
+            ➕ הוסף מטרה חדשה
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function GoalEditForm({ emoji, name, target, parsedTarget, setEmoji, setName, setTarget, onSave, onCancel, busy }) {
+  return (
+    <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.95)', border: '2px solid rgba(99,102,241,0.3)' }}>
+      {/* Emoji picker */}
+      <div>
+        <p className="text-xs font-bold text-gray-500 mb-2">אמוג׳י</p>
+        <div className="flex flex-wrap gap-2">
+          {GOAL_EMOJIS.slice(0, 12).map((e) => (
+            <button key={e} type="button" onClick={() => setEmoji(e)}
+              className={`text-2xl p-1.5 rounded-xl transition-all active:scale-90 ${emoji === e ? 'bg-indigo-100 ring-2 ring-indigo-400' : 'bg-gray-50'}`}>
+              {e}
+            </button>
+          ))}
+        </div>
+      </div>
+      <input type="text" value={name} onChange={(e) => setName(e.target.value)}
+        placeholder="מה אתה חוסך? (אייפד, אופניים...)"
+        className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-base focus:border-indigo-400 focus:outline-none"
+        dir="rtl" />
+      <input type="number" min="1" step="1" value={target} onChange={(e) => setTarget(e.target.value)}
+        placeholder="יעד בשקלים (₪)"
+        className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-xl font-bold focus:border-indigo-400 focus:outline-none text-center"
+        dir="ltr" />
+      <div className="flex gap-2">
+        <button onClick={onSave} disabled={!name.trim() || parsedTarget <= 0 || busy}
+          className="flex-1 py-3 rounded-2xl font-black text-white text-sm active:scale-95 disabled:opacity-40"
+          style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+          {busy ? '...' : '💾 שמור'}
+        </button>
+        <button onClick={onCancel}
+          className="flex-1 py-3 rounded-2xl font-bold text-gray-600 bg-gray-100 text-sm active:scale-95">ביטול</button>
+      </div>
+    </div>
+  )
+}
+
 export default function ChildModeApp() {
   const childMode = get('childMode')
   const { familyCode, childId } = childMode || {}
@@ -770,6 +1063,8 @@ export default function ChildModeApp() {
   const [showSavings,  setShowSavings]  = useState(false)
   const [showTransfer, setShowTransfer] = useState(false)
   const [showWheel,    setShowWheel]    = useState(false)
+  const [showPrizes,   setShowPrizes]   = useState(false)
+  const [showGoals,    setShowGoals]    = useState(false)
 
   const prevPendingRef = useRef(null)
 
@@ -970,6 +1265,8 @@ export default function ChildModeApp() {
       {showSavings  && <ChildSavingsModal  {...commonProps} onClose={() => setShowSavings(false)} />}
       {showTransfer && <ChildTransferModal {...commonProps} siblings={siblings} onClose={() => setShowTransfer(false)} />}
       {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
+      {showPrizes   && <ChildPrizesModal   {...commonProps} settings={settings} pendingChores={pendingChores} onClose={() => setShowPrizes(false)} />}
+      {showGoals    && <ChildGoalsModal    {...commonProps} onClose={() => setShowGoals(false)} />}
 
       {hint && <HintBanner text={hint} />}
 
@@ -1023,11 +1320,13 @@ export default function ChildModeApp() {
         <div className="grid grid-cols-3 gap-2">
           {[
             { icon: '🏦', label: 'חסכון',  onClick: () => setShowSavings(true),  bg: 'linear-gradient(135deg,#38bdf8,#14b8a6)' },
+            { icon: '🎯', label: 'מטרה',   onClick: () => setShowGoals(true),    bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
             { icon: '💸', label: 'העברה',  onClick: () => setShowTransfer(true), bg: 'linear-gradient(135deg,#818cf8,#a855f7)', disabled: siblings.length === 0 },
+            { icon: '🎁', label: 'פרסים',  onClick: () => setShowPrizes(true),   bg: 'linear-gradient(135deg,#a855f7,#7c3aed)' },
             { icon: '🎰', label: 'גלגל',   onClick: () => setShowWheel(true),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)' },
           ].map(({ icon, label, onClick, bg, disabled }) => (
             <button key={label} onClick={onClick} disabled={disabled}
-              className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}
+              className={`flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}
               style={{ background: bg, boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
               <span className="text-2xl">{icon}</span>
               <span className="text-xs font-black">{label}</span>
@@ -1061,27 +1360,41 @@ export default function ChildModeApp() {
           </div>
         )}
 
-        {/* Goal progress */}
-        {firstGoal && (
-          <div className="rounded-[22px] p-4"
+        {/* Goals progress */}
+        {goals.length > 0 ? (
+          <div className="rounded-[22px] p-4 space-y-2"
             style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-bold text-gray-700">{firstGoal.emoji || '🎯'} {firstGoal.name}</span>
-              <span className="text-xs font-bold text-gray-500">
-                {formatNumber(child.shekelBalance)}₪ / {formatNumber(firstGoal.targetAmount)}₪
-              </span>
+            <div className="flex items-center justify-between mb-1">
+              <h3 className="font-black text-gray-800 text-sm">🎯 המטרות שלי</h3>
+              <button onClick={() => setShowGoals(true)} className="text-xs font-bold text-indigo-400">ערוך ›</button>
             </div>
-            <div className="w-full rounded-full overflow-hidden" style={{ height: 10, background: 'rgba(0,0,0,0.08)' }}>
-              <div className="h-full rounded-full transition-all duration-700"
-                style={{
-                  width: `${Math.min(100, Math.round(getGoalProgress(child, settings, firstGoal) * 100))}%`,
-                  background: 'linear-gradient(90deg,#6366f1,#8b5cf6)',
-                }} />
-            </div>
-            <p className="text-xs text-gray-400 mt-1.5 text-center">
-              {Math.round(getGoalProgress(child, settings, firstGoal) * 100)}% מהמטרה
-            </p>
+            {goals.map((goal) => {
+              const pct = Math.min(1, getGoalProgress(child, settings, goal))
+              return (
+                <div key={goal.id}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-xs font-bold text-gray-700">{goal.emoji || '🎯'} {goal.name}</span>
+                    <span className="text-xs text-gray-400">{Math.round(pct * 100)}%</span>
+                  </div>
+                  <div className="w-full rounded-full overflow-hidden" style={{ height: 8, background: 'rgba(0,0,0,0.07)' }}>
+                    <div className="h-full rounded-full transition-all duration-700"
+                      style={{ width: `${pct * 100}%`, background: pct >= 1 ? 'linear-gradient(90deg,#f59e0b,#f97316)' : 'linear-gradient(90deg,#6366f1,#8b5cf6)' }} />
+                  </div>
+                  {pct >= 1 && <p className="text-xs text-amber-600 font-bold mt-0.5 text-center">🎉 הגעת!</p>}
+                </div>
+              )
+            })}
           </div>
+        ) : (
+          <button onClick={() => setShowGoals(true)}
+            className="w-full rounded-[22px] px-4 py-3 flex items-center gap-3 active:scale-95 transition-all"
+            style={{ background: 'rgba(255,255,255,0.7)', border: '2px dashed rgba(99,102,241,0.25)' }}>
+            <span className="text-2xl">🎯</span>
+            <div className="text-right">
+              <p className="text-sm font-black text-indigo-600">הוסף מטרת חיסכון</p>
+              <p className="text-xs text-gray-400">מה תרצה לחסוך?</p>
+            </div>
+          </button>
         )}
 
         {/* Parent-assigned tasks */}

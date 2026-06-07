@@ -308,6 +308,23 @@ export function AppProvider({ children: reactChildren }) {
     })
   }
 
+  function approvePendingPrize(prizeReqId) {
+    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === prizeReqId)
+    if (!req || req.type !== 'prize' || req.status !== 'pending') return
+    pendingChoresApi.setPendingChoreStatus(prizeReqId, 'approved')
+    childrenApi.adjustStars(req.childId, -req.amount)
+    addTransaction(req.childId, {
+      type: 'prize_redeem',
+      amount: req.amount,
+      currency: 'stars',
+      description: `${req.choreEmoji || '🎁'} ${req.choreName}`,
+    })
+  }
+
+  function rejectPendingPrize(prizeReqId) {
+    pendingChoresApi.setPendingChoreStatus(prizeReqId, 'rejected')
+  }
+
   function rejectPendingChore(choreReqId) {
     pendingChoresApi.setPendingChoreStatus(choreReqId, 'rejected')
   }
@@ -342,6 +359,8 @@ export function AppProvider({ children: reactChildren }) {
     addAssignedChore,
     approvePendingChore,
     rejectPendingChore,
+    approvePendingPrize,
+    rejectPendingPrize,
     getChildLearning:       learningApi.getChildLearning,
     startLearningSession:   learningApi.startSession,
     answerLearningQuestion: learningApi.answerQuestion,
