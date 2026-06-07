@@ -181,6 +181,13 @@ function HistoryEntry({ entry }) {
 export default function LotteryScreen({ onClose }) {
   const { children } = useApp()
   const [history, setHistory] = useLocalStorage('lottery_history', [])
+  const [introSeen, setIntroSeen] = useLocalStorage('lottery_intro_seen', false)
+  const [showIntro, setShowIntro] = useState(!introSeen)
+
+  function dismissIntro() {
+    setIntroSeen(true)
+    setShowIntro(false)
+  }
 
   const [participants, setParticipants] = useState(() =>
     children.map((c, i) => ({
@@ -361,6 +368,85 @@ export default function LotteryScreen({ onClose }) {
   const cageSize  = CAGE_R * 2
   const outerSize = cageSize + OUTER_PAD * 2
 
+  if (showIntro) return (
+    <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center overflow-hidden"
+         style={{ background: 'linear-gradient(160deg, #040001 0%, #180004 45%, #020008 100%)' }}>
+      {/* Texture */}
+      <div className="absolute inset-0 pointer-events-none"
+           style={{ backgroundImage: 'repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0px, transparent 1px, transparent 10px, rgba(255,255,255,0.015) 11px), repeating-linear-gradient(-45deg, rgba(255,255,255,0.008) 0px, transparent 1px, transparent 10px, rgba(255,255,255,0.008) 11px)' }} />
+      {/* Floating suits */}
+      {SUITS.map((s, i) => (
+        <div key={i} className="absolute pointer-events-none font-black select-none"
+             style={{ color: s === '♥' || s === '♦' ? 'rgba(220,38,38,0.1)' : 'rgba(255,255,255,0.04)', fontSize: 80 + (i % 3) * 40, left: `${[5, 70, 15, 78][i]}%`, top: `${[10, 8, 65, 58][i]}%`, animation: `float ${4 + i * 0.7}s ease-in-out ${i * 0.9}s infinite`, transform: `rotate(${[-15, 10, 20, -8][i]}deg)` }}>{s}</div>
+      ))}
+
+      {/* Top border */}
+      <div className="absolute top-0 inset-x-0 h-0.5 pointer-events-none"
+           style={{ background: 'linear-gradient(90deg, transparent, rgba(251,191,36,0.8), rgba(255,50,50,0.6), rgba(251,191,36,0.8), transparent)' }} />
+
+      {/* Close button */}
+      <button onClick={onClose}
+        className="absolute top-10 right-5 w-9 h-9 rounded-full flex items-center justify-center font-bold text-lg active:scale-90 transition-all"
+        style={{ background: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.7)', border: '1px solid rgba(255,255,255,0.12)' }}>
+        ×
+      </button>
+
+      <div className="relative z-10 flex flex-col items-center px-8 max-w-sm w-full gap-5 text-center">
+        {/* Title */}
+        <div className="inline-block px-5 py-1.5 rounded-2xl mb-1"
+             style={{ border: '2px solid rgba(251,191,36,0.6)', animationName: 'neon-sign-glow', animationDuration: '2.5s', animationTimingFunction: 'ease-in-out', animationIterationCount: 'infinite' }}>
+          <h1 className="text-3xl font-black tracking-widest"
+              style={{ color: '#fbbf24', animationName: 'neon-flicker', animationDuration: '6s', animationTimingFunction: 'linear', animationIterationCount: 'infinite' }}>
+            🎰 הגרלה
+          </h1>
+        </div>
+
+        {/* Tagline */}
+        <p className="text-white/80 font-bold text-base leading-snug">
+          יש ויכוח? <span style={{ color: '#fbbf24' }}>תנו למזל להחליט!</span>
+        </p>
+
+        {/* Bulb strip */}
+        <BulbStrip count={14} size={8} gap={5} duration={1.5} />
+
+        {/* Use cases */}
+        <div className="w-full rounded-2xl p-4 space-y-3"
+             style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(251,191,36,0.15)' }}>
+          <p className="text-xs font-black tracking-widest text-yellow-400/70 uppercase mb-1">לדוגמה...</p>
+          {[
+            { emoji: '🚗', text: 'מי יושב קדימה?' },
+            { emoji: '🎮', text: 'מי ראשון על הפלייסטיישן / אקסבוקס?' },
+            { emoji: '📺', text: 'מה רואים הערב?' },
+            { emoji: '🛁', text: 'מי מתקלח ראשון?' },
+            { emoji: '🍕', text: 'מאיפה מזמינים אוכל?' },
+          ].map(({ emoji, text }) => (
+            <div key={text} className="flex items-center gap-3">
+              <span className="text-xl flex-shrink-0">{emoji}</span>
+              <span className="text-sm text-white/70 font-semibold text-right">{text}</span>
+            </div>
+          ))}
+        </div>
+
+        <p className="text-white/40 text-xs leading-relaxed">
+          כל המשתתפים נכנסים לגלגל — ואחד יוצא מנצח!<br/>
+          המערכת מאזנת ניצחונות קודמים כדי שכולם יזכו בצדק.
+        </p>
+
+        {/* CTA */}
+        <button onClick={dismissIntro}
+          className="w-full py-4 rounded-2xl font-black text-xl text-black active:scale-95 transition-all"
+          style={{
+            background: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 50%, #fbbf24 100%)',
+            backgroundSize: '200% 100%',
+            boxShadow: '0 4px 28px rgba(251,191,36,0.55)',
+            letterSpacing: '0.05em',
+          }}>
+          בואו נגריל! 🎲
+        </button>
+      </div>
+    </div>
+  )
+
   return (
     <div className="fixed inset-0 z-[60] flex flex-col overflow-hidden"
          style={{ background: 'linear-gradient(160deg, #040001 0%, #180004 45%, #020008 100%)' }}>
@@ -406,7 +492,7 @@ export default function LotteryScreen({ onClose }) {
         </button>
 
         <div className="text-center">
-          {/* Neon JACKPOT sign */}
+          {/* Neon title */}
           <div className="inline-block px-4 py-1 rounded-xl mb-0.5"
                style={{
                  border: '2px solid rgba(251,191,36,0.6)',
@@ -423,11 +509,11 @@ export default function LotteryScreen({ onClose }) {
                   animationTimingFunction: 'linear',
                   animationIterationCount: 'infinite',
                 }}>
-              🎰 JACKPOT
+              🎰 הגרלה
             </h1>
           </div>
           <p className="text-[10px] tracking-[0.35em] font-bold"
-             style={{ color: 'rgba(255,100,100,0.7)' }}>VEGAS · FAMILY · LOTTERY</p>
+             style={{ color: 'rgba(255,100,100,0.7)' }}>המזל יחליט · הגרלה משפחתית</p>
         </div>
 
         <button onClick={() => setShowHistory(v => !v)}
