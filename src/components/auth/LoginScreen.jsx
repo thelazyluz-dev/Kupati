@@ -37,7 +37,7 @@ export default function LoginScreen() {
       <div className="fixed inset-0 flex flex-col items-center justify-center overflow-hidden px-4"
         style={{ background: 'linear-gradient(160deg, #f0f4ff 0%, #fff7ed 55%, #f0fdf4 100%)' }}>
         <ChildLogin onBack={() => setChildMode(false)} />
-        <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
+        <p className="mt-2 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
       </div>
     )
   }
@@ -138,9 +138,8 @@ export default function LoginScreen() {
           <span className="text-base">👶</span>
           כניסה כילד
         </button>
+        <p className="text-[10px] text-gray-300 tracking-widest select-none">made by illouzman</p>
       </div>
-
-      <p className="absolute bottom-4 text-[10px] text-gray-400 tracking-widest select-none">made by illouzman</p>
     </div>
   )
 }
