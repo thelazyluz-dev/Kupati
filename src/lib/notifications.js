@@ -41,6 +41,9 @@ export const notifyChore = (childName, desc) =>
 export const notifyChoreRequest = (childName, choreName) =>
   notifyIfEnabled('choreRequest', `📝 בקשת מטלה — ${childName}`, choreName)
 
+export const notifyPrizeRequest = (childName, prizeName) =>
+  notifyIfEnabled('choreRequest', `🎁 בקשת פרס — ${childName}`, prizeName)
+
 export const notifyMoneyAdded = (childName, amount) =>
   notifyIfEnabled('moneyAdded', `💵 הפקדה — ${childName}`, `+${amount}₪ הופקדו`)
 

@@ -11,7 +11,7 @@ import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
 import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get, set } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
-import { notifyChore, notifyChoreRequest } from '../lib/notifications.js'
+import { notifyChore, notifyChoreRequest, notifyPrizeRequest } from '../lib/notifications.js'
 import { calculateStreak, generateId } from '../lib/utils.js'
 
 const AppContext = createContext(null)
@@ -47,18 +47,22 @@ export function AppProvider({ children: reactChildren }) {
   const unreadActivityCount = childActivity.filter((e) => e.timestamp > activityViewed).length
 
   function logActivity(childId, childName, type, description, amount, currency) {
+    const now = Date.now()
     const entry = {
       id: generateId(),
       childId, childName, type, description,
       amount: amount || 0,
       currency: currency || 'stars',
       source: 'parent',
-      timestamp: Date.now(),
+      timestamp: now,
     }
     const current = get('childActivity') ?? []
     const next = [entry, ...current].slice(0, 200)
     set('childActivity', next)
     setChildActivity(next)
+    // Mark as viewed so the parent's own action doesn't light up the bell badge
+    localStorage.setItem('kupati_activityViewed', String(now))
+    setActivityViewed(now)
     window.dispatchEvent(new CustomEvent('kupati-storage', { detail: { key: 'childActivity' } }))
   }
 
@@ -328,7 +332,10 @@ export function AppProvider({ children: reactChildren }) {
     )
     newReqs.forEach((pc) => {
       const child = childrenApi.children.find((c) => c.id === pc.childId)
-      if (child) notifyChoreRequest(child.name, `${pc.choreEmoji || ''} ${pc.choreName}`.trim())
+      if (!child) return
+      const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
+      if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
+      else notifyChoreRequest(child.name, label)
     })
     prevPendingRef.current = current
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
