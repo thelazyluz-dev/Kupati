@@ -1165,7 +1165,15 @@ export default function ChildModeApp() {
     const myChores = pendingChores.filter((pc) => pc.childId === childId)
     myChores.forEach((pc) => {
       const prevPc = prev.find((p) => p.id === pc.id)
-      if (!prevPc) return
+      if (!prevPc) {
+        // Brand-new item — alert child if it's a parent-assigned task
+        if (pc.source === 'parent' && pc.status === 'assigned') {
+          showHint(`📋 מטלה חדשה: "${pc.choreName}"`)
+          sounds.send?.()
+          navigator.vibrate?.([30, 10, 30, 10, 60])
+        }
+        return
+      }
       const wasAwaitingApproval = prevPc.status === 'pending' || prevPc.status === 'done'
       if (!wasAwaitingApproval) return
       if (pc.status === 'approved') {
@@ -1373,6 +1381,16 @@ export default function ChildModeApp() {
             <span className="text-amber-500 text-sm font-bold flex-shrink-0">אפשר ›</span>
           </button>
         )}
+        {notifPerm === 'denied' && (
+          <div className="w-full flex items-center gap-3 rounded-[22px] px-4 py-3"
+            style={{ background: 'rgba(243,244,246,0.9)', border: '1.5px solid rgba(209,213,219,0.6)' }}>
+            <span className="text-xl flex-shrink-0">🔕</span>
+            <div className="text-right flex-1">
+              <p className="text-sm font-semibold text-gray-600">התראות חסומות</p>
+              <p className="text-xs text-gray-400">כדי להפעיל — פתח הגדרות הדפדפן ואפשר התראות לאתר</p>
+            </div>
+          </div>
+        )}
 
         {/* Quick actions */}
         <div className="grid grid-cols-3 gap-2">
@@ -1567,6 +1585,20 @@ export default function ChildModeApp() {
             )
           }
         </div>
+
+        {/* Notification re-enable row (visible only when granted or denied — not 'default' which already has top banner) */}
+        {notifPerm === 'granted' && (
+          <div className="flex items-center justify-center gap-1.5 text-emerald-500">
+            <span className="text-sm">🔔</span>
+            <span className="text-xs font-semibold">התראות מופעלות</span>
+          </div>
+        )}
+        {notifPerm === 'denied' && (
+          <button onClick={handleRequestNotifPerm}
+            className="w-full py-2.5 rounded-2xl text-xs font-semibold text-gray-400 border border-dashed border-gray-200 active:scale-95 transition-all">
+            🔕 התראות חסומות — לחץ לנסות שוב
+          </button>
+        )}
 
         {/* Exit button — far from action buttons at bottom */}
         <button onClick={exitChildMode}
