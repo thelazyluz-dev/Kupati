@@ -1,9 +1,10 @@
 import { useState, useEffect, useRef } from 'react'
 import { get, remove } from '../lib/storage.js'
-import { fetchFamilyData, subscribeFamilyData, pushFamilyData } from '../lib/childSync.js'
+import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity } from '../lib/childSync.js'
 import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
-import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
+import { celebrateGoal } from '../lib/confetti.js'
 import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected } from '../lib/notifications.js'
 
 const GRAPH_PERIODS = [
@@ -150,9 +151,604 @@ function TxRow({ tx }) {
 
 function HintBanner({ text }) {
   return (
-    <div className="fixed top-4 inset-x-4 z-50 rounded-2xl px-4 py-3 text-center font-bold text-white text-sm animate-bounce-in"
+    <div className="fixed top-4 inset-x-4 z-[60] rounded-2xl px-4 py-3 text-center font-bold text-white text-sm animate-bounce-in"
       style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 8px 24px rgba(99,102,241,0.4)' }}>
       {text}
+    </div>
+  )
+}
+
+// ─── Savings Modal ────────────────────────────────────────────────────────────
+
+function calcCompletedMonths(startTs) {
+  const s = new Date(startTs), n = new Date()
+  let m = (n.getFullYear() - s.getFullYear()) * 12 + (n.getMonth() - s.getMonth())
+  if (n.getDate() < s.getDate()) m--
+  return Math.max(0, m)
+}
+function cv(principal, months) { return principal * Math.pow(1.10, months) }
+
+function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, showHint }) {
+  const [amount, setAmount] = useState('')
+  const [confirmOpen, setConfirmOpen] = useState(false)
+  const [withdrawTarget, setWithdrawTarget] = useState(null)
+  const [busy, setBusy] = useState(false)
+
+  const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
+  const parsed = parseFloat(amount) || 0
+  const canOpen = parsed >= 1 && parsed <= child.shekelBalance
+
+  async function handleOpen() {
+    if (!canOpen) return
+    if (!confirmOpen) { setConfirmOpen(true); return }
+    setBusy(true)
+    try {
+      const saving = { id: generateId(), amount: parsed, startDate: Date.now(), status: 'active' }
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      const newChildren = freshChildren.map((c) =>
+        c.id !== childId ? c : { ...c, shekelBalance: Math.max(0, c.shekelBalance - parsed), savings: [...(c.savings || []), saving] }
+      )
+      const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
+      const newTx = { id: generateId(), type: 'savings_open', amount: parsed, currency: 'shekels', description: '🏦 חסכון נפתח — 10% ריבית לחודש', timestamp: Date.now() }
+      const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
+      await pushFamilyData(familyCode, 'children', newChildren)
+      await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'savings_open', description: `${child.name} פתח חסכון של ${formatNumber(parsed)}₪`, amount: parsed, currency: 'shekels', timestamp: Date.now() })
+      onUpdate(newChildren, newTx)
+      sounds.approve()
+      showHint(`🏦 חסכון של ${formatNumber(parsed)}₪ נפתח!`)
+      onClose()
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  async function handleWithdraw(saving) {
+    if (!withdrawTarget) { setWithdrawTarget(saving); return }
+    setBusy(true)
+    try {
+      const cm = calcCompletedMonths(saving.startDate)
+      const payout = cv(saving.amount, cm)
+      const interest = payout - saving.amount
+      const mode = cm >= 1 ? 'matured' : 'early'
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      const newChildren = freshChildren.map((c) =>
+        c.id !== childId ? c : {
+          ...c,
+          shekelBalance: c.shekelBalance + payout,
+          savings: (c.savings || []).map((s) => s.id !== saving.id ? s : { ...s, status: mode === 'matured' ? 'matured' : 'withdrawn_early' }),
+        }
+      )
+      const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
+      const txType = cm >= 1 ? 'savings_close' : 'savings_early'
+      const txDesc = cm >= 1
+        ? `💰 חסכון הבשיל! (${cm} חודש${cm > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`
+        : '⚠️ פדיון מוקדם — פחות מחודש, ללא ריבית'
+      const newTx = { id: generateId(), type: txType, amount: Math.round(payout), currency: 'shekels', description: txDesc, timestamp: Date.now() }
+      const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
+      await pushFamilyData(familyCode, 'children', newChildren)
+      await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: txType, description: txDesc, amount: Math.round(payout), currency: 'shekels', timestamp: Date.now() })
+      onUpdate(newChildren, newTx)
+      sounds.goal()
+      showHint(`💰 קיבלת ${formatNumber(Math.round(payout))}₪!`)
+      onClose()
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      style={{ background: 'linear-gradient(160deg,#e0f2fe,#bae6fd)' }}>
+      <div className="flex items-center justify-between px-5 pt-10 pb-4">
+        <h1 className="text-xl font-black text-blue-900">🏦 חסכון</h1>
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/50 flex items-center justify-center text-xl font-bold text-blue-700 active:scale-90">×</button>
+      </div>
+
+      <div className="flex-1 px-4 pb-8 space-y-4">
+        {/* Interest intro */}
+        <div className="rounded-2xl px-4 py-3 text-center"
+          style={{ background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(14,165,233,0.25)' }}>
+          <p className="text-xs font-semibold text-blue-600">🏦 10% ריבית לכל חודש</p>
+          <p className="text-sm font-black text-blue-900 mt-1">חוסכים ← מרוויחים ריבית ← מכסה יותר כסף</p>
+        </div>
+
+        {/* Active savings */}
+        {activeSavings.map((s) => {
+          const cm = calcCompletedMonths(s.startDate)
+          const payout = cv(s.amount, cm)
+          const nextPayout = cv(s.amount, cm + 1)
+          const now = Date.now()
+          const nextExit = new Date(s.startDate); nextExit.setMonth(nextExit.getMonth() + cm + 1)
+          const prevExit = new Date(s.startDate); prevExit.setMonth(prevExit.getMonth() + cm)
+          const progress = Math.min(1, (now - prevExit.getTime()) / (nextExit.getTime() - prevExit.getTime()))
+          const daysLeft = Math.ceil((nextExit.getTime() - now) / 86400000)
+          return (
+            <div key={s.id} className="rounded-2xl p-4 space-y-3"
+              style={{ background: 'rgba(255,255,255,0.9)', border: '1.5px solid rgba(14,165,233,0.2)' }}>
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-blue-500">🏦 חסכון פעיל</span>
+                <span className="font-black text-gray-800">{formatNumber(s.amount)}₪ <span className="text-xs text-gray-400 font-normal">קרן</span></span>
+              </div>
+              <div className="space-y-1.5">
+                <div className="flex justify-between text-xs font-semibold">
+                  <span className="text-gray-400">חודש {cm}{cm > 0 ? ' ✅' : ''}</span>
+                  <span className="text-blue-600">עוד {daysLeft} ימים → חודש {cm + 1}</span>
+                </div>
+                <div className="w-full h-2.5 rounded-full bg-blue-100 overflow-hidden">
+                  <div className="h-full rounded-full bg-gradient-to-r from-blue-400 to-teal-500 transition-all" style={{ width: `${progress * 100}%` }} />
+                </div>
+                <div className="flex justify-between text-xs font-bold">
+                  <span className={cm > 0 ? 'text-teal-600' : 'text-gray-400'}>{cm > 0 ? `${formatNumber(Math.round(payout))}₪ עכשיו` : 'עוד לא חודש'}</span>
+                  <span className="text-blue-600">חד׳ {cm + 1}: {formatNumber(Math.round(nextPayout))}₪</span>
+                </div>
+              </div>
+              {withdrawTarget?.id === s.id ? (
+                <div className="space-y-2">
+                  <p className="text-sm font-bold text-center text-orange-700 bg-orange-50 rounded-xl py-2">
+                    {cm > 0 ? `תקבל ${formatNumber(Math.round(payout))}₪` : `תקבל ${formatNumber(s.amount)}₪ (ללא ריבית)`}
+                  </p>
+                  <div className="flex gap-2">
+                    <button onClick={() => handleWithdraw(s)} disabled={busy}
+                      className="flex-1 py-2.5 rounded-xl bg-teal-500 text-white font-bold text-sm active:scale-95">
+                      {busy ? '...' : '✅ פדה'}
+                    </button>
+                    <button onClick={() => setWithdrawTarget(null)}
+                      className="flex-1 py-2.5 rounded-xl bg-gray-100 text-gray-600 font-bold text-sm active:scale-95">ביטול</button>
+                  </div>
+                </div>
+              ) : (
+                <button onClick={() => setWithdrawTarget(s)}
+                  className="w-full py-2.5 rounded-xl bg-teal-500 text-white font-bold text-sm active:scale-95 transition-all">
+                  {cm >= 1 ? `💰 פדה — ${formatNumber(Math.round(payout))}₪` : `💰 פדה ללא ריבית — ${formatNumber(s.amount)}₪`}
+                </button>
+              )}
+            </div>
+          )
+        })}
+
+        {/* Open new savings */}
+        <div className="rounded-2xl p-4 space-y-3" style={{ background: 'rgba(255,255,255,0.9)' }}>
+          <h3 className="font-bold text-blue-900 text-sm">{activeSavings.length > 0 ? 'פתח חסכון נוסף' : 'פתח חסכון חדש'}</h3>
+          <div className="rounded-xl py-2 text-center" style={{ background: 'rgba(209,250,229,0.6)' }}>
+            <span className="text-2xl font-black text-emerald-700">{formatNumber(child.shekelBalance)}₪</span>
+            <p className="text-xs text-emerald-600">זמין לחסכון</p>
+          </div>
+          <input type="number" min="1" max={child.shekelBalance} step="1" value={amount}
+            onChange={(e) => { setAmount(e.target.value); setConfirmOpen(false) }}
+            placeholder={`עד ${formatNumber(child.shekelBalance)}₪`}
+            className="w-full rounded-2xl border-2 border-blue-200 px-4 py-3 text-lg focus:border-blue-400 focus:outline-none text-center"
+            dir="ltr" />
+          {parsed >= 1 && parsed <= child.shekelBalance && (
+            <div className="flex gap-1.5 overflow-x-auto pb-1">
+              {[1, 2, 3, 4, 6].map((m) => (
+                <div key={m} className="flex-shrink-0 rounded-xl p-2 text-center min-w-[52px]"
+                  style={{ background: 'linear-gradient(to bottom,#eff6ff,#e0f2fe)', border: '1px solid #bae6fd' }}>
+                  <p className="text-[10px] text-gray-400 font-semibold">חד׳ {m}</p>
+                  <p className="text-sm font-black text-teal-700">{formatNumber(Math.round(cv(parsed, m)))}₪</p>
+                </div>
+              ))}
+            </div>
+          )}
+          {confirmOpen ? (
+            <div className="space-y-2">
+              <p className="text-sm text-blue-700 font-semibold text-center bg-blue-50 rounded-xl py-2 px-3">
+                הכסף ינעל ויצבור 10% ריבית לחודש. ניתן לפדות בכל חודש.
+              </p>
+              <div className="flex gap-2">
+                <button onClick={handleOpen} disabled={busy}
+                  className="flex-1 py-3 rounded-2xl font-black text-white text-sm active:scale-95 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#0ea5e9,#0891b2)' }}>
+                  {busy ? '...' : '🔒 נעל ובחסוך'}
+                </button>
+                <button onClick={() => setConfirmOpen(false)}
+                  className="flex-1 py-3 rounded-2xl font-bold text-gray-600 bg-gray-100 text-sm active:scale-95">ביטול</button>
+              </div>
+            </div>
+          ) : (
+            <button onClick={handleOpen} disabled={!canOpen || busy}
+              className="w-full py-3 rounded-2xl font-black text-white text-sm active:scale-95 transition-all disabled:opacity-40"
+              style={{ background: 'linear-gradient(135deg,#0ea5e9,#0891b2)' }}>
+              🔒 נעל ובחסוך
+            </button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Transfer Modal ───────────────────────────────────────────────────────────
+
+function ChildTransferModal({ child, siblings, familyCode, childId, onClose, onUpdate, showHint }) {
+  const [currency, setCurrency]   = useState('stars')
+  const [targetId, setTargetId]   = useState(() => siblings[0]?.id || '')
+  const [amount, setAmount]       = useState('')
+  const [mode, setMode]           = useState('gift') // stars only: 'gift' | 'sale'
+  const [price, setPrice]         = useState('')
+  const [confirmed, setConfirmed] = useState(false)
+  const [busy, setBusy]           = useState(false)
+
+  const isStars    = currency === 'stars'
+  const target     = siblings.find((s) => s.id === targetId)
+  const parsed     = Math.max(0, isStars ? Math.floor(parseFloat(amount) || 0) : parseFloat(amount) || 0)
+  const parsedPrice = Math.max(0, parseFloat(price) || 0)
+  const maxBal     = isStars ? child.starBalance : child.shekelBalance
+  const validAmount = parsed >= 1 && parsed <= maxBal
+  const validPrice  = !isStars || mode === 'gift' || (parsedPrice >= 1 && parsedPrice <= (target?.shekelBalance || 0))
+  const canTransfer = validAmount && validPrice
+
+  function reset() { setAmount(''); setPrice(''); setConfirmed(false) }
+
+  async function handleConfirm() {
+    if (!canTransfer) return
+    if (!confirmed) { setConfirmed(true); return }
+    setBusy(true)
+    try {
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      let newChildren
+      let tx1, tx2
+      if (isStars) {
+        const isSale = mode === 'sale'
+        newChildren = freshChildren.map((c) => {
+          if (c.id === childId) return { ...c, starBalance: Math.max(0, c.starBalance - parsed), ...(isSale ? { shekelBalance: c.shekelBalance + parsedPrice } : {}) }
+          if (c.id === targetId) return { ...c, starBalance: c.starBalance + parsed, ...(isSale ? { shekelBalance: Math.max(0, c.shekelBalance - parsedPrice) } : {}) }
+          return c
+        })
+        if (isSale) {
+          tx1 = { id: generateId(), type: 'stars_sold_out',  amount: parsed, currency: 'stars',  description: `🤝 מכרת ${parsed}⭐ ל${target.name} ← +${parsedPrice}₪`, timestamp: Date.now() }
+          tx2 = { id: generateId(), type: 'stars_bought_in', amount: parsed, currency: 'stars',  description: `🤝 קנית ${parsed}⭐ מ${child.name} ← -${parsedPrice}₪`, timestamp: Date.now() }
+        } else {
+          tx1 = { id: generateId(), type: 'stars_transfer_out', amount: parsed, currency: 'stars', description: `🎁 שלחת ${parsed}⭐ ל${target.name}`, timestamp: Date.now() }
+          tx2 = { id: generateId(), type: 'stars_transfer_in',  amount: parsed, currency: 'stars', description: `🎁 קיבלת ${parsed}⭐ מ${child.name}`, timestamp: Date.now() }
+        }
+      } else {
+        newChildren = freshChildren.map((c) => {
+          if (c.id === childId) return { ...c, shekelBalance: Math.max(0, c.shekelBalance - parsed) }
+          if (c.id === targetId) return { ...c, shekelBalance: c.shekelBalance + parsed }
+          return c
+        })
+        tx1 = { id: generateId(), type: 'money_transfer_out', amount: parsed, currency: 'shekels', description: `💸 שלחת ${formatNumber(parsed)}₪ ל${target.name}`, timestamp: Date.now() }
+        tx2 = { id: generateId(), type: 'money_transfer_in',  amount: parsed, currency: 'shekels', description: `💸 קיבלת ${formatNumber(parsed)}₪ מ${child.name}`, timestamp: Date.now() }
+      }
+      const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
+      const newTxs = { ...freshTxs, [childId]: [tx1, ...(freshTxs[childId] || [])], [targetId]: [tx2, ...(freshTxs[targetId] || [])] }
+      await pushFamilyData(familyCode, 'children', newChildren)
+      await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'transfer_out', description: tx1.description, amount: parsed, currency, timestamp: Date.now() })
+      onUpdate(newChildren, tx1)
+      sounds.approve()
+      showHint(`${isStars ? '⭐' : '💸'} הועבר ל${target.name}!`)
+      onClose()
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  if (siblings.length === 0) {
+    return (
+      <div className="fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 p-6"
+        style={{ background: 'linear-gradient(160deg,#eef2ff,#f5f3ff)' }}>
+        <div className="text-5xl">👥</div>
+        <p className="text-gray-700 font-bold text-center">אין אחים להעברה</p>
+        <button onClick={onClose} className="px-6 py-3 rounded-2xl font-bold text-white" style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>חזרה</button>
+      </div>
+    )
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col overflow-y-auto"
+      style={{ background: 'linear-gradient(160deg,#eef2ff,#f5f3ff)' }}>
+      <div className="flex items-center justify-between px-5 pt-10 pb-4">
+        <h1 className="text-xl font-black text-indigo-900">💸 העברה לאח</h1>
+        <button onClick={onClose} className="w-9 h-9 rounded-full bg-white/60 flex items-center justify-center text-xl font-bold text-indigo-700 active:scale-90">×</button>
+      </div>
+
+      <div className="flex-1 px-4 pb-8 space-y-4">
+        {/* Currency tabs */}
+        <div className="flex gap-2 bg-white/60 p-1 rounded-2xl">
+          {[['stars', '⭐ כוכבים'], ['shekels', '💵 שקלים']].map(([c, label]) => (
+            <button key={c} onClick={() => { setCurrency(c); reset() }}
+              className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${currency === c ? (c === 'stars' ? 'bg-indigo-500 text-white shadow' : 'bg-emerald-500 text-white shadow') : 'text-gray-500'}`}>
+              {label}
+            </button>
+          ))}
+        </div>
+
+        {/* Mode toggle — stars only */}
+        {isStars && (
+          <div className="flex gap-2 bg-white/60 p-1 rounded-2xl">
+            {[['gift', '🎁 מתנה'], ['sale', '💰 מכירה']].map(([m, label]) => (
+              <button key={m} onClick={() => { setMode(m); setConfirmed(false) }}
+                className={`flex-1 py-2.5 rounded-xl text-sm font-bold transition-all ${mode === m ? (m === 'gift' ? 'bg-indigo-500 text-white shadow' : 'bg-orange-500 text-white shadow') : 'text-gray-500'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* Sibling picker */}
+        <div className="flex gap-2">
+          {siblings.map((s) => (
+            <button key={s.id} onClick={() => { setTargetId(s.id); setConfirmed(false) }}
+              className={`flex-1 py-3 rounded-2xl text-sm font-bold border-2 transition-all ${targetId === s.id ? (isStars ? 'border-indigo-400 bg-indigo-50 text-indigo-700' : 'border-emerald-400 bg-emerald-50 text-emerald-700') : 'border-gray-100 bg-white/60 text-gray-500'}`}>
+              {s.avatarImage
+                ? <img src={s.avatarImage} alt={s.name} className="w-10 h-10 rounded-full mx-auto mb-1 object-cover" />
+                : <span className="text-3xl block leading-none mb-1">{s.avatar || '🦁'}</span>}
+              {s.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Amount input */}
+        <div className="rounded-2xl p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.85)' }}>
+          <label className="text-sm font-semibold text-gray-600">
+            {isStars ? 'כמה כוכבים?' : 'כמה שקלים?'}{' '}
+            <span className="text-gray-400">(יש לך {formatNumber(maxBal)}{isStars ? '⭐' : '₪'})</span>
+          </label>
+          <input type="number" min="1" max={maxBal} step={isStars ? '1' : '0.5'} value={amount}
+            onChange={(e) => { setAmount(e.target.value); setConfirmed(false) }}
+            placeholder={`1 – ${formatNumber(maxBal)}`}
+            className={`w-full rounded-2xl border-2 px-4 py-3 text-lg focus:outline-none ${isStars ? 'border-gray-200 focus:border-indigo-400' : 'border-gray-200 focus:border-emerald-400'}`}
+            dir="ltr" />
+          {parsed > maxBal && <p className="text-xs text-red-500">אין מספיק {isStars ? 'כוכבים' : 'שקלים'}</p>}
+        </div>
+
+        {/* Price input for sale */}
+        {isStars && mode === 'sale' && (
+          <div className="rounded-2xl p-4 space-y-2" style={{ background: 'rgba(255,255,255,0.85)' }}>
+            <label className="text-sm font-semibold text-gray-600">
+              תמורת כמה שקלים?{' '}
+              <span className="text-gray-400">(ל{target?.name} יש {formatNumber(target?.shekelBalance || 0)}₪)</span>
+            </label>
+            <input type="number" min="1" step="1" value={price}
+              onChange={(e) => { setPrice(e.target.value); setConfirmed(false) }}
+              placeholder="מחיר"
+              className="w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-lg focus:border-orange-400 focus:outline-none"
+              dir="ltr" />
+            {parsedPrice > (target?.shekelBalance || 0) && <p className="text-xs text-red-500">ל{target?.name} אין מספיק שקלים</p>}
+          </div>
+        )}
+
+        {/* Preview */}
+        {parsed >= 1 && (
+          <div className={`rounded-2xl p-4 text-center ${isStars ? (mode === 'gift' ? 'bg-indigo-50' : 'bg-orange-50') : 'bg-emerald-50'}`}>
+            <p className="text-sm text-gray-500 mb-1">
+              <strong>{child.name}</strong>{' '}{isStars ? (mode === 'gift' ? 'שולח בחינם' : 'מוכר') : 'מעביר'}{' '}ל<strong>{target?.name}</strong>
+            </p>
+            <p className={`text-3xl font-black ${isStars ? (mode === 'gift' ? 'text-indigo-700' : 'text-orange-700') : 'text-emerald-700'}`}>
+              {parsed}{isStars ? '⭐' : '₪'}
+              {isStars && mode === 'sale' && parsedPrice >= 1 ? ` ← ${parsedPrice}₪` : ''}
+            </p>
+          </div>
+        )}
+
+        {confirmed ? (
+          <div className="space-y-2">
+            <p className="text-sm text-center font-bold text-gray-700 bg-white/80 rounded-2xl py-2">בטוח לאשר?</p>
+            <div className="flex gap-2">
+              <button onClick={handleConfirm} disabled={busy}
+                className="flex-1 py-3 rounded-2xl font-black text-white text-sm active:scale-95"
+                style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+                {busy ? '...' : '✅ אשר'}
+              </button>
+              <button onClick={() => setConfirmed(false)}
+                className="flex-1 py-3 rounded-2xl font-bold text-gray-600 bg-white/60 text-sm active:scale-95">ביטול</button>
+            </div>
+          </div>
+        ) : (
+          <button onClick={handleConfirm} disabled={!canTransfer || busy}
+            className="w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all disabled:opacity-40"
+            style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>
+            {isStars ? (mode === 'gift' ? '🎁 שלח כוכבים' : '💰 מכור כוכבים') : '💸 העבר כסף'}
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Wheel Modal ──────────────────────────────────────────────────────────────
+
+const CX = 170, CY = 170, R = 160
+const PHASE1_MS = 3500, PHASE2_MS = 500, PAUSE_MS = 800
+const WHEEL_COLORS = ['#0ea5e9','#059669','#0891b2','#0e7490','#06b6d4','#7c3aed','#0d9488','#15803d','#047857','#0369a1','#8b5cf6','#d97706']
+
+function polarR(deg, r) { const rad = ((deg - 90) * Math.PI) / 180; return { x: CX + r * Math.cos(rad), y: CY + r * Math.sin(rad) } }
+function polar(deg) { return polarR(deg, R) }
+
+function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpdate, showHint }) {
+  const prizes  = (settings?.wheelPrizes?.length >= 2 ? settings.wheelPrizes : DEFAULT_WHEEL_PRIZES)
+  const SPIN_COST = settings?.wheelSpinCost ?? 70
+  const segments  = prizes.map((p, i) => ({ ...p, color: WHEEL_COLORS[i % WHEEL_COLORS.length], label: String(p.shekels) }))
+  const N   = segments.length
+  const DEG = 360 / N
+
+  const freeSpins = child?.freeSpins || 0
+  const isFree    = freeSpins > 0
+  const canSpin   = isFree || (child?.starBalance || 0) >= SPIN_COST
+
+  const [spinning, setSpinning] = useState(false)
+  const [result,   setResult]   = useState(null)
+  const [busy,     setBusy]     = useState(false)
+  const wheelRef     = useRef(null)
+  const highlightRef = useRef(null)
+  const tickIds      = useRef([])
+  const rafRef       = useRef(null)
+
+  function segPath(i) {
+    const s = polar(i * DEG); const e = polar((i + 1) * DEG)
+    return `M${CX},${CY} L${s.x.toFixed(2)},${s.y.toFixed(2)} A${R},${R},0,0,1,${e.x.toFixed(2)},${e.y.toFixed(2)} Z`
+  }
+  function labelPos(i) { const a = polarR(i * DEG + DEG / 2, R); return { x: CX + (a.x - CX) * 0.62, y: CY + (a.y - CY) * 0.62 } }
+
+  function startHighlight() {
+    const hl = highlightRef.current; if (hl) hl.setAttribute('fill', 'rgba(255,255,255,0.28)')
+    function frame() {
+      const el = wheelRef.current; if (!el || !highlightRef.current) return
+      try { const m = new DOMMatrix(window.getComputedStyle(el).transform); const deg = ((Math.atan2(m.m12, m.m11) * 180 / Math.PI) + 360) % 360; const idx = Math.floor(((360 - deg) % 360) / DEG) % N; highlightRef.current.setAttribute('d', segPath(idx)) } catch {}
+      rafRef.current = requestAnimationFrame(frame)
+    }
+    rafRef.current = requestAnimationFrame(frame)
+  }
+  function stopHighlight(winnerIdx) {
+    cancelAnimationFrame(rafRef.current); rafRef.current = null
+    const hl = highlightRef.current; if (hl) { hl.setAttribute('d', segPath(winnerIdx)); hl.setAttribute('fill', 'rgba(255,255,255,0.32)') }
+  }
+
+  async function spin() {
+    if (spinning || result || !canSpin || busy) return
+    setSpinning(true)
+    setBusy(true)
+    try {
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      let newChildren
+      if (isFree) {
+        newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, freeSpins: Math.max(0, (c.freeSpins || 0) - 1) })
+        await pushFamilyData(familyCode, 'children', newChildren)
+        onUpdate(newChildren, null)
+      } else {
+        const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
+        const newTx = { id: generateId(), type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: '🎰 גלגל המזל — עלות סיבוב', timestamp: Date.now() }
+        newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, starBalance: Math.max(0, c.starBalance - SPIN_COST) })
+        const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
+        await pushFamilyData(familyCode, 'children', newChildren)
+        await pushFamilyData(familyCode, 'all_transactions', newTxs)
+        onUpdate(newChildren, newTx)
+      }
+    } catch { showHint('שגיאה — נסה שוב'); setSpinning(false); setBusy(false); return }
+    setBusy(false)
+
+    const winner    = Math.floor(Math.random() * N)
+    const segCenter = winner * DEG + DEG / 2
+    const finalAngle = 360 * 6 + (360 - segCenter)
+    const overshoot  = 18 + Math.random() * 14
+    const el = wheelRef.current
+    if (el) {
+      el.style.transition = 'none'; el.style.transform = 'rotate(0deg)'; void el.getBoundingClientRect()
+      el.style.transition = `transform ${PHASE1_MS}ms cubic-bezier(0.08,0.4,0.12,1)`; el.style.transform = `rotate(${finalAngle + overshoot}deg)`
+      setTimeout(() => { el.style.transition = `transform ${PHASE2_MS}ms cubic-bezier(0.25,0.46,0.45,0.94)`; el.style.transform = `rotate(${finalAngle}deg)` }, PHASE1_MS)
+    }
+    startHighlight()
+    sounds.wheelTick?.() // optional - might not exist
+    tickIds.current = [
+      setTimeout(() => { sounds.lotteryPop?.(); try { navigator.vibrate?.([70, 20, 90]) } catch {} }, PHASE1_MS + 80),
+      setTimeout(() => sounds.wheelSuspense?.(), PHASE1_MS + 300),
+      setTimeout(() => {
+        sounds.wheelReveal?.()
+        celebrateGoal()
+        stopHighlight(winner)
+        setSpinning(false)
+        setResult(segments[winner])
+      }, PHASE1_MS + PHASE2_MS + PAUSE_MS),
+    ]
+  }
+
+  async function handleClaim() {
+    if (!result || busy) return
+    setBusy(true)
+    try {
+      const freshChildren = await fetchFamilyData(familyCode, 'children') || []
+      const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
+      const newTx = { id: generateId(), type: 'wheel_win', amount: result.shekels, currency: 'shekels', description: '🎰 גלגל המזל — זכייה', timestamp: Date.now() }
+      const newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, shekelBalance: c.shekelBalance + result.shekels })
+      const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
+      await pushFamilyData(familyCode, 'children', newChildren)
+      await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'wheel_win', description: `${child.name} זכה ב-${result.shekels}₪ בגלגל`, amount: result.shekels, currency: 'shekels', timestamp: Date.now() })
+      onUpdate(newChildren, newTx)
+      sounds.goal?.()
+      showHint(`🎉 זכית ב-${result.shekels}₪!`)
+      onClose()
+    } catch { showHint('שגיאה — נסה שוב') }
+    setBusy(false)
+  }
+
+  function handleClose() {
+    tickIds.current.forEach(clearTimeout)
+    cancelAnimationFrame(rafRef.current)
+    onClose()
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col bg-gradient-to-b from-violet-900 to-purple-950 text-white overflow-hidden">
+      <div className="flex items-center justify-between px-5 pt-10 pb-2 flex-shrink-0">
+        <div className="w-10" />
+        <h1 className="text-base font-black tracking-wide">🎰 גלגל המזל</h1>
+        <button onClick={handleClose}
+          className="w-10 h-10 rounded-full bg-white/20 hover:bg-white/30 flex items-center justify-center text-2xl font-bold active:scale-90 leading-none">×</button>
+      </div>
+
+      <div className="flex-1 flex flex-col items-center gap-3 px-4 pb-4 min-h-0">
+        {/* Info bar */}
+        <div className="w-full max-w-sm flex-shrink-0">
+          {result ? (
+            <div className="rounded-2xl px-4 py-2.5 text-center animate-bounce-in"
+              style={{ background: 'rgba(255,255,255,0.15)', border: '1.5px solid rgba(255,255,255,0.25)' }}>
+              <p className="text-lg font-black">🎉 זכית ב-{result.shekels}₪!</p>
+              <p className="text-xs font-bold text-emerald-300 mt-0.5">💵 הכסף נוסף לחשבון!</p>
+            </div>
+          ) : isFree ? (
+            <div className="rounded-2xl px-3 py-2 flex items-center gap-2 animate-pop"
+              style={{ background: 'linear-gradient(135deg,#fbbf24,#f97316)' }}>
+              <span className="text-lg">🎁</span>
+              <p className="font-black text-sm flex-1">{freeSpins > 1 ? `${freeSpins} סיבובים חינמיים!` : 'סיבוב מתנה!'}</p>
+              <span className="text-xs font-black bg-white/25 rounded-full w-6 h-6 flex items-center justify-center">×{freeSpins}</span>
+            </div>
+          ) : (
+            <div className="flex gap-2">
+              <div className="flex-1 rounded-xl px-2 py-1.5 text-center" style={{ background: 'rgba(254,243,199,0.15)', border: '1px solid rgba(251,191,36,0.3)' }}>
+                <div className="text-[10px] font-semibold text-amber-300">יתרת כוכבים</div>
+                <div className="text-sm font-black text-amber-200">⭐ {formatNumber(child.starBalance)}</div>
+              </div>
+              <div className="flex-1 rounded-xl px-2 py-1.5 text-center" style={{ background: 'rgba(221,214,254,0.15)', border: '1px solid rgba(167,139,250,0.35)' }}>
+                <div className="text-[10px] font-semibold text-violet-300">עלות סיבוב</div>
+                <div className="text-sm font-black text-violet-200">⭐ {SPIN_COST}</div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Wheel */}
+        <div className="flex-1 flex items-center justify-center min-h-0">
+          <div className="relative flex-shrink-0" style={{ width: 340, height: 354 }}>
+            <div className="absolute top-0 left-1/2 z-10" style={{ transform: 'translateX(-50%) translateY(-2px)', width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderTop: '26px solid white', filter: 'drop-shadow(0 3px 5px rgba(0,0,0,0.5))' }} />
+            <svg ref={wheelRef} width={340} height={340} style={{ display: 'block', willChange: 'transform', marginTop: 14 }}>
+              {segments.map((seg, i) => <path key={`f${i}`} d={segPath(i)} fill={seg.color} />)}
+              <path ref={highlightRef} d="" fill="rgba(255,255,255,0)" />
+              {Array.from({ length: N }, (_, i) => { const p = polar(i * DEG); return <line key={`d${i}`} x1={CX} y1={CY} x2={p.x.toFixed(2)} y2={p.y.toFixed(2)} stroke="white" strokeWidth={2.5} /> })}
+              {segments.map((seg, i) => { const lp = labelPos(i); return (
+                <g key={`l${i}`} style={{ pointerEvents: 'none', userSelect: 'none' }}>
+                  <text x={lp.x} y={lp.y - 9} textAnchor="middle" dominantBaseline="central" fontSize={20}>{seg.emoji}</text>
+                  <text x={lp.x} y={lp.y + 12} textAnchor="middle" dominantBaseline="central" fontSize={14} fontWeight="bold" fill="white">{seg.label}₪</text>
+                </g>
+              )})}
+              <circle cx={CX} cy={CY} r={22} fill="white" stroke="#ddd6fe" strokeWidth={3} />
+              <text x={CX} y={CY} textAnchor="middle" dominantBaseline="central" fontSize={20}>🎰</text>
+            </svg>
+          </div>
+        </div>
+
+        {/* Action */}
+        <div className="w-full max-w-sm flex-shrink-0">
+          {!canSpin && !result && (
+            <p className="text-center text-xs text-rose-300 font-semibold bg-rose-900/40 rounded-xl py-1.5 px-3 mb-2">
+              אין מספיק כוכבים (יש {child.starBalance}⭐, צריך {SPIN_COST}⭐)
+            </p>
+          )}
+          {result ? (
+            <button onClick={handleClaim} disabled={busy}
+              className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all disabled:opacity-50"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 6px 22px rgba(16,185,129,0.4)' }}>
+              {busy ? '...' : `✅ קח את הפרס — ${result.shekels}₪`}
+            </button>
+          ) : (
+            <button onClick={spin} disabled={spinning || !canSpin || busy}
+              className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all disabled:opacity-60"
+              style={{ background: spinning ? 'rgba(255,255,255,0.15)' : 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: spinning ? 'none' : '0 6px 22px rgba(124,58,237,0.5)' }}>
+              {spinning ? '🎰 מסתובב...' : isFree ? '🎁 סובב חינם!' : `🎰 סובב! (${SPIN_COST}⭐)`}
+            </button>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
@@ -171,6 +767,9 @@ export default function ChildModeApp() {
   const [submitting, setSubmitting]   = useState(null)
   const [hint, setHint]               = useState(null)
   const [notifPerm, setNotifPerm]     = useState(getPermission())
+  const [showSavings,  setShowSavings]  = useState(false)
+  const [showTransfer, setShowTransfer] = useState(false)
+  const [showWheel,    setShowWheel]    = useState(false)
 
   const prevPendingRef = useRef(null)
 
@@ -244,6 +843,11 @@ export default function ChildModeApp() {
     })
     prevPendingRef.current = pendingChores
   }, [pendingChores, childId])
+
+  function handleChildUpdate(newChildren, newTx) {
+    setChildren(newChildren)
+    if (newTx) setTransactions((prev) => [newTx, ...prev])
+  }
 
   async function markAssignedDone(pc) {
     sounds.send()
@@ -355,9 +959,18 @@ export default function ChildModeApp() {
     .reduce((s, tx) => s + tx.amount, 0)
   const level = getLevel(totalStarsEarned)
 
+  const siblings = children.filter((c) => c.id !== childId)
+  const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
+  const commonProps = { child, familyCode, childId, onClose: () => {}, onUpdate: handleChildUpdate, showHint }
+
   return (
     <div className="min-h-screen flex flex-col pb-20"
       style={{ background: 'linear-gradient(180deg,#eef2ff 0%,#f5f3ff 100%)' }}>
+
+      {showSavings  && <ChildSavingsModal  {...commonProps} onClose={() => setShowSavings(false)} />}
+      {showTransfer && <ChildTransferModal {...commonProps} siblings={siblings} onClose={() => setShowTransfer(false)} />}
+      {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
+
       {hint && <HintBanner text={hint} />}
 
       {/* Header */}
@@ -404,6 +1017,48 @@ export default function ChildModeApp() {
             </div>
             <span className="text-amber-500 text-sm font-bold flex-shrink-0">אפשר ›</span>
           </button>
+        )}
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { icon: '🏦', label: 'חסכון',  onClick: () => setShowSavings(true),  bg: 'linear-gradient(135deg,#38bdf8,#14b8a6)' },
+            { icon: '💸', label: 'העברה',  onClick: () => setShowTransfer(true), bg: 'linear-gradient(135deg,#818cf8,#a855f7)', disabled: siblings.length === 0 },
+            { icon: '🎰', label: 'גלגל',   onClick: () => setShowWheel(true),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)' },
+          ].map(({ icon, label, onClick, bg, disabled }) => (
+            <button key={label} onClick={onClick} disabled={disabled}
+              className={`flex flex-col items-center justify-center gap-1.5 py-4 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}
+              style={{ background: bg, boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
+              <span className="text-2xl">{icon}</span>
+              <span className="text-xs font-black">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Active savings summary */}
+        {activeSavings.length > 0 && (
+          <div className="rounded-[22px] p-4 space-y-2"
+            style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(14,165,233,0.25)', boxShadow: '0 4px 16px rgba(14,165,233,0.08)' }}>
+            <div className="flex items-center justify-between">
+              <h3 className="font-black text-sky-800 text-sm">🏦 חסכונות פעילים</h3>
+              <button onClick={() => setShowSavings(true)} className="text-xs font-bold text-sky-500">ניהול ›</button>
+            </div>
+            {activeSavings.map((s) => {
+              const cm = calcCompletedMonths(s.startDate)
+              const payout = cv(s.amount, cm)
+              return (
+                <div key={s.id} className="flex items-center justify-between bg-sky-50 rounded-2xl px-3 py-2.5">
+                  <div>
+                    <p className="text-xs font-bold text-sky-700">קרן: {formatNumber(s.amount)}₪</p>
+                    <p className="text-[11px] text-gray-500">{cm > 0 ? `חודש ${cm} — ${formatNumber(Math.round(payout))}₪` : 'פחות מחודש'}</p>
+                  </div>
+                  <span className="text-xs font-black text-teal-600 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5">
+                    +{Math.round((Math.pow(1.10, cm) - 1) * 100)}%
+                  </span>
+                </div>
+              )
+            })}
+          </div>
         )}
 
         {/* Goal progress */}

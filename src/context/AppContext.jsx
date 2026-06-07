@@ -28,6 +28,24 @@ export function AppProvider({ children: reactChildren }) {
   useRecurringAllowance(childrenApi, transactionsApi)
   useWeeklySummary(childrenApi, transactionsApi)
 
+  const [childActivity, setChildActivity] = useState(() => get('childActivity') ?? [])
+  const [activityViewed, setActivityViewed] = useState(
+    () => parseInt(localStorage.getItem('kupati_activityViewed') || '0', 10)
+  )
+  useEffect(() => {
+    function onSync(e) {
+      if (e.detail?.key === 'childActivity') setChildActivity(get('childActivity') ?? [])
+    }
+    window.addEventListener('kupati-storage', onSync)
+    return () => window.removeEventListener('kupati-storage', onSync)
+  }, [])
+  function markChildActivityRead() {
+    const now = Date.now()
+    localStorage.setItem('kupati_activityViewed', String(now))
+    setActivityViewed(now)
+  }
+  const unreadActivityCount = childActivity.filter((e) => e.timestamp > activityViewed).length
+
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
   const [openModal, setOpenModal] = useState(null)
@@ -328,6 +346,9 @@ export function AppProvider({ children: reactChildren }) {
     startLearningSession:   learningApi.startSession,
     answerLearningQuestion: learningApi.answerQuestion,
     startLearningCorrection: learningApi.startCorrection,
+    childActivity,
+    unreadActivityCount,
+    markChildActivityRead,
     syncStatus,
     screen,
     activeChildId,

@@ -15,7 +15,7 @@ import { get, set } from './storage.js'
 
 const LS_EVENT  = 'kupati-storage'
 const DEVICE_KEY = 'kupati_device_id'
-const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings', 'pendingChores']
+const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings', 'pendingChores', 'childActivity']
 
 // ── device ID ──────────────────────────────────────────────────────────────
 function getDeviceId() {
@@ -64,6 +64,15 @@ function mergePendingChores(local, remote) {
 }
 
 /**
+ * Merge child activity log — append-only by entry id, newest-first, capped at 100.
+ */
+function mergeChildActivity(local, remote) {
+  const seen = new Set((local || []).map((e) => e.id))
+  const fresh = (remote || []).filter((e) => !seen.has(e.id))
+  return [...fresh, ...(local || [])].sort((a, b) => b.timestamp - a.timestamp).slice(0, 100)
+}
+
+/**
  * Merge remote transactions into local ones (append-only by tx id).
  * Both parents can add transactions concurrently — we never lose either.
  */
@@ -95,6 +104,9 @@ function applyRemoteData(key, payload) {
     } else if (key === 'pendingChores') {
       const local  = get('pendingChores') ?? []
       set('pendingChores', mergePendingChores(local, payload))
+    } else if (key === 'childActivity') {
+      const local  = get('childActivity') ?? []
+      set('childActivity', mergeChildActivity(local, payload))
     } else {
       set(key, payload)
     }

@@ -16,6 +16,7 @@ import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
 import LotteryScreen from './LotteryScreen.jsx'
+import ChildActivityLog from './ChildActivityLog.jsx'
 
 // ── Pig Easter Egg — constants ────────────────────────────────────────────────
 
@@ -544,7 +545,7 @@ const ONBOARDING_FEATURES = [
 // ── Main component ────────────────────────────────────────────────────────────
 
 export default function HomeScreen() {
-  const { children, navigate, showModal, getTransactions, coinInFlight, pendingChores } = useApp()
+  const { children, navigate, showModal, getTransactions, coinInFlight, pendingChores, unreadActivityCount, markChildActivityRead, childActivity } = useApp()
 
   // Pig Easter Egg state
   const [pigClicks,     setPigClicks]     = useState(0)
@@ -574,6 +575,7 @@ export default function HomeScreen() {
   const [showRainbow,      setShowRainbow]      = useState(false)
   const [showSuccess,      setShowSuccess]      = useState(false)
   const [showLottery,      setShowLottery]      = useState(false)
+  const [showActivityLog,  setShowActivityLog]  = useState(false)
   const speechTimer   = useRef(null)
   const pigWrapperRef = useRef(null)
   const pigCenterRef  = useRef({ x: '50%', y: '13%' })
@@ -824,6 +826,19 @@ export default function HomeScreen() {
               🎯
             </button>
           )}
+          <div className="relative">
+            <button onClick={() => setShowActivityLog(true)} aria-label="עדכוני ילדים"
+              className="w-11 h-11 flex items-center justify-center text-xl active:scale-90 transition-all"
+              style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
+              🔔
+            </button>
+            {unreadActivityCount > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-black text-white rounded-full px-1 animate-pop"
+                    style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)', boxShadow: '0 2px 6px rgba(99,102,241,0.5)' }}>
+                {unreadActivityCount > 9 ? '9+' : unreadActivityCount}
+              </span>
+            )}
+          </div>
           <button onClick={() => showModal('addChild')} aria-label="הוסף ילד"
             className="w-11 h-11 flex items-center justify-center text-2xl font-bold leading-none active:scale-90 transition-all"
             style={{ borderRadius: 16, background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)', border: '1.5px solid rgba(255,255,255,0.35)', boxShadow: 'inset 0 1px 1px rgba(255,255,255,0.3), 0 4px 12px rgba(0,0,0,0.12)' }}>
@@ -1001,6 +1016,7 @@ export default function HomeScreen() {
       </main>
 
 {showLottery && <LotteryScreen onClose={() => setShowLottery(false)} />}
+{showActivityLog && <ChildActivityLog onClose={() => setShowActivityLog(false)} />}
     </div>
   )
 }

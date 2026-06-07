@@ -28,3 +28,12 @@ export async function pushFamilyData(familyCode, key, value) {
     updatedBy: 'child_mode',
   })
 }
+
+export async function appendChildActivity(familyCode, entry) {
+  if (!db) return
+  const ref = dataRef(familyCode, 'childActivity')
+  const snap = await getDoc(ref)
+  const current = snap.exists() ? (snap.data().payload || []) : []
+  const next = [entry, ...current].slice(0, 100)
+  await setDoc(ref, { payload: next, updatedAt: serverTimestamp(), updatedBy: 'child_mode' })
+}
