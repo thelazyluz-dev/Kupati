@@ -1046,6 +1046,50 @@ function GoalEditForm({ emoji, name, target, parsedTarget, setEmoji, setName, se
   )
 }
 
+function IconCloud({ icons }) {
+  if (!icons.length) return null
+  return (
+    <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[22px]">
+      {icons.map((emoji, i) => {
+        const angle = (i * 137.508) % 360
+        const r     = 12 + (i % 5) * 9
+        const x     = 50 + r * Math.cos(angle * Math.PI / 180)
+        const y     = 50 + r * Math.sin(angle * Math.PI / 180)
+        const dx    = 5 + (i % 6) * 2.5
+        const dy    = 3 + (i % 4) * 1.5
+        const dur   = 4 + (i % 5) * 0.9
+        const del   = -((i * 1.4) % dur)
+        return (
+          <span key={i} className="absolute leading-none select-none" style={{
+            left: `${Math.max(8, Math.min(90, x))}%`,
+            top:  `${Math.max(8, Math.min(90, y))}%`,
+            fontSize: 9, opacity: 0.4,
+            animationName: 'icon-drift',
+            animationDuration: `${dur}s`,
+            animationDelay: `${del}s`,
+            animationTimingFunction: 'ease-in-out',
+            animationIterationCount: 'infinite',
+            animationDirection: 'alternate',
+            '--dx': `${dx}px`, '--dy': `${dy}px`,
+          }}>{emoji}</span>
+        )
+      })}
+    </div>
+  )
+}
+function StarIconCloud({ count }) {
+  const n = Math.min(Math.round(count), 50)
+  return <IconCloud icons={Array.from({ length: n }, () => '⭐')} />
+}
+function ShekelIconCloud({ balance }) {
+  if (balance <= 0) return <IconCloud icons={[]} />
+  const total    = Math.max(5, Math.min(30, Math.round(5 + 25 * Math.sqrt(balance / 1000))))
+  const billFrac = Math.min(balance / 500, 1)
+  const bills    = Math.round(total * billFrac * 0.6)
+  const coins    = total - bills
+  return <IconCloud icons={[...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]} />
+}
+
 export default function ChildModeApp() {
   const childMode = get('childMode')
   const { familyCode, childId } = childMode || {}
@@ -1287,15 +1331,29 @@ export default function ChildModeApp() {
 
         {/* Balance cards */}
         <div className="grid grid-cols-2 gap-3">
-          <div className="rounded-[22px] p-4 text-center"
+          {(() => {
+            const activeSavingsTotal = activeSavings.reduce((s, sv) => s + sv.amount, 0)
+            return (
+              <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
+                style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
+                <ShekelIconCloud balance={child.shekelBalance} />
+                <div className="relative text-4xl font-black" dir="ltr">{formatNumber(child.shekelBalance)}₪</div>
+                <div className="relative text-sm opacity-90 mt-1">{activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}</div>
+                {activeSavingsTotal > 0 && (
+                  <div className="relative mt-2 pt-1.5 border-t border-white/25 flex items-center justify-center gap-1.5 text-white/85">
+                    <span className="text-sm">🏦</span>
+                    <span className="text-xs font-bold">{formatNumber(activeSavingsTotal)}₪</span>
+                    <span className="text-[10px] opacity-70">בחסכון</span>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+          <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
             style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
-            <div className="text-4xl font-black" dir="ltr">{formatNumber(child.shekelBalance)}₪</div>
-            <div className="text-sm opacity-90 mt-1">💵 שקלים</div>
-          </div>
-          <div className="rounded-[22px] p-4 text-center"
-            style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
-            <div className="text-4xl font-black" dir="ltr">{formatNumber(child.starBalance)}</div>
-            <div className="text-sm opacity-90 mt-1">⭐ כוכבים</div>
+            <StarIconCloud count={child.starBalance} />
+            <div className="relative text-4xl font-black" dir="ltr">{formatNumber(child.starBalance)}</div>
+            <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
           </div>
         </div>
       </header>
