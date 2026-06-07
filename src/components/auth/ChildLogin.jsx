@@ -62,8 +62,10 @@ function OtpInput({ value, onChange, onComplete }) {
           autoCapitalize="none"
           autoComplete="off"
           autoCorrect="off"
+          autoFocus={i === 0 ? undefined : undefined}
           spellCheck={false}
-          className="w-11 h-14 text-center text-2xl font-black rounded-2xl border-2 lowercase transition-all focus:outline-none"
+          inputMode="text"
+          className="w-11 h-14 text-center text-2xl font-black rounded-2xl border-2 transition-all focus:outline-none"
           style={{
             fontFamily: 'monospace',
             borderColor: c ? '#6366f1' : '#e5e7eb',
@@ -167,8 +169,8 @@ export default function ChildLogin({ onBack }) {
       </div>
 
       <div className="w-full space-y-3">
-        <p className="text-xs font-bold text-gray-400 text-center tracking-wider uppercase">קוד משפחה — 6 תווים</p>
         <OtpInput value={code} onChange={setCode} onComplete={handleConnect} />
+        <p className="text-[11px] text-gray-400 text-center">אותיות גדולות או קטנות — לא משנה</p>
       </div>
 
       {error && (
