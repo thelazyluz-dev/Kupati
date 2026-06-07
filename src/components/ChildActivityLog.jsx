@@ -13,14 +13,24 @@ function timeAgo(ts) {
 }
 
 const ACT_META = {
-  savings_open:  { icon: '🏦', label: 'פתח חסכון',   color: 'text-sky-600'  },
-  savings_close: { icon: '💰', label: 'פדה חסכון',   color: 'text-emerald-600' },
-  savings_early: { icon: '⚠️', label: 'פדיון מוקדם', color: 'text-amber-600' },
-  transfer_out:  { icon: '💸', label: 'העביר',        color: 'text-indigo-600' },
-  wheel_spin:    { icon: '🎰', label: 'גלגל המזל',   color: 'text-violet-600' },
-  wheel_win:     { icon: '🎉', label: 'זכה בגלגל',   color: 'text-emerald-600' },
-  prize_redeem:  { icon: '🎁', label: 'מימש פרס',    color: 'text-purple-600' },
+  savings_open:     { icon: '🏦', label: 'פתח חסכון',    color: 'text-sky-600'     },
+  savings_close:    { icon: '💰', label: 'פדה חסכון',    color: 'text-emerald-600' },
+  savings_early:    { icon: '⚠️', label: 'פדיון מוקדם',  color: 'text-amber-600'   },
+  transfer_out:     { icon: '💸', label: 'העביר',         color: 'text-indigo-600'  },
+  wheel_spin:       { icon: '🎰', label: 'גלגל המזל',    color: 'text-violet-600'  },
+  wheel_win:        { icon: '🎉', label: 'זכה בגלגל',    color: 'text-emerald-600' },
+  prize_redeem:     { icon: '🎁', label: 'מימש פרס',     color: 'text-purple-600'  },
+  parent_stars_add: { icon: '⭐', label: 'הוסיף כוכבים', color: 'text-amber-500'   },
+  parent_money_add: { icon: '💵', label: 'הוסיף כסף',   color: 'text-emerald-600' },
+  expense:          { icon: '🛒', label: 'הוצאה',         color: 'text-rose-600'    },
+  penalty:          { icon: '⚠️', label: 'קנס',           color: 'text-red-600'     },
+  loan:             { icon: '💳', label: 'הלוואה',        color: 'text-orange-600'  },
+  loan_repay:       { icon: '💳', label: 'פרעון',         color: 'text-teal-600'    },
+  chore_assign:     { icon: '📋', label: 'מטלה חדשה',    color: 'text-blue-600'    },
 }
+
+const CREDIT_TYPES = new Set(['wheel_win', 'savings_close', 'savings_early', 'parent_stars_add', 'parent_money_add', 'loan'])
+const DEBIT_TYPES  = new Set(['savings_open', 'wheel_spin', 'prize_redeem', 'expense', 'penalty', 'loan_repay', 'transfer_out'])
 
 export default function ChildActivityLog({ onClose }) {
   const {
@@ -46,7 +56,7 @@ export default function ChildActivityLog({ onClose }) {
     .filter((pc) => pc.status === 'pending' || (pc.source === 'parent' && pc.status === 'done'))
     .sort((a, b) => b.timestamp - a.timestamp)
 
-  // Recently resolved items (last 7 days)
+  // Resolved pending chores (last 7 days) — show as history cards
   const cutoff = Date.now() - 7 * 86400000
   const resolvedItems = (pendingChores || [])
     .filter((pc) => (pc.status === 'approved' || pc.status === 'rejected') && pc.timestamp > cutoff)
@@ -69,7 +79,7 @@ export default function ChildActivityLog({ onClose }) {
       currency: pc.currency,
       type: pc.type === 'prize' ? 'prize_redeem' : 'chore',
     })),
-  ].sort((a, b) => b.timestamp - a.timestamp).slice(0, 30)
+  ].sort((a, b) => b.timestamp - a.timestamp).slice(0, 50)
 
   async function handleApprove(pc) {
     setBusy(pc.id)
@@ -121,7 +131,6 @@ export default function ChildActivityLog({ onClose }) {
                 <div key={pc.id}
                   className="rounded-2xl overflow-hidden"
                   style={{ background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(245,158,11,0.25)', boxShadow: '0 2px 10px rgba(245,158,11,0.1)' }}>
-                  {/* Child + chore info */}
                   <div className="flex items-center gap-3 px-4 pt-3 pb-2">
                     <span className="text-2xl flex-shrink-0">{pc.choreEmoji || (isPrize ? '🎁' : '✅')}</span>
                     <div className="flex-1 min-w-0">
@@ -134,7 +143,6 @@ export default function ChildActivityLog({ onClose }) {
                       <p className="text-[10px] text-gray-400">{timeAgo(pc.timestamp)}</p>
                     </div>
                   </div>
-                  {/* Approve / Reject */}
                   <div className="flex border-t border-gray-100">
                     <button
                       onClick={() => handleApprove(pc)}
@@ -162,25 +170,31 @@ export default function ChildActivityLog({ onClose }) {
           <div className="text-center py-16">
             <div className="text-5xl mb-3">📭</div>
             <p className="text-gray-400 font-semibold">אין עדיין פעולות</p>
-            <p className="text-gray-300 text-sm mt-1">פעולות של הילדים יופיעו כאן</p>
+            <p className="text-gray-300 text-sm mt-1">פעולות של הילדים וההורים יופיעו כאן</p>
           </div>
         ) : historyItems.length > 0 && (
           <section className="space-y-2">
             <p className="text-[11px] font-black text-gray-400 uppercase tracking-wider px-1">📋 היסטוריה</p>
             {historyItems.map((item) => {
               if (item._kind === 'activity') {
-                const meta = ACT_META[item.type] || { icon: '📋', label: item.type, color: 'text-gray-600' }
-                const isCredit = item.type === 'wheel_win' || item.type === 'savings_close' || item.type === 'savings_early'
-                const isDebit  = item.type === 'savings_open' || item.type === 'wheel_spin' || item.type === 'prize_redeem'
+                const meta     = ACT_META[item.type] || { icon: '📋', label: item.type, color: 'text-gray-600' }
+                const isCredit = CREDIT_TYPES.has(item.type)
+                const isDebit  = DEBIT_TYPES.has(item.type)
                 const amtSign  = isCredit ? '+' : isDebit ? '-' : ''
                 const unit     = item.currency === 'stars' ? '⭐' : '₪'
+                const isParent = item.source === 'parent'
                 return (
                   <div key={item.id}
                     className="flex items-center gap-3 rounded-2xl px-4 py-3"
                     style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(255,255,255,0.7)' }}>
                     <span className="text-xl flex-shrink-0">{meta.icon}</span>
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-bold text-gray-800">{item.childName}</p>
+                      <div className="flex items-center gap-1.5">
+                        <p className="text-sm font-bold text-gray-800">{item.childName}</p>
+                        {isParent && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-indigo-100 text-indigo-600">הורה</span>
+                        )}
+                      </div>
                       <p className="text-xs text-gray-500 truncate">{item.description}</p>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -194,7 +208,7 @@ export default function ChildActivityLog({ onClose }) {
                   </div>
                 )
               }
-              // Resolved chore / prize
+              // Resolved chore / prize request
               const approved = item.status === 'approved'
               const isPrize  = item.type === 'prize_redeem'
               return (

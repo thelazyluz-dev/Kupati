@@ -9,10 +9,10 @@ import { useDailyPenalty } from '../hooks/useDailyPenalty.js'
 import { useRecurringAllowance } from '../hooks/useRecurringAllowance.js'
 import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
 import { usePendingChores } from '../hooks/usePendingChores.js'
-import { clearAll, get } from '../lib/storage.js'
+import { clearAll, get, set } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore, notifyChoreRequest } from '../lib/notifications.js'
-import { calculateStreak } from '../lib/utils.js'
+import { calculateStreak, generateId } from '../lib/utils.js'
 
 const AppContext = createContext(null)
 
@@ -45,6 +45,22 @@ export function AppProvider({ children: reactChildren }) {
     setActivityViewed(now)
   }
   const unreadActivityCount = childActivity.filter((e) => e.timestamp > activityViewed).length
+
+  function logActivity(childId, childName, type, description, amount, currency) {
+    const entry = {
+      id: generateId(),
+      childId, childName, type, description,
+      amount: amount || 0,
+      currency: currency || 'stars',
+      source: 'parent',
+      timestamp: Date.now(),
+    }
+    const current = get('childActivity') ?? []
+    const next = [entry, ...current].slice(0, 200)
+    set('childActivity', next)
+    setChildActivity(next)
+    window.dispatchEvent(new CustomEvent('kupati-storage', { detail: { key: 'childActivity' } }))
+  }
 
   const [screen, setScreen] = useState('home')
   const [activeChildId, setActiveChildId] = useState(null)
@@ -87,9 +103,29 @@ export function AppProvider({ children: reactChildren }) {
     transactionsApi.clearTransactions(childId)
   }
 
+  const PARENT_LOG_MAP = {
+    chore:              (d) => d.currency === 'stars' ? 'parent_stars_add' : 'parent_money_add',
+    other:              (d) => d.currency === 'stars' ? 'parent_stars_add' : 'parent_money_add',
+    gift:               ()  => 'parent_money_add',
+    expense:            ()  => 'expense',
+    penalty:            ()  => 'penalty',
+    prize_redeem:       ()  => 'prize_redeem',
+    wheel_spin:         ()  => 'wheel_spin',
+    wheel_win:          ()  => 'wheel_win',
+    savings_open:       ()  => 'savings_open',
+    savings_close:      ()  => 'savings_close',
+    savings_early:      ()  => 'savings_early',
+    stars_transfer_out: ()  => 'transfer_out',
+    money_transfer_out: ()  => 'transfer_out',
+    stars_sold_out:     ()  => 'transfer_out',
+    loan:               ()  => 'loan',
+    loan_repay:         ()  => 'loan_repay',
+  }
+
   // Wraps addTransaction to check for newly earned badges + free spins afterwards
   function addTransaction(childId, txData) {
-    const tx = transactionsApi.addTransaction(childId, txData)
+    const { _skipLog, ...cleanTxData } = txData
+    const tx = transactionsApi.addTransaction(childId, cleanTxData)
     const child = childrenApi.children.find((c) => c.id === childId)
     if (child) {
       // Project next state (new tx prepended; state hasn't flushed yet)
@@ -134,6 +170,13 @@ export function AppProvider({ children: reactChildren }) {
             }
           }
         }
+      }
+
+      // Log to activity feed for parent-initiated actions
+      const actTypeResolver = PARENT_LOG_MAP[cleanTxData.type]
+      if (!_skipLog && child && actTypeResolver) {
+        const actType = actTypeResolver(cleanTxData)
+        logActivity(childId, child.name, actType, cleanTxData.description, cleanTxData.amount, cleanTxData.currency)
       }
     }
     return tx
@@ -291,6 +334,9 @@ export function AppProvider({ children: reactChildren }) {
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
 
   function addAssignedChore(childId, { choreId, choreName, choreEmoji, amount, currency = 'stars' }) {
+    const child = childrenApi.children.find((c) => c.id === childId)
+    logActivity(childId, child?.name || '', 'chore_assign',
+      `${choreEmoji || '📋'} ${choreName}`, amount, currency)
     return pendingChoresApi.addPendingChore({ childId, choreId, choreName, choreEmoji, amount, currency, source: 'parent' })
   }
 
@@ -305,6 +351,7 @@ export function AppProvider({ children: reactChildren }) {
       currency: req.currency,
       description: `${req.choreEmoji || '✅'} ${req.choreName} (אושר)`,
       timestamp: req.timestamp,
+      _skipLog: true,
     })
   }
 
@@ -318,6 +365,7 @@ export function AppProvider({ children: reactChildren }) {
       amount: req.amount,
       currency: 'stars',
       description: `${req.choreEmoji || '🎁'} ${req.choreName}`,
+      _skipLog: true,
     })
   }
 
@@ -368,6 +416,7 @@ export function AppProvider({ children: reactChildren }) {
     childActivity,
     unreadActivityCount,
     markChildActivityRead,
+    logActivity,
     syncStatus,
     screen,
     activeChildId,
