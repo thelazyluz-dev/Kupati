@@ -4,8 +4,11 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
+    // Family data is access-controlled by the family code (which is the document path).
+    // Child devices are not authenticated via Firebase Auth, so we allow public access.
+    // Knowing the family code is the only "password" needed.
     match /families/{familyCode}/data/{key} {
-      allow read, write: if request.auth != null;
+      allow read, write: if true;
     }
   }
 }

@@ -7,7 +7,7 @@ function OtpInput({ value, onChange, onComplete }) {
   const chars = Array.from({ length: 6 }, (_, i) => value[i] || '')
 
   function handleChange(i, raw) {
-    const char = raw.toUpperCase().replace(/[^A-Z0-9]/, '').slice(-1)
+    const char = raw.toLowerCase().replace(/[^a-z0-9]/, '').slice(-1)
     const next = [...chars.slice(0, i), char, ...chars.slice(i + 1)].join('')
     onChange(next)
     if (char && i < 5) refs.current[i + 1]?.focus()
@@ -34,7 +34,7 @@ function OtpInput({ value, onChange, onComplete }) {
 
   function handlePaste(e) {
     e.preventDefault()
-    const pasted = e.clipboardData.getData('text').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 6)
+    const pasted = e.clipboardData.getData('text').toLowerCase().replace(/[^a-z0-9]/g, '').slice(0, 6)
     onChange(pasted)
     refs.current[Math.min(pasted.length, 5)]?.focus()
     if (pasted.length === 6) onComplete(pasted)
@@ -59,9 +59,11 @@ function OtpInput({ value, onChange, onComplete }) {
           onPaste={i === 0 ? handlePaste : undefined}
           onFocus={() => handleFocus(i)}
           maxLength={2}
-          autoCapitalize="characters"
+          autoCapitalize="none"
           autoComplete="off"
-          className="w-11 h-14 text-center text-2xl font-black rounded-2xl border-2 uppercase transition-all focus:outline-none"
+          autoCorrect="off"
+          spellCheck={false}
+          className="w-11 h-14 text-center text-2xl font-black rounded-2xl border-2 lowercase transition-all focus:outline-none"
           style={{
             fontFamily: 'monospace',
             borderColor: c ? '#6366f1' : '#e5e7eb',
@@ -85,7 +87,7 @@ export default function ChildLogin({ onBack }) {
   useEffect(() => { setError('') }, [code])
 
   async function handleConnect(codeOverride) {
-    const trimCode = (codeOverride ?? code).trim().toUpperCase()
+    const trimCode = (codeOverride ?? code).trim().toLowerCase()
     if (trimCode.length < 4) { setError('קוד לא תקין'); return }
     setLoading(true)
     setError('')
@@ -104,7 +106,7 @@ export default function ChildLogin({ onBack }) {
 
   function selectChild(child) {
     set('childMode', {
-      familyCode: code.trim().toUpperCase(),
+      familyCode: code.trim().toLowerCase(),
       childId: child.id,
       childName: child.name,
     })

@@ -35,7 +35,7 @@ export default function SyncSettings() {
   const st = STATUS_MAP[syncStatus] ?? STATUS_MAP.idle
 
   function handleSet() {
-    const trimmed = draft.trim()
+    const trimmed = draft.trim().toLowerCase()
     if (trimmed.length < 4) return
     updateSettings({ familyCode: trimmed })
     setDraft('')

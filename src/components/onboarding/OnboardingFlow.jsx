@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 
 function generateFamilyCode() {
-  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789'
+  const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
   return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 

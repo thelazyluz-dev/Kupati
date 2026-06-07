@@ -6,21 +6,17 @@ function dataRef(familyCode, key) {
 }
 
 export async function fetchFamilyData(familyCode, key) {
-  if (!db) return null
-  try {
-    const snap = await getDoc(dataRef(familyCode, key))
-    return snap.exists() ? snap.data().payload : null
-  } catch {
-    return null
-  }
+  if (!db) throw new Error('Firebase לא מחובר')
+  const snap = await getDoc(dataRef(familyCode, key))
+  return snap.exists() ? snap.data().payload : null
 }
 
-export function subscribeFamilyData(familyCode, key, cb) {
+export function subscribeFamilyData(familyCode, key, cb, onError) {
   if (!db) return () => {}
   return onSnapshot(
     dataRef(familyCode, key),
     (snap) => { if (snap.exists()) cb(snap.data().payload) },
-    () => {}
+    (err) => { if (onError) onError(err) }
   )
 }
 
