@@ -110,7 +110,7 @@ function applyRemoteData(key, payload) {
 export async function attach(code, statusCb) {
   if (!db) return
   detach()
-  familyCode = code
+  familyCode = code.toLowerCase()
   onStatus   = statusCb ?? null
 
   onStatus?.('syncing')
@@ -122,14 +122,22 @@ export async function attach(code, statusCb) {
     if (childrenSnap.exists() && childrenSnap.data()?.updatedBy !== deviceId) {
       // Remote data exists from another device — pull everything
       for (const key of DATA_KEYS) {
-        const snap = await getDoc(dataDocRef(key))
-        if (snap.exists()) applyRemoteData(key, snap.data().payload)
+        try {
+          const snap = await getDoc(dataDocRef(key))
+          if (snap.exists()) applyRemoteData(key, snap.data().payload)
+        } catch (pullErr) {
+          console.warn(`[sync] Initial pull failed for ${key}:`, pullErr.message)
+        }
       }
     } else if (!childrenSnap.exists()) {
       // No remote data at all — push current local state
       for (const key of DATA_KEYS) {
-        const val = get(key)
-        if (val !== null) await push(key, val)
+        try {
+          const val = get(key)
+          if (val !== null) await push(key, val)
+        } catch (pushErr) {
+          console.warn(`[sync] Initial push failed for ${key}:`, pushErr.message)
+        }
       }
     }
     // If childrenSnap exists and updatedBy === deviceId → same device, no need to pull
