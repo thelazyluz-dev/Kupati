@@ -62,3 +62,10 @@ export const notifyChoreApproved = (choreName, stars) =>
 
 export const notifyChoreRejected = (choreName) =>
   notify(`❌ מטלה לא אושרה`, choreName)
+
+export const notifyChoreSubmitted = (childName, count, firstChoreName) => {
+  const body = count > 1
+    ? `${count} מטלות ממתינות לאישור הורה`
+    : `${firstChoreName} — ממתין לאישור הורה`
+  notify(`📝 ${childName} ביצע מטלה`, body)
+}

@@ -5,7 +5,7 @@ import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBal
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
-import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected } from '../lib/notifications.js'
+import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected, notifyChoreSubmitted } from '../lib/notifications.js'
 
 const GRAPH_PERIODS = [
   { days: 30,  label: 'חודש'    },
@@ -1290,6 +1290,7 @@ export default function ChildModeApp() {
       await pushFamilyData(familyCode, 'pendingChores', [...current, newReq])
       setPendingChores([...current, newReq])
       showHint('📝 הבקשה נשלחה להורה לאישור!')
+      notifyChoreSubmitted(child.name, 1, chore.name)
     } catch {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
     }
@@ -1317,9 +1318,11 @@ export default function ChildModeApp() {
       }))
       await pushFamilyData(familyCode, 'pendingChores', [...current, ...newReqs])
       setPendingChores([...current, ...newReqs])
-      showHint(choresToSubmit.length > 1
+      const hintMsg = choresToSubmit.length > 1
         ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
-        : '📝 הבקשה נשלחה להורה לאישור!')
+        : '📝 הבקשה נשלחה להורה לאישור!'
+      showHint(hintMsg)
+      notifyChoreSubmitted(child.name, choresToSubmit.length, choresToSubmit[0]?.name)
       setSelectedChores(new Set())
     } catch {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
