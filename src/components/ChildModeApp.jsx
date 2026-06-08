@@ -1072,8 +1072,8 @@ function FreeSpinCelebrationOverlay({ count, onSpin, onDismiss }) {
         <p className="text-sm text-white/80 mb-6">
           {count > 1 ? `יש לך ${count} סיבובים חינמיים` : 'קיבלת סיבוב אחד בגלגל המזל'}
         </p>
-        <div className="relative mb-3">
-          <div className="absolute inset-0 rounded-2xl animate-ping"
+        <div className="relative mb-3 overflow-hidden rounded-2xl">
+          <div className="absolute inset-0 animate-ping"
             style={{ background: 'rgba(255,255,255,0.35)', animationDuration: '1s' }} />
           <button onClick={onSpin}
             className="relative w-full py-5 rounded-2xl font-black text-2xl text-amber-800 active:scale-95 transition-transform"
@@ -1495,16 +1495,10 @@ export default function ChildModeApp() {
               {actions.map(({ icon, label, onClick, bg, disabled, freeSpin }) => (
                 <div key={label} className="relative">
                   {freeSpin && (
-                    <>
-                      {/* outer ping ring */}
-                      <div className="absolute inset-0 rounded-[22px] animate-ping opacity-60"
-                        style={{ background: 'rgba(251,191,36,0.45)', animationDuration: '1.1s' }} />
-                      {/* badge */}
-                      <span className="free-spin-badge absolute -top-1.5 -left-1.5 z-10 bg-amber-400 text-white text-[11px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
-                        style={{ boxShadow: '0 0 8px rgba(251,191,36,0.7)' }}>
-                        🎟️
-                      </span>
-                    </>
+                    <span className="free-spin-badge absolute -top-1.5 -left-1.5 z-10 bg-amber-400 text-white text-[11px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                      style={{ boxShadow: '0 0 8px rgba(251,191,36,0.7)' }}>
+                      🎟️
+                    </span>
                   )}
                   <button onClick={onClick} disabled={disabled}
                     className={`relative w-full flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}

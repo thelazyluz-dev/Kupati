@@ -978,17 +978,13 @@ export default function HomeScreen() {
                       const filled    = freeSpins > 0 ? 5 : dispCount % 5
                       return (
                         <div className="relative">
-                          {freeSpins > 0 && (
-                            <div className="absolute inset-0 rounded-xl animate-ping opacity-70"
-                              style={{ background: 'rgba(251,191,36,0.55)', animationDuration: '1.2s' }} />
-                          )}
                           <button
                             ref={(el) => registerCoinTarget(child.id, el)}
                             onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                            className={`relative w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
+                            className={`w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
                               freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
                             }`}
-                            style={freeSpins > 0 ? { boxShadow: '0 4px 18px rgba(251,191,36,0.55)' } : {}}
+                            style={freeSpins > 0 ? { boxShadow: '0 0 0 3px rgba(251,191,36,0.7), 0 4px 18px rgba(251,191,36,0.5)' } : {}}
                           >
                             <div className="flex items-center gap-1.5">
                               <span className="text-lg leading-none">🎰</span>

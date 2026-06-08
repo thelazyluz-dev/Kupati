@@ -300,16 +300,12 @@ export default function SpinWheelModal() {
               </button>
             </div>
           ) : isFree && !spinning ? (
-            <div className="relative">
-              <div className="absolute inset-0 rounded-2xl animate-ping"
-                style={{ background: 'rgba(251,191,36,0.38)', animationDuration: '1.1s' }} />
-              <button onClick={spin}
-                className="relative overflow-hidden w-full py-5 rounded-2xl font-black text-2xl text-amber-900 active:scale-95 transition-transform"
-                style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b,#d97706)', boxShadow: '0 0 0 3px rgba(251,191,36,0.5), 0 12px 32px rgba(245,158,11,0.6)' }}>
-                <span className="prize-shimmer" />
-                <span className="relative">🎁 סובב חינם!</span>
-              </button>
-            </div>
+            <button onClick={spin}
+              className="relative overflow-hidden w-full py-5 rounded-2xl font-black text-2xl text-amber-900 active:scale-95 transition-transform"
+              style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b,#d97706)', boxShadow: '0 0 0 3px rgba(251,191,36,0.6), 0 8px 28px rgba(245,158,11,0.55)' }}>
+              <span className="prize-shimmer" />
+              <span className="relative">🎁 סובב חינם!</span>
+            </button>
           ) : (
             <Button size="lg" fullWidth onClick={spin} disabled={spinning || !canSpin} className={spinning ? 'opacity-60 cursor-not-allowed' : ''}>
               {spinning ? '🎰 מסתובב...' : `🎰 סובב! (${SPIN_COST}⭐)`}
