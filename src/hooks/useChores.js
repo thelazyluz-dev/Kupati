@@ -5,8 +5,8 @@ import { generateId } from '../lib/utils.js'
 export function useChores() {
   const [chores, setChores] = useLocalStorage('chores', DEFAULT_CHORES)
 
-  function addChore({ name, defaultStars }) {
-    const chore = { id: generateId(), name, defaultStars: parseFloat(defaultStars) || 1 }
+  function addChore({ name, defaultStars, emoji = '' }) {
+    const chore = { id: generateId(), name, emoji, defaultStars: parseFloat(defaultStars) || 1 }
     setChores((prev) => [...prev, chore])
     return chore
   }

@@ -1280,9 +1280,9 @@ export default function ChildModeApp() {
         id: generateId(),
         childId,
         choreId: chore.id,
-        choreName: chore.name,
-        choreEmoji: chore.emoji,
-        amount: chore.defaultStars,
+        choreName: chore.name ?? '',
+        choreEmoji: chore.emoji ?? '',
+        amount: chore.defaultStars ?? 1,
         currency: 'stars',
         timestamp: Date.now(),
         status: 'pending',
@@ -1311,9 +1311,9 @@ export default function ChildModeApp() {
         id: generateId(),
         childId,
         choreId: chore.id,
-        choreName: chore.name,
-        choreEmoji: chore.emoji,
-        amount: chore.defaultStars,
+        choreName: chore.name ?? '',
+        choreEmoji: chore.emoji ?? '',
+        amount: chore.defaultStars ?? 1,
         currency: 'stars',
         timestamp: now,
         status: 'pending',
@@ -1324,9 +1324,8 @@ export default function ChildModeApp() {
         ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
         : '📝 הבקשה נשלחה להורה לאישור!')
       setSelectedChores(new Set())
-    } catch (err) {
-      console.error('[requestChores]', err)
-      showHint(`שגיאה: ${err?.message || String(err)}`)
+    } catch {
+      showHint('שגיאה בשליחת הבקשה — נסה שוב')
       setSubmittingBulk(false)
       return
     }
