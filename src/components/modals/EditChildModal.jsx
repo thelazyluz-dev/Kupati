@@ -125,6 +125,9 @@ export default function EditChildModal() {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
   const [confirmRecalc, setConfirmRecalc] = useState(false)
+  const [editBalance, setEditBalance] = useState(false)
+  const [manualStars, setManualStars] = useState('')
+  const [manualShekels, setManualShekels] = useState('')
   // undefined = unchanged, null = remove, string = new dataURL
   const [avatarImage, setAvatarImage] = useState(undefined)
   // Allowance
@@ -411,6 +414,74 @@ export default function EditChildModal() {
               className="text-amber-600 border-amber-200 hover:bg-amber-50"
             >
               🔄 איפוס יתרה והיסטוריה
+            </Button>
+          )}
+        </div>
+
+        {/* Manual balance correction */}
+        <div className="pt-2 border-t border-gray-100">
+          {editBalance ? (
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600 font-semibold text-center">תקן יתרה ידנית</p>
+              <div className="flex gap-2">
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 block mb-1 text-center">כוכבים ⭐</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.5"
+                    value={manualStars}
+                    onChange={(e) => setManualStars(e.target.value)}
+                    placeholder={String(child.starBalance)}
+                    className="w-full rounded-xl border-2 border-indigo-200 px-3 py-2 text-center font-bold focus:border-indigo-400 focus:outline-none"
+                    dir="ltr"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-gray-500 block mb-1 text-center">שקלים ₪</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={manualShekels}
+                    onChange={(e) => setManualShekels(e.target.value)}
+                    placeholder={String(child.shekelBalance)}
+                    className="w-full rounded-xl border-2 border-green-200 px-3 py-2 text-center font-bold focus:border-green-400 focus:outline-none"
+                    dir="ltr"
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  type="button"
+                  onClick={() => {
+                    const stars   = manualStars   !== '' ? parseFloat(manualStars)   : child.starBalance
+                    const shekels = manualShekels !== '' ? parseFloat(manualShekels) : child.shekelBalance
+                    if (!isNaN(stars) && !isNaN(shekels)) {
+                      updateChild(child.id, { starBalance: Math.max(0, stars), shekelBalance: Math.max(0, shekels) })
+                    }
+                    setEditBalance(false)
+                    closeModal()
+                  }}
+                >
+                  💾 שמור יתרה
+                </Button>
+                <Button variant="secondary" fullWidth type="button" onClick={() => setEditBalance(false)}>
+                  ביטול
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              fullWidth
+              type="button"
+              onClick={() => { setManualStars(''); setManualShekels(''); setEditBalance(true) }}
+              className="text-indigo-600 border-indigo-200 hover:bg-indigo-50"
+            >
+              ✏️ תקן יתרה ידנית
             </Button>
           )}
         </div>
