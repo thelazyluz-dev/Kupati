@@ -100,10 +100,12 @@ export default function AddStarsModal() {
 
   return (
     <Modal title={title} onClose={closeModal} headerColor="from-amber-400 to-orange-500">
-      <form onSubmit={handleSubmit} className="space-y-4">
+      {/* form fills the modal content area as a flex column */}
+      <form onSubmit={handleSubmit} className="flex flex-col h-full gap-3">
+
         {/* Tabs — free-entry only visible in parent mode */}
         {allowFreeEntry && (
-          <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl">
+          <div className="flex gap-2 bg-gray-100 p-1 rounded-2xl flex-shrink-0">
             <button
               type="button"
               onClick={() => setTab('chore')}
@@ -125,9 +127,10 @@ export default function AddStarsModal() {
           </div>
         )}
 
+        {/* Scrollable content area — chore list grows to fill */}
         {tab === 'chore' ? (
-          <div key="chore" className="space-y-2 animate-tab-in">
-            <div className="flex items-center justify-between">
+          <div className="flex-1 flex flex-col gap-2 min-h-0 animate-tab-in">
+            <div className="flex items-center justify-between flex-shrink-0">
               <p className="text-sm text-gray-500">בחר מטלות:</p>
               {selectedChores.size > 0 && (
                 <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
@@ -135,7 +138,7 @@ export default function AddStarsModal() {
                 </span>
               )}
             </div>
-            <div className="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto no-scrollbar">
+            <div className="flex-1 overflow-y-auto no-scrollbar space-y-2">
               {chores.map((chore) => {
                 const isSelected = selectedChores.has(chore.id)
                 return (
@@ -143,7 +146,7 @@ export default function AddStarsModal() {
                     key={chore.id}
                     type="button"
                     onClick={() => toggleChore(chore)}
-                    className={`flex items-center gap-3 p-3 rounded-2xl border-2 text-right transition-all active:scale-95 ${
+                    className={`w-full flex items-center gap-3 p-3 rounded-2xl border-2 text-right transition-all active:scale-95 ${
                       isSelected
                         ? 'border-emerald-500 bg-emerald-50'
                         : 'border-gray-200 bg-gray-50 hover:border-gray-300'
@@ -167,9 +170,7 @@ export default function AddStarsModal() {
         ) : (
           <div key="custom" className="space-y-3 animate-tab-in">
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">
-                כמות כוכבים
-              </label>
+              <label className="text-sm font-semibold text-gray-600 block mb-1">כמות כוכבים</label>
               <input
                 type="number"
                 min="0.5"
@@ -183,9 +184,7 @@ export default function AddStarsModal() {
               />
             </div>
             <div>
-              <label className="text-sm font-semibold text-gray-600 block mb-1">
-                תיאור
-              </label>
+              <label className="text-sm font-semibold text-gray-600 block mb-1">תיאור</label>
               <input
                 type="text"
                 value={customDesc}
@@ -197,48 +196,49 @@ export default function AddStarsModal() {
           </div>
         )}
 
-        {/* Note — collapsible to save space */}
-        {showNote ? (
-          <input
-            type="text"
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="הערה..."
-            className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
-            autoFocus
-          />
-        ) : (
-          <button
-            type="button"
-            onClick={() => setShowNote(true)}
-            className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+        {/* Pinned bottom area */}
+        <div className="flex-shrink-0 space-y-3">
+          {showNote ? (
+            <input
+              type="text"
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="הערה..."
+              className="w-full rounded-xl border-2 border-gray-200 px-3 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+              autoFocus
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={() => setShowNote(true)}
+              className="text-xs text-gray-400 hover:text-gray-600 transition-colors"
+            >
+              📝 הוסף הערה
+            </button>
+          )}
+
+          {((tab === 'chore' && selectedChores.size > 0) || (tab === 'custom' && customStars)) && (
+            <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-center">
+              <span className="text-xl font-bold text-amber-600">
+                +{tab === 'chore' ? totalStars : customStars} ⭐
+              </span>
+              {tab === 'custom' && customDesc && (
+                <span className="text-gray-600 mr-2">— {customDesc}</span>
+              )}
+            </div>
+          )}
+
+          <Button
+            type="submit"
+            fullWidth
+            size="lg"
+            disabled={tab === 'chore' ? selectedChores.size === 0 : !customStars}
           >
-            📝 הוסף הערה
-          </button>
-        )}
-
-        {/* Preview */}
-        {((tab === 'chore' && selectedChores.size > 0) || (tab === 'custom' && customStars)) && (
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-center">
-            <span className="text-xl font-bold text-amber-600">
-              +{tab === 'chore' ? totalStars : customStars} ⭐
-            </span>
-            {tab === 'custom' && customDesc && (
-              <span className="text-gray-600 mr-2">— {customDesc}</span>
-            )}
-          </div>
-        )}
-
-        <Button
-          type="submit"
-          fullWidth
-          size="lg"
-          disabled={tab === 'chore' ? selectedChores.size === 0 : !customStars}
-        >
-          {tab === 'chore' && selectedChores.size > 1
-            ? `✅ אשר ${selectedChores.size} מטלות (+${totalStars}⭐)`
-            : '✅ אשר ועדכן'}
-        </Button>
+            {tab === 'chore' && selectedChores.size > 1
+              ? `✅ אשר ${selectedChores.size} מטלות (+${totalStars}⭐)`
+              : '✅ אשר ועדכן'}
+          </Button>
+        </div>
       </form>
     </Modal>
   )
