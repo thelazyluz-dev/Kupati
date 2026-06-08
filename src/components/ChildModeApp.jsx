@@ -1052,6 +1052,45 @@ function GoalEditForm({ emoji, name, target, parsedTarget, setEmoji, setName, se
   )
 }
 
+// ─── Free Spin Celebration Overlay ───────────────────────────────────────────
+
+function FreeSpinCelebrationOverlay({ count, onSpin, onDismiss }) {
+  useEffect(() => {
+    celebrateGoal()
+    sounds.approve?.()
+    try { navigator.vibrate?.([40, 20, 80, 20, 120, 30, 120]) } catch {}
+  }, [])
+
+  return (
+    <div className="fixed inset-0 z-[70] flex flex-col items-center justify-center p-6"
+      style={{ background: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(4px)' }}>
+      <div className="w-full max-w-sm rounded-[32px] p-8 text-center animate-bounce-in"
+        style={{ background: 'linear-gradient(135deg,#fbbf24,#f59e0b,#d97706)', boxShadow: '0 0 60px rgba(251,191,36,0.7), 0 24px 60px rgba(0,0,0,0.5)' }}>
+        <div className="text-8xl mb-3" style={{ animation: 'bounce 0.8s ease-in-out infinite alternate' }}>🎰</div>
+        <h2 className="text-3xl font-black text-white mb-1 drop-shadow">סיבוב חינם!</h2>
+        <p className="text-lg font-bold text-white/90 mb-1">השלמת 5 מטלות 🎉</p>
+        <p className="text-sm text-white/80 mb-6">
+          {count > 1 ? `יש לך ${count} סיבובים חינמיים` : 'קיבלת סיבוב אחד בגלגל המזל'}
+        </p>
+        <div className="relative mb-3">
+          <div className="absolute inset-0 rounded-2xl animate-ping"
+            style={{ background: 'rgba(255,255,255,0.35)', animationDuration: '1s' }} />
+          <button onClick={onSpin}
+            className="relative w-full py-5 rounded-2xl font-black text-2xl text-amber-800 active:scale-95 transition-transform"
+            style={{ background: 'white', boxShadow: '0 8px 24px rgba(0,0,0,0.25)' }}>
+            🎰 סובב עכשיו!
+          </button>
+        </div>
+        <button onClick={onDismiss}
+          className="w-full py-3 rounded-2xl font-semibold text-white/80 text-sm active:scale-95 transition-all"
+          style={{ background: 'rgba(0,0,0,0.15)' }}>
+          אחר כך
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function IconCloud({ icons }) {
   if (!icons.length) return null
   return (
@@ -1115,6 +1154,7 @@ export default function ChildModeApp() {
   const [showWheel,    setShowWheel]    = useState(false)
   const [showPrizes,   setShowPrizes]   = useState(false)
   const [showGoals,    setShowGoals]    = useState(false)
+  const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
 
   const prevPendingRef = useRef(null)
 
@@ -1197,16 +1237,14 @@ export default function ChildModeApp() {
     prevPendingRef.current = pendingChores
   }, [pendingChores, childId])
 
-  // Alert child when they earn a free spin
+  // Alert child when they earn a free spin — full-screen celebration overlay
   const prevFreeSpinsRef = useRef(null)
   useEffect(() => {
     const c = children.find((x) => x.id === childId)
     const current = c?.freeSpins || 0
     if (prevFreeSpinsRef.current === null) { prevFreeSpinsRef.current = current; return }
     if (current > prevFreeSpinsRef.current) {
-      showHint('🎰 זכית בסיבוב חינם בגלגל המזל!')
-      sounds.approve?.()
-      navigator.vibrate?.([40, 20, 80, 20, 40])
+      setShowFreeSpinCelebration(true)
     }
     prevFreeSpinsRef.current = current
   }, [children, childId])
@@ -1339,6 +1377,14 @@ export default function ChildModeApp() {
       {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
       {showPrizes   && <ChildPrizesModal   {...commonProps} settings={settings} pendingChores={pendingChores} onClose={() => setShowPrizes(false)} />}
       {showGoals    && <ChildGoalsModal    {...commonProps} onClose={() => setShowGoals(false)} />}
+
+      {showFreeSpinCelebration && (
+        <FreeSpinCelebrationOverlay
+          count={child.freeSpins || 1}
+          onSpin={() => { setShowFreeSpinCelebration(false); setShowWheel(true) }}
+          onDismiss={() => setShowFreeSpinCelebration(false)}
+        />
+      )}
 
       {hint && <HintBanner text={hint} />}
 
