@@ -981,19 +981,20 @@ export default function HomeScreen() {
                           <button
                             ref={(el) => registerCoinTarget(child.id, el)}
                             onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                            className={`w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
-                              freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
+                            className={`w-full rounded-xl ring-1 ring-white/30 px-3 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
+                              freeSpins > 0
+                                ? 'bg-gradient-to-b from-yellow-400 to-orange-500 py-3 wheel-free-spin'
+                                : 'bg-gradient-to-b from-violet-500 to-purple-600 py-2.5 shadow-md'
                             }`}
-                            style={freeSpins > 0 ? { boxShadow: '0 0 0 3px rgba(251,191,36,0.7), 0 4px 18px rgba(251,191,36,0.5)' } : {}}
                           >
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-lg leading-none">🎰</span>
+                            <div className="flex items-center gap-1">
+                              <span className={freeSpins > 0 ? 'text-2xl leading-none' : 'text-lg leading-none'}>🎰</span>
                               {freeSpins > 0 && (
-                                <span className="bg-white/40 text-xs font-black rounded-full w-5 h-5 flex items-center justify-center leading-none shadow">{freeSpins}</span>
+                                <span className="bg-white/50 text-sm font-black rounded-full w-6 h-6 flex items-center justify-center leading-none shadow font-black">{freeSpins}</span>
                               )}
                             </div>
-                            <span className="text-xs font-bold leading-tight">
-                              {freeSpins > 0 ? '🎁 חינם!' : 'גלגל המזל'}
+                            <span className={`font-bold leading-tight ${freeSpins > 0 ? 'text-sm font-black' : 'text-xs'}`}>
+                              {freeSpins > 0 ? '🎁 סיבוב חינם!' : 'גלגל המזל'}
                             </span>
                             <div className="flex gap-0.5">
                               {Array.from({ length: 5 }, (_, j) => (

@@ -507,4 +507,13 @@
   .free-spin-badge {
     animation: free-spin-pop 0.8s ease-in-out infinite;
   }
+
+  /* Pulsing glow ring for wheel button when free spin available */
+  @keyframes wheel-free-glow {
+    0%, 100% { box-shadow: 0 0 0 2px rgba(251,191,36,0.9), 0 4px 14px rgba(251,191,36,0.5); }
+    50%       { box-shadow: 0 0 0 5px rgba(251,191,36,0.4), 0 4px 28px rgba(251,191,36,0.8); }
+  }
+  .wheel-free-spin {
+    animation: wheel-free-glow 1.3s ease-in-out infinite;
+  }
 }
