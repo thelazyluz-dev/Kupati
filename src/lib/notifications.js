@@ -17,15 +17,22 @@ export async function requestPermission() {
   return Notification.requestPermission()
 }
 
-function notify(title, body) {
+const NOTIF_OPTIONS = { lang: 'he', dir: 'rtl', icon: '/icon-192.png' }
+
+// Use Service Worker showNotification when available (required for PWA/iOS),
+// fall back to new Notification() for plain browser context.
+async function notify(title, body) {
   if (!('Notification' in window) || Notification.permission !== 'granted') return
+  const opts = { ...NOTIF_OPTIONS, body }
   try {
-    new Notification(title, {
-      body,
-      lang: 'he',
-      dir: 'rtl',
-      icon: '/icon-192.png',
-    })
+    if ('serviceWorker' in navigator) {
+      const reg = await navigator.serviceWorker.getRegistration()
+      if (reg) {
+        await reg.showNotification(title, opts)
+        return
+      }
+    }
+    new Notification(title, opts)
   } catch {}
 }
 
