@@ -262,8 +262,20 @@ function BalanceGraph({ transactions, currentBalance }) {
   )
 }
 
-function PendingChoresCard({ requests, onApprove, onReject }) {
+function PendingChoresCard({ requests, onApprove, onApproveMany, onReject }) {
   const [confirmReject, setConfirmReject] = useState(null)
+  const [selected, setSelected]           = useState(() => new Set(requests.map((r) => r.id)))
+
+  // Keep selected in sync when requests list changes (approval removes items)
+  useEffect(() => {
+    const validIds = new Set(requests.map((r) => r.id))
+    setSelected((prev) => {
+      const next = new Set([...prev].filter((id) => validIds.has(id)))
+      // Also add any brand-new items
+      requests.forEach((r) => next.add(r.id))
+      return next
+    })
+  }, [requests.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!confirmReject) return
@@ -271,51 +283,105 @@ function PendingChoresCard({ requests, onApprove, onReject }) {
     return () => clearTimeout(t)
   }, [confirmReject])
 
+  const isMulti     = requests.length >= 2
+  const allSelected = selected.size === requests.length
+  const bulkCount   = selected.size
+
+  function toggleSelect(id) {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id); else next.add(id)
+      return next
+    })
+  }
+
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(requests.map((r) => r.id)))
+  }
+
+  function approveSelected() {
+    onApproveMany([...selected])
+    setSelected(new Set())
+  }
+
+  const totalStars = requests.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.amount, 0)
+
   return (
     <div className="rounded-[22px] p-4 space-y-3 animate-slide-up"
       style={{ background: 'rgba(255,251,235,0.95)', border: '1.5px solid rgba(245,158,11,0.3)', boxShadow: '0 4px 16px rgba(245,158,11,0.12), inset 0 1px 1px rgba(255,255,255,0.8)' }}>
+
+      {/* Header */}
       <div className="flex items-center gap-2">
         <span className="text-base">📝</span>
         <p className="text-sm font-black text-amber-800">ממתינות לאישור</p>
         <span className="mr-auto text-xs font-black bg-amber-500 text-white rounded-full px-2 py-0.5 animate-pop">
           {requests.length}
         </span>
+        {isMulti && (
+          <button onClick={toggleAll}
+            className="text-xs font-bold text-amber-700 px-2.5 py-1 rounded-full bg-amber-100 active:scale-95">
+            {allSelected ? 'בטל הכל' : 'בחר הכל'}
+          </button>
+        )}
       </div>
-      {requests.map((req) => (
-        <div key={req.id} className="bg-white/70 rounded-2xl px-3 py-3 space-y-2.5">
-          <div className="flex items-center gap-2">
-            <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-bold text-gray-800 truncate">{req.choreName}</p>
-              <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
-              {req.source === 'parent' && req.status === 'done' && (
-                <p className="text-[10px] text-indigo-500 font-semibold">📌 משימה שהוקצתה — הילד סיים</p>
+
+      {/* Rows */}
+      {requests.map((req) => {
+        const isSel = isMulti && selected.has(req.id)
+        return (
+          <div key={req.id}
+            onClick={isMulti ? () => toggleSelect(req.id) : undefined}
+            className={`rounded-2xl px-3 py-3 space-y-2.5 transition-all ${isMulti ? 'cursor-pointer' : ''} ${isSel ? 'bg-emerald-50 ring-2 ring-emerald-300' : 'bg-white/70'}`}>
+            <div className="flex items-center gap-2">
+              {/* Checkbox */}
+              {isMulti && (
+                <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'}`}>
+                  {isSel && <span className="text-white text-[11px] font-black leading-none">✓</span>}
+                </div>
+              )}
+              <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-bold text-gray-800 truncate">{req.choreName}</p>
+                <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
+                {req.source === 'parent' && req.status === 'done' && (
+                  <p className="text-[10px] text-indigo-500 font-semibold">📌 משימה שהוקצתה — הילד סיים</p>
+                )}
+              </div>
+            </div>
+            {/* Individual approve / reject */}
+            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <button
+                onClick={() => onApprove(req.id)}
+                className="flex-1 py-2 rounded-xl text-sm font-black text-white active:scale-95 transition-all"
+                style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}>
+                ✅ אשר
+              </button>
+              {confirmReject === req.id ? (
+                <button
+                  onClick={() => { onReject(req.id); setConfirmReject(null) }}
+                  className="flex-1 py-2 rounded-xl text-sm font-black text-white bg-rose-500 active:scale-95 transition-all animate-pulse">
+                  בטוח? ✗
+                </button>
+              ) : (
+                <button
+                  onClick={() => setConfirmReject(req.id)}
+                  className="px-4 py-2 rounded-xl text-sm font-bold text-rose-500 bg-rose-50 border-2 border-rose-200 active:scale-95 transition-all">
+                  ❌ דחה
+                </button>
               )}
             </div>
           </div>
-          <div className="flex gap-2">
-            <button
-              onClick={() => onApprove(req.id)}
-              className="flex-1 py-2 rounded-xl text-sm font-black text-white active:scale-95 transition-all"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 3px 10px rgba(16,185,129,0.4)' }}>
-              ✅ אשר
-            </button>
-            {confirmReject === req.id ? (
-              <button
-                onClick={() => { onReject(req.id); setConfirmReject(null) }}
-                className="flex-1 py-2 rounded-xl text-sm font-black text-white bg-rose-500 active:scale-95 transition-all animate-pulse">
-                בטוח? ✗
-              </button>
-            ) : (
-              <button
-                onClick={() => setConfirmReject(req.id)}
-                className="px-4 py-2 rounded-xl text-sm font-bold text-rose-500 bg-rose-50 border-2 border-rose-200 active:scale-95 transition-all">
-                ❌ דחה
-              </button>
-            )}
-          </div>
-        </div>
-      ))}
+        )
+      })}
+
+      {/* Bulk approve button — shows when 2+ are selected */}
+      {isMulti && bulkCount >= 2 && (
+        <button onClick={approveSelected}
+          className="w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all"
+          style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 18px rgba(16,185,129,0.45)' }}>
+          ✅ אשר {bulkCount} מטלות · +{totalStars}⭐
+        </button>
+      )}
     </div>
   )
 }
@@ -779,6 +845,7 @@ export default function ChildDashboard({ childId }) {
             <PendingChoresCard
               requests={myPending}
               onApprove={(id) => { sounds.approve(); approvePendingChore(id) }}
+              onApproveMany={(ids) => { sounds.approve(); ids.forEach(approvePendingChore) }}
               onReject={rejectPendingChore}
             />
           )
