@@ -977,26 +977,35 @@ export default function HomeScreen() {
                       const dispCount = coinInFlight === child.id ? Math.max(0, rawCount - 1) : rawCount
                       const filled    = freeSpins > 0 ? 5 : dispCount % 5
                       return (
-                        <button
-                          ref={(el) => registerCoinTarget(child.id, el)}
-                          onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
-                          className={`w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
-                            freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
-                          }`}
-                        >
-                          <div className="flex items-center gap-1.5">
-                            <span className="text-lg leading-none">🎰</span>
-                            {freeSpins > 0 && (
-                              <span className="bg-white/30 text-[10px] font-black rounded-full w-4 h-4 flex items-center justify-center leading-none">{freeSpins}</span>
-                            )}
-                          </div>
-                          <span className="text-xs font-bold leading-tight">גלגל המזל</span>
-                          <div className="flex gap-0.5">
-                            {Array.from({ length: 5 }, (_, j) => (
-                              <span key={j} className="text-sm leading-none transition-all" style={{ opacity: j < filled ? 1 : 0.3 }}>🪙</span>
-                            ))}
-                          </div>
-                        </button>
+                        <div className="relative">
+                          {freeSpins > 0 && (
+                            <div className="absolute inset-0 rounded-xl animate-ping opacity-70"
+                              style={{ background: 'rgba(251,191,36,0.55)', animationDuration: '1.2s' }} />
+                          )}
+                          <button
+                            ref={(el) => registerCoinTarget(child.id, el)}
+                            onClick={() => showModal('spinWheel', { childId: child.id, childName: child.name })}
+                            className={`relative w-full rounded-xl shadow-md ring-1 ring-white/30 px-3 py-2.5 flex flex-col items-center gap-0.5 active:scale-95 active:brightness-90 transition-all text-white ${
+                              freeSpins > 0 ? 'bg-gradient-to-b from-yellow-400 to-orange-500' : 'bg-gradient-to-b from-violet-500 to-purple-600'
+                            }`}
+                            style={freeSpins > 0 ? { boxShadow: '0 4px 18px rgba(251,191,36,0.55)' } : {}}
+                          >
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-lg leading-none">🎰</span>
+                              {freeSpins > 0 && (
+                                <span className="bg-white/40 text-xs font-black rounded-full w-5 h-5 flex items-center justify-center leading-none shadow">{freeSpins}</span>
+                              )}
+                            </div>
+                            <span className="text-xs font-bold leading-tight">
+                              {freeSpins > 0 ? '🎁 חינם!' : 'גלגל המזל'}
+                            </span>
+                            <div className="flex gap-0.5">
+                              {Array.from({ length: 5 }, (_, j) => (
+                                <span key={j} className="text-sm leading-none transition-all" style={{ opacity: j < filled ? 1 : 0.3 }}>🪙</span>
+                              ))}
+                            </div>
+                          </button>
+                        </div>
                       )
                     })()}
                   </div>
