@@ -5,7 +5,7 @@ function toLocalDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-export function useDailyPenalty(childrenApi, transactionsApi) {
+export function useDailyPenalty(childrenApi, transactionsApi, pendingChores) {
   useEffect(() => {
     const now = new Date()
     const todayStr = toLocalDateStr(now)
@@ -17,7 +17,15 @@ export function useDailyPenalty(childrenApi, transactionsApi) {
     childrenApi.children.forEach(child => {
       if (child.penaltyEnabled === false) return
 
-      const pc = child.penaltyCheck || { lastDate: yesterdayStr, streak: 0 }
+      const pc = child.penaltyCheck
+
+      // New child (no penaltyCheck yet) — just initialise, don't penalise for days before joining
+      if (!pc) {
+        childrenApi.updateChild(child.id, {
+          penaltyCheck: { lastDate: todayStr, streak: 0, todayChecked: pastNoon },
+        })
+        return
+      }
 
       const alreadyCheckedToday = pc.lastDate === todayStr && pc.todayChecked
       if (alreadyCheckedToday) return
@@ -43,9 +51,21 @@ export function useDailyPenalty(childrenApi, transactionsApi) {
         const dayStart = new Date(dayStr + 'T00:00:00').getTime()
         const dayEnd   = dayStart + 86400000
 
-        const hadChore = txList.some(
+        // Count approved chore transactions for this day
+        const hadApprovedChore = txList.some(
           t => t.type === 'chore' && t.timestamp >= dayStart && t.timestamp < dayEnd
         )
+
+        // Also count pending/submitted chore requests — child did the work even if not yet approved
+        const hadPendingChore = (pendingChores || []).some(
+          pc => pc.childId === child.id
+            && pc.status !== 'rejected'
+            && pc.timestamp >= dayStart
+            && pc.timestamp < dayEnd
+        )
+
+        const hadChore = hadApprovedChore || hadPendingChore
+
         // Idempotent: skip if penalty already recorded for this day
         const alreadyPenalized = txList.some(
           t => t.type === 'penalty' && t.timestamp >= dayStart && t.timestamp < dayEnd

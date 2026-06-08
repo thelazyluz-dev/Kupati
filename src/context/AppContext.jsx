@@ -24,7 +24,7 @@ export function AppProvider({ children: reactChildren }) {
   const { status: syncStatus } = useSyncEngine(settingsApi.settings.familyCode || '')
   const learningApi = useLearning()
   const pendingChoresApi = usePendingChores()
-  useDailyPenalty(childrenApi, transactionsApi)
+  useDailyPenalty(childrenApi, transactionsApi, pendingChoresApi.pendingChores)
   useRecurringAllowance(childrenApi, transactionsApi)
   useWeeklySummary(childrenApi, transactionsApi)
 
