@@ -1458,6 +1458,28 @@ export default function ChildModeApp() {
           </div>
         )}
 
+        {/* Free spin persistent banner */}
+        {(child.freeSpins || 0) > 0 && (
+          <button onClick={() => setShowWheel(true)}
+            className="w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
+            style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)', boxShadow: '0 6px 28px rgba(245,158,11,0.55), 0 0 0 2px rgba(251,191,36,0.4)' }}>
+            {/* shimmer sweep */}
+            <span className="prize-shimmer" style={{ borderRadius: 22 }} />
+            <div className="relative flex items-center gap-4 px-5 py-4">
+              <div className="text-5xl flex-shrink-0" style={{ animation: 'bounce 0.9s ease-in-out infinite alternate' }}>🎰</div>
+              <div className="flex-1 text-right">
+                <p className="text-white font-black text-lg leading-tight">
+                  {(child.freeSpins || 0) > 1 ? `${child.freeSpins} סיבובים חינמיים!` : 'יש לך סיבוב חינם!'}
+                </p>
+                <p className="text-amber-100 text-sm font-semibold">לחץ לסובב עכשיו ←</p>
+              </div>
+              <div className="flex-shrink-0 bg-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg">
+                <span className="text-amber-600 font-black text-lg leading-none">{child.freeSpins}</span>
+              </div>
+            </div>
+          </button>
+        )}
+
         {/* Quick actions */}
         {(() => {
           const freeSpins = child.freeSpins || 0
