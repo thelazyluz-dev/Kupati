@@ -1461,10 +1461,10 @@ export default function ChildModeApp() {
         {/* Free spin persistent banner */}
         {(child.freeSpins || 0) > 0 && (
           <button onClick={() => setShowWheel(true)}
-            className="w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
+            className="relative w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
             style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)', boxShadow: '0 6px 28px rgba(245,158,11,0.55), 0 0 0 2px rgba(251,191,36,0.4)' }}>
             {/* shimmer sweep */}
-            <span className="prize-shimmer" style={{ borderRadius: 22 }} />
+            <span className="prize-shimmer" />
             <div className="relative flex items-center gap-4 px-5 py-4">
               <div className="text-5xl flex-shrink-0" style={{ animation: 'bounce 0.9s ease-in-out infinite alternate' }}>🎰</div>
               <div className="flex-1 text-right">
