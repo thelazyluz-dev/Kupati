@@ -14,40 +14,55 @@ export default function AddStarsModal() {
   const child = children.find((c) => c.id === childId)
 
   const [tab, setTab] = useState('chore') // 'chore' | 'custom'
-  const [selectedChore, setSelectedChore] = useState(null)
+  const [selectedChores, setSelectedChores] = useState(new Set())
   const [customStars, setCustomStars] = useState('')
   const [customDesc, setCustomDesc] = useState('')
   const [note, setNote] = useState('')
   const [showNote, setShowNote] = useState(false)
-  const [success, setSuccess] = useState(null) // { amount, description } | null
+  const [success, setSuccess] = useState(null)
 
   if (!child) return null
 
+  function toggleChore(chore) {
+    setSelectedChores((prev) => {
+      const next = new Set(prev)
+      if (next.has(chore.id)) next.delete(chore.id)
+      else next.add(chore.id)
+      return next
+    })
+  }
+
   function handleSubmit(e) {
     e.preventDefault()
-    let amount, description, type
 
-    if (tab === 'chore' && selectedChore) {
-      amount = selectedChore.defaultStars
-      description = selectedChore.name
-      type = 'chore'
-    } else if (tab === 'custom') {
-      amount = parseFloat(customStars)
-      description = customDesc || 'כוכבים'
-      type = 'other'
+    if (tab === 'chore') {
+      if (selectedChores.size === 0) return
+      const choresToSubmit = chores.filter((c) => selectedChores.has(c.id))
+      const totalStars = choresToSubmit.reduce((s, c) => s + c.defaultStars, 0)
+
+      addStars(childId, totalStars)
+      const txIds = choresToSubmit.map((chore) => {
+        const tx = addTransaction(childId, { type: 'chore', amount: chore.defaultStars, currency: 'stars', description: chore.name, note })
+        return tx.id
+      })
+
+      sounds.star()
+      celebrateChore()
+
+      const desc = choresToSubmit.length === 1 ? choresToSubmit[0].name : `${choresToSubmit.length} מטלות`
+      const emoji = choresToSubmit.length === 1 ? choresToSubmit[0].emoji : null
+      setSuccess({ amount: totalStars, description: desc, choreEmoji: emoji, txIds, isChore: true })
     } else {
-      return
+      const amount = parseFloat(customStars)
+      const description = customDesc || 'כוכבים'
+      if (!amount || amount <= 0) return
+
+      addStars(childId, amount)
+      const tx = addTransaction(childId, { type: 'other', amount, currency: 'stars', description, note })
+      sounds.star()
+      celebrateChore()
+      setSuccess({ amount, description, choreEmoji: null, txIds: [tx.id], isChore: false })
     }
-
-    if (!amount || amount <= 0) return
-
-    addStars(childId, amount)
-    const tx = addTransaction(childId, { type, amount, currency: 'stars', description, note })
-
-    sounds.star()
-    celebrateChore()
-
-    setSuccess({ amount, description, choreEmoji: selectedChore?.emoji ?? null, txId: tx.id, isChore: type === 'chore' })
   }
 
   const title = allowFreeEntry ? '⭐ הוסף כוכבים — מצב הורה ✏️' : '⭐ עשיתי מטלה!'
@@ -63,7 +78,6 @@ export default function AddStarsModal() {
           if (success.isChore) {
             const srcX = coinRect ? coinRect.left + coinRect.width  / 2 : window.innerWidth  / 2
             const srcY = coinRect ? coinRect.top  + coinRect.height / 2 : window.innerHeight / 2
-            // Keep dots showing old count until coin fully lands (1800ms anim + buffer)
             startCoinFlight(childId, 2100)
             fireCoin(childId, srcX, srcY, {
               onFly:  () => sounds.coinFly(),
@@ -74,12 +88,15 @@ export default function AddStarsModal() {
         onDone={closeModal}
         onUndo={() => {
           adjustStars(childId, -success.amount)
-          deleteTransaction(childId, success.txId)
+          success.txIds.forEach((id) => deleteTransaction(childId, id))
           closeModal()
         }}
       />
     )
   }
+
+  const selectedList = chores.filter((c) => selectedChores.has(c.id))
+  const totalStars = selectedList.reduce((s, c) => s + c.defaultStars, 0)
 
   return (
     <Modal title={title} onClose={closeModal} headerColor="from-amber-400 to-orange-500">
@@ -110,27 +127,41 @@ export default function AddStarsModal() {
 
         {tab === 'chore' ? (
           <div key="chore" className="space-y-2 animate-tab-in">
-            <p className="text-sm text-gray-500">בחר מטלה:</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">בחר מטלות:</p>
+              {selectedChores.size > 0 && (
+                <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                  {selectedChores.size} נבחרו · +{totalStars}⭐
+                </span>
+              )}
+            </div>
             <div className="grid grid-cols-1 gap-2 max-h-52 overflow-y-auto no-scrollbar">
-              {chores.map((chore) => (
-                <button
-                  key={chore.id}
-                  type="button"
-                  onClick={() => setSelectedChore(chore)}
-                  className={`flex items-center gap-3 p-3 rounded-2xl border-2 text-right transition-all active:scale-95 ${
-                    selectedChore?.id === chore.id
-                      ? 'border-indigo-500 bg-indigo-50'
-                      : 'border-gray-200 bg-gray-50 hover:border-gray-300'
-                  }`}
-                >
-                  <span className="text-2xl flex-shrink-0">{chore.emoji || '⭐'}</span>
-                  <span className="flex-1 font-medium text-gray-800">{chore.name}</span>
-                  <div className="flex items-center gap-1 text-amber-500 font-bold flex-shrink-0">
-                    <span>{chore.defaultStars}</span>
-                    <span>⭐</span>
-                  </div>
-                </button>
-              ))}
+              {chores.map((chore) => {
+                const isSelected = selectedChores.has(chore.id)
+                return (
+                  <button
+                    key={chore.id}
+                    type="button"
+                    onClick={() => toggleChore(chore)}
+                    className={`flex items-center gap-3 p-3 rounded-2xl border-2 text-right transition-all active:scale-95 ${
+                      isSelected
+                        ? 'border-emerald-500 bg-emerald-50'
+                        : 'border-gray-200 bg-gray-50 hover:border-gray-300'
+                    }`}
+                  >
+                    <span className="text-2xl flex-shrink-0">{chore.emoji || '⭐'}</span>
+                    <span className="flex-1 font-medium text-gray-800">{chore.name}</span>
+                    <div className="flex items-center gap-2 flex-shrink-0">
+                      <span className="text-amber-500 font-bold">{chore.defaultStars}⭐</span>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${
+                        isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'
+                      }`}>
+                        {isSelected && <span className="text-white text-[11px] font-black leading-none">✓</span>}
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           </div>
         ) : (
@@ -187,10 +218,10 @@ export default function AddStarsModal() {
         )}
 
         {/* Preview */}
-        {((tab === 'chore' && selectedChore) || (tab === 'custom' && customStars)) && (
+        {((tab === 'chore' && selectedChores.size > 0) || (tab === 'custom' && customStars)) && (
           <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 text-center">
             <span className="text-xl font-bold text-amber-600">
-              +{tab === 'chore' ? selectedChore.defaultStars : customStars} ⭐
+              +{tab === 'chore' ? totalStars : customStars} ⭐
             </span>
             {tab === 'custom' && customDesc && (
               <span className="text-gray-600 mr-2">— {customDesc}</span>
@@ -202,9 +233,11 @@ export default function AddStarsModal() {
           type="submit"
           fullWidth
           size="lg"
-          disabled={tab === 'chore' ? !selectedChore : !customStars}
+          disabled={tab === 'chore' ? selectedChores.size === 0 : !customStars}
         >
-          ✅ אשר ועדכן
+          {tab === 'chore' && selectedChores.size > 1
+            ? `✅ אשר ${selectedChores.size} מטלות (+${totalStars}⭐)`
+            : '✅ אשר ועדכן'}
         </Button>
       </form>
     </Modal>
