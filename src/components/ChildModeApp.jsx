@@ -1290,10 +1290,12 @@ export default function ChildModeApp() {
       await pushFamilyData(familyCode, 'pendingChores', [...current, newReq])
       setPendingChores([...current, newReq])
       showHint('📝 הבקשה נשלחה להורה לאישור!')
-      notifyChoreSubmitted(child.name, 1, chore.name)
     } catch {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
+      setSubmitting(null)
+      return
     }
+    try { notifyChoreSubmitted(child?.name, 1, chore.name) } catch {}
     setSubmitting(null)
   }
 
@@ -1318,15 +1320,16 @@ export default function ChildModeApp() {
       }))
       await pushFamilyData(familyCode, 'pendingChores', [...current, ...newReqs])
       setPendingChores([...current, ...newReqs])
-      const hintMsg = choresToSubmit.length > 1
+      showHint(choresToSubmit.length > 1
         ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
-        : '📝 הבקשה נשלחה להורה לאישור!'
-      showHint(hintMsg)
-      notifyChoreSubmitted(child.name, choresToSubmit.length, choresToSubmit[0]?.name)
+        : '📝 הבקשה נשלחה להורה לאישור!')
       setSelectedChores(new Set())
     } catch {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
+      setSubmittingBulk(false)
+      return
     }
+    try { notifyChoreSubmitted(child?.name, choresToSubmit.length, choresToSubmit[0]?.name) } catch {}
     setSubmittingBulk(false)
   }
 
