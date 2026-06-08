@@ -736,11 +736,16 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
             </p>
           )}
           {result ? (
-            <button onClick={handleClaim} disabled={busy}
-              className="w-full py-5 rounded-2xl font-black text-xl text-white active:scale-95 transition-transform disabled:opacity-50 animate-bounce"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 0 6px rgba(16,185,129,0.25), 0 10px 32px rgba(16,185,129,0.55)' }}>
-              {busy ? '...' : `💰 קח את הפרס — ${result.shekels}₪!`}
-            </button>
+            <div className="relative">
+              <div className="absolute inset-0 rounded-2xl animate-ping"
+                style={{ background: 'rgba(16,185,129,0.35)', animationDuration: '1s' }} />
+              <button onClick={handleClaim} disabled={busy}
+                className="relative overflow-hidden w-full py-5 rounded-2xl font-black text-2xl text-white active:scale-95 transition-transform disabled:opacity-50"
+                style={{ background: 'linear-gradient(135deg,#34d399,#059669,#047857)', boxShadow: '0 0 0 4px rgba(52,211,153,0.4), 0 12px 40px rgba(16,185,129,0.7)' }}>
+                <span className="prize-shimmer" />
+                <span className="relative">{busy ? '...' : `💰 קח את הפרס — ${result.shekels}₪!`}</span>
+              </button>
+            </div>
           ) : (
             <button onClick={spin} disabled={spinning || !canSpin || busy}
               className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all disabled:opacity-60"
@@ -1192,6 +1197,20 @@ export default function ChildModeApp() {
     prevPendingRef.current = pendingChores
   }, [pendingChores, childId])
 
+  // Alert child when they earn a free spin
+  const prevFreeSpinsRef = useRef(null)
+  useEffect(() => {
+    const c = children.find((x) => x.id === childId)
+    const current = c?.freeSpins || 0
+    if (prevFreeSpinsRef.current === null) { prevFreeSpinsRef.current = current; return }
+    if (current > prevFreeSpinsRef.current) {
+      showHint('🎰 זכית בסיבוב חינם בגלגל המזל!')
+      sounds.approve?.()
+      navigator.vibrate?.([40, 20, 80, 20, 40])
+    }
+    prevFreeSpinsRef.current = current
+  }, [children, childId])
+
   function handleChildUpdate(newChildren, newTx) {
     setChildren(newChildren)
     if (newTx) setTransactions((prev) => [newTx, ...prev])
@@ -1394,22 +1413,42 @@ export default function ChildModeApp() {
         )}
 
         {/* Quick actions */}
-        <div className="grid grid-cols-3 gap-2">
-          {[
+        {(() => {
+          const freeSpins = child.freeSpins || 0
+          const actions = [
             { icon: '🏦', label: 'חסכון',  onClick: () => setShowSavings(true),  bg: 'linear-gradient(135deg,#38bdf8,#14b8a6)' },
             { icon: '🎯', label: 'מטרה',   onClick: () => setShowGoals(true),    bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
             { icon: '💸', label: 'העברה',  onClick: () => setShowTransfer(true), bg: 'linear-gradient(135deg,#818cf8,#a855f7)', disabled: siblings.length === 0 },
             { icon: '🎁', label: 'פרסים',  onClick: () => setShowPrizes(true),   bg: 'linear-gradient(135deg,#a855f7,#7c3aed)' },
-            { icon: '🎰', label: 'גלגל',   onClick: () => setShowWheel(true),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)' },
-          ].map(({ icon, label, onClick, bg, disabled }) => (
-            <button key={label} onClick={onClick} disabled={disabled}
-              className={`flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}
-              style={{ background: bg, boxShadow: '0 4px 14px rgba(0,0,0,0.15)' }}>
-              <span className="text-2xl">{icon}</span>
-              <span className="text-xs font-black">{label}</span>
-            </button>
-          ))}
-        </div>
+            { icon: '🎰', label: 'גלגל',   onClick: () => setShowWheel(true),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)', freeSpin: freeSpins > 0 },
+          ]
+          return (
+            <div className="grid grid-cols-3 gap-2">
+              {actions.map(({ icon, label, onClick, bg, disabled, freeSpin }) => (
+                <div key={label} className="relative">
+                  {freeSpin && (
+                    <>
+                      {/* outer ping ring */}
+                      <div className="absolute inset-0 rounded-[22px] animate-ping opacity-60"
+                        style={{ background: 'rgba(251,191,36,0.45)', animationDuration: '1.1s' }} />
+                      {/* badge */}
+                      <span className="free-spin-badge absolute -top-1.5 -left-1.5 z-10 bg-amber-400 text-white text-[11px] font-black w-6 h-6 rounded-full flex items-center justify-center shadow-lg"
+                        style={{ boxShadow: '0 0 8px rgba(251,191,36,0.7)' }}>
+                        🎟️
+                      </span>
+                    </>
+                  )}
+                  <button onClick={onClick} disabled={disabled}
+                    className={`relative w-full flex flex-col items-center justify-center gap-1.5 py-3.5 rounded-[22px] active:scale-95 transition-all text-white ${disabled ? 'opacity-40' : ''}`}
+                    style={{ background: bg, boxShadow: freeSpin ? '0 4px 20px rgba(251,191,36,0.5)' : '0 4px 14px rgba(0,0,0,0.15)' }}>
+                    <span className="text-2xl">{icon}</span>
+                    <span className="text-xs font-black">{label}</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          )
+        })()}
 
         {/* Active savings summary */}
         {activeSavings.length > 0 && (

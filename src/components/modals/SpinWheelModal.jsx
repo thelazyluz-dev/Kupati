@@ -289,11 +289,17 @@ export default function SpinWheelModal() {
             </p>
           )}
           {result ? (
-            <button onClick={handleClaim}
-              className="w-full py-5 rounded-2xl font-black text-xl text-white active:scale-95 transition-transform animate-bounce"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 0 6px rgba(16,185,129,0.25), 0 10px 32px rgba(16,185,129,0.55)' }}>
-              💰 קח את הפרס — {rewardLabel}!
-            </button>
+            <div className="relative">
+              {/* pulsing halo ring */}
+              <div className="absolute inset-0 rounded-2xl animate-ping"
+                style={{ background: 'rgba(16,185,129,0.35)', animationDuration: '1s' }} />
+              <button onClick={handleClaim}
+                className="relative overflow-hidden w-full py-5 rounded-2xl font-black text-2xl text-white active:scale-95 transition-transform"
+                style={{ background: 'linear-gradient(135deg,#34d399,#059669,#047857)', boxShadow: '0 0 0 4px rgba(52,211,153,0.4), 0 12px 40px rgba(16,185,129,0.7)' }}>
+                <span className="prize-shimmer" />
+                <span className="relative">💰 קח את הפרס — {rewardLabel}!</span>
+              </button>
+            </div>
           ) : (
             <Button size="lg" fullWidth onClick={spin} disabled={spinning || !canSpin} className={spinning ? 'opacity-60 cursor-not-allowed' : ''}>
               {spinning ? '🎰 מסתובב...' : isFree ? '🎁 סובב חינם!' : `🎰 סובב! (${SPIN_COST}⭐)`}
