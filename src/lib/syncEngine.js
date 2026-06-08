@@ -242,6 +242,26 @@ export function detach() {
   onStatus      = null
 }
 
+/**
+ * Pull and merge all append-only keys from Firestore.
+ * Safe to call at any time (e.g. when app returns to foreground) because
+ * these keys are merge-only — local data is never lost.
+ */
+export async function pullMergeKeys() {
+  if (!db || !familyCode) return
+  for (const key of MERGE_KEYS) {
+    try {
+      const snap = await getDoc(dataDocRef(key))
+      if (snap.exists()) {
+        const ts = snap.data()?.updatedAt?.toMillis() || 0
+        applyRemoteData(key, snap.data().payload, ts)
+      }
+    } catch (err) {
+      console.warn(`[sync] pullMergeKeys failed for ${key}:`, err.message)
+    }
+  }
+}
+
 export async function push(key, value) {
   if (!db || !familyCode) return
   const payload = key === 'settings' ? sanitizeSettings(value) : value

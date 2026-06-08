@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { get } from '../lib/storage.js'
-import { attach, detach, push, isSuppressed, setLocalTs } from '../lib/syncEngine.js'
+import { attach, detach, push, isSuppressed, setLocalTs, pullMergeKeys } from '../lib/syncEngine.js'
 
 const LS_EVENT = 'kupati-storage'
 
@@ -45,9 +45,19 @@ export function useSyncEngine(familyCode) {
     return () => window.removeEventListener(LS_EVENT, handler)
   }, [familyCode])
 
+  // Pull merge-only keys when app returns to foreground — onSnapshot may have
+  // missed updates while the browser tab / PWA was in the background.
+  useEffect(() => {
+    function onVisible() {
+      if (familyCode && document.visibilityState === 'visible') pullMergeKeys()
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [familyCode])
+
   // Network status
   useEffect(() => {
-    function online()  { if (familyCode) setStatus('ok') }
+    function online()  { if (familyCode) { setStatus('ok'); pullMergeKeys() } }
     function offline() { if (familyCode) setStatus('offline') }
     window.addEventListener('online',  online)
     window.addEventListener('offline', offline)
