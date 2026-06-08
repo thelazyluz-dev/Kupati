@@ -7,14 +7,17 @@
  * - `updatedBy` is a per-device UUID so we can ignore our own writes in onSnapshot.
  * - `suppressKeys` prevents an infinite loop:
  *     pull from Firestore → write LS → kupati-storage event → would push back → suppress it.
+ * - `kupati_local_ts` tracks when each key was last written locally (ms epoch).
+ *   Used in attach() to avoid pulling Firestore data that is older than local state.
  */
 
 import { db } from './firebase.js'
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
 import { get, set } from './storage.js'
 
-const LS_EVENT  = 'kupati-storage'
+const LS_EVENT   = 'kupati-storage'
 const DEVICE_KEY = 'kupati_device_id'
+const LOCAL_TS_KEY = 'kupati_local_ts'
 const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings', 'pendingChores', 'childActivity']
 
 // ── device ID ──────────────────────────────────────────────────────────────
@@ -25,6 +28,21 @@ function getDeviceId() {
     localStorage.setItem(DEVICE_KEY, id)
   }
   return id
+}
+
+// ── local timestamp tracking ───────────────────────────────────────────────
+export function getLocalTs(key) {
+  try {
+    return JSON.parse(localStorage.getItem(LOCAL_TS_KEY) || '{}')[key] || 0
+  } catch { return 0 }
+}
+
+export function setLocalTs(key, ts) {
+  try {
+    const obj = JSON.parse(localStorage.getItem(LOCAL_TS_KEY) || '{}')
+    obj[key] = ts
+    localStorage.setItem(LOCAL_TS_KEY, JSON.stringify(obj))
+  } catch {}
 }
 
 // ── module state ───────────────────────────────────────────────────────────
@@ -91,7 +109,7 @@ function mergeTransactions(local, remote) {
 }
 
 /** Write remote payload into localStorage and fire the React sync event. */
-function applyRemoteData(key, payload) {
+function applyRemoteData(key, payload, remoteTs) {
   suppressKeys.add(key)
   try {
     if (key === 'settings') {
@@ -110,6 +128,8 @@ function applyRemoteData(key, payload) {
     } else {
       set(key, payload)
     }
+    // Record when remote data was last applied, so we can compare in future attach() calls
+    if (remoteTs) setLocalTs(key, remoteTs)
     window.dispatchEvent(new CustomEvent(LS_EVENT, { detail: { key } }))
   } finally {
     // Allow outbound pushes again after React processes this update
@@ -132,13 +152,33 @@ export async function attach(code, statusCb) {
     const childrenSnap = await getDoc(dataDocRef('children'))
 
     if (childrenSnap.exists() && childrenSnap.data()?.updatedBy !== deviceId) {
-      // Remote data exists from another device — pull everything
-      for (const key of DATA_KEYS) {
-        try {
-          const snap = await getDoc(dataDocRef(key))
-          if (snap.exists()) applyRemoteData(key, snap.data().payload)
-        } catch (pullErr) {
-          console.warn(`[sync] Initial pull failed for ${key}:`, pullErr.message)
+      // Remote data was last written by another source (another device or child_mode).
+      // Compare Firestore updatedAt with our last local write time to decide direction.
+      const remoteTs = childrenSnap.data()?.updatedAt?.toMillis() || 0
+      const localTs  = getLocalTs('children')
+
+      if (remoteTs > localTs) {
+        // Firestore is newer — pull everything from remote
+        for (const key of DATA_KEYS) {
+          try {
+            const snap = await getDoc(dataDocRef(key))
+            if (snap.exists()) {
+              const ts = snap.data()?.updatedAt?.toMillis() || 0
+              applyRemoteData(key, snap.data().payload, ts)
+            }
+          } catch (pullErr) {
+            console.warn(`[sync] Initial pull failed for ${key}:`, pullErr.message)
+          }
+        }
+      } else {
+        // Local is newer (or same) — protect local data by pushing to Firestore
+        for (const key of DATA_KEYS) {
+          try {
+            const val = get(key)
+            if (val !== null) await push(key, val)
+          } catch (pushErr) {
+            console.warn(`[sync] Initial push failed for ${key}:`, pushErr.message)
+          }
         }
       }
     } else if (!childrenSnap.exists()) {
@@ -167,7 +207,8 @@ export async function attach(code, statusCb) {
         if (!snap.exists()) return
         const data = snap.data()
         if (data.updatedBy === deviceId) return  // our own write, ignore
-        applyRemoteData(key, data.payload)
+        const remoteTs = data.updatedAt?.toMillis() || 0
+        applyRemoteData(key, data.payload, remoteTs)
       },
       (err) => {
         console.warn('[sync] onSnapshot error:', err)

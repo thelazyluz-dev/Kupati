@@ -114,7 +114,7 @@ function ColorPicker({ value, onChange }) {
 }
 
 export default function EditChildModal() {
-  const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin, resetChildData } = useApp()
+  const { closeModal, modalData, updateChild, deleteChild, navigate, requirePin, resetChildData, recalculateBalance } = useApp()
   const child = modalData
 
   const [name, setName] = useState(child?.name || '')
@@ -124,6 +124,7 @@ export default function EditChildModal() {
   const [grade, setGrade] = useState(child?.grade || 1)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [confirmRecalc, setConfirmRecalc] = useState(false)
   // undefined = unchanged, null = remove, string = new dataURL
   const [avatarImage, setAvatarImage] = useState(undefined)
   // Allowance
@@ -410,6 +411,40 @@ export default function EditChildModal() {
               className="text-amber-600 border-amber-200 hover:bg-amber-50"
             >
               🔄 איפוס יתרה והיסטוריה
+            </Button>
+          )}
+        </div>
+
+        {/* Recalculate balance from transaction history */}
+        <div className="pt-2 border-t border-gray-100">
+          {confirmRecalc ? (
+            <div className="space-y-2">
+              <p className="text-sm text-blue-700 font-semibold text-center bg-blue-50 rounded-xl py-2 px-3">
+                יחושב מחדש מתוך כל ההיסטוריה.<br />פעולה זו בטוחה ואפשר לבטל עם undo.
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  variant="primary"
+                  fullWidth
+                  type="button"
+                  onClick={() => { recalculateBalance(child.id); setConfirmRecalc(false); closeModal() }}
+                >
+                  כן, שחזר
+                </Button>
+                <Button variant="secondary" fullWidth type="button" onClick={() => setConfirmRecalc(false)}>
+                  ביטול
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <Button
+              variant="ghost"
+              fullWidth
+              type="button"
+              onClick={() => setConfirmRecalc(true)}
+              className="text-blue-600 border-blue-200 hover:bg-blue-50"
+            >
+              🔧 שחזר יתרה מהיסטוריה
             </Button>
           )}
         </div>

@@ -291,6 +291,31 @@ export function useChildren() {
     }))
   }
 
+  /**
+   * Recompute starBalance and shekelBalance from transaction history.
+   * Uses the same sign convention as deleteTransaction so the result is consistent.
+   * Deduct types (subtract from balance when present): expense, convert_out, prize_redeem,
+   * savings_open, penalty, wheel_spin, loan_repay.
+   * Everything else adds to balance.
+   */
+  function recalculateBalance(childId, transactions) {
+    const DEDUCT = new Set(['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay'])
+    let stars = 0, shekels = 0
+    for (const tx of (transactions || [])) {
+      const sign = DEDUCT.has(tx.type) ? -1 : 1
+      const amt  = parseFloat(tx.amount) || 0
+      if (tx.currency === 'stars') stars    += sign * amt
+      else                          shekels  += sign * amt
+    }
+    setChildren((prev) =>
+      prev.map((c) =>
+        c.id !== childId
+          ? c
+          : { ...c, starBalance: Math.max(0, Math.round(stars * 10) / 10), shekelBalance: Math.max(0, Math.round(shekels * 100) / 100) }
+      )
+    )
+  }
+
   return {
     children,
     addChild,
@@ -318,5 +343,6 @@ export function useChildren() {
     addMemory,
     deleteMemory,
     transferStars,
+    recalculateBalance,
   }
 }

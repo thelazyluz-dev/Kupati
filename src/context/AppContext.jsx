@@ -105,6 +105,11 @@ export function AppProvider({ children: reactChildren }) {
     transactionsApi.clearTransactions(childId)
   }
 
+  function recalculateBalance(childId) {
+    const txs = transactionsApi.getTransactions(childId)
+    childrenApi.recalculateBalance(childId, txs)
+  }
+
   const PARENT_LOG_MAP = {
     chore:              (d) => d.currency === 'stars' ? 'parent_stars_add' : 'parent_money_add',
     other:              (d) => d.currency === 'stars' ? 'parent_stars_add' : 'parent_money_add',
@@ -433,6 +438,7 @@ export function AppProvider({ children: reactChildren }) {
     undoRepayLoan,
     requirePin,
     resetChildData,
+    recalculateBalance,
     pendingBadge,
     clearPendingBadge: () => setPendingBadge(null),
     pendingFreeSpin,

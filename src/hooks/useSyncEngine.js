@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { get } from '../lib/storage.js'
-import { attach, detach, push, isSuppressed } from '../lib/syncEngine.js'
+import { attach, detach, push, isSuppressed, setLocalTs } from '../lib/syncEngine.js'
 
 const LS_EVENT = 'kupati-storage'
 
@@ -25,6 +25,9 @@ export function useSyncEngine(familyCode) {
       const key = e.detail?.key
       if (!key || !familyCode) return
       if (isSuppressed(key)) return  // this write came FROM Firestore — don't echo back
+
+      // Record local write time immediately so attach() knows local data is fresh
+      setLocalTs(key, Date.now())
 
       clearTimeout(debounce.current[key])
       debounce.current[key] = setTimeout(async () => {
