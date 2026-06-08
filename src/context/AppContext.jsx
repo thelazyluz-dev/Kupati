@@ -69,6 +69,8 @@ export function AppProvider({ children: reactChildren }) {
   const [pendingBadge,    setPendingBadge]    = useState(null)
   const [pendingFreeSpin, setPendingFreeSpin] = useState(null)
   const [coinInFlight,    setCoinInFlight]    = useState(null) // childId while coin is animating
+  // Tracks today's chore count per child synchronously (React state is stale inside a batch loop)
+  const todayChoreCountRef = useRef({})
 
   function navigate(nextScreen, childId = null) {
     setScreen(nextScreen)
@@ -140,19 +142,29 @@ export function AppProvider({ children: reactChildren }) {
       // Free spin + streak bonus
       if (txData.type === 'chore') {
         const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
-        const todayChores = projected.filter(
-          (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
-        )
+        const todayStr  = dayStart.toDateString()
+
+        // Use a ref so the count is correct even when addTransaction is called
+        // multiple times synchronously (React state is stale between batch calls)
+        const cached = todayChoreCountRef.current[childId]
+        if (!cached || cached.dateStr !== todayStr) {
+          const base = transactionsApi.getTransactions(childId).filter(
+            (t) => t.type === 'chore' && t.timestamp >= dayStart.getTime()
+          ).length
+          todayChoreCountRef.current[childId] = { dateStr: todayStr, count: base }
+        }
+        todayChoreCountRef.current[childId].count++
+        const todayCount = todayChoreCountRef.current[childId].count
 
         // Free spin every 5 chores in a day
-        if (todayChores.length > 0 && todayChores.length % 5 === 0) {
+        if (todayCount % 5 === 0) {
           childrenApi.grantFreeSpin(childId)
           setPendingFreeSpin({ childId })
         }
 
         // Streak bonus: check on FIRST chore of the day only
-        if (todayChores.length === 1) {
-          const streak = calculateStreak(projected)
+        if (todayCount === 1) {
+          const streak = calculateStreak(projected)  // projected is fine here — single call per day
           const bonus  = child.streakBonus
           if (bonus?.enabled && streak > 0 && streak % (bonus.threshold || 7) === 0) {
             const bonusStars = parseInt(bonus.stars) || 0
