@@ -1324,8 +1324,9 @@ export default function ChildModeApp() {
         ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
         : '📝 הבקשה נשלחה להורה לאישור!')
       setSelectedChores(new Set())
-    } catch {
-      showHint('שגיאה בשליחת הבקשה — נסה שוב')
+    } catch (err) {
+      console.error('[requestChores]', err)
+      showHint(`שגיאה: ${err?.message || String(err)}`)
       setSubmittingBulk(false)
       return
     }
