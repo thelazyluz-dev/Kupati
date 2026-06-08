@@ -333,18 +333,42 @@ export function AppProvider({ children: reactChildren }) {
   const prevPendingRef = useRef(null)
   useEffect(() => {
     const current = pendingChoresApi.pendingChores
-    if (prevPendingRef.current === null) { prevPendingRef.current = current; return }
+    if (prevPendingRef.current === null) {
+      // First mount — notify about pending chores submitted in the last 10 min
+      // that weren't notified yet (tracked by timestamp in localStorage).
+      const lastNotified = parseInt(localStorage.getItem('kupati_lastNotified') || '0', 10)
+      const tenMinAgo = Date.now() - 10 * 60 * 1000
+      const cutoff = Math.max(lastNotified, tenMinAgo)
+      const missed = current.filter(
+        (pc) => pc.status === 'pending' && pc.timestamp > cutoff
+      )
+      if (missed.length > 0) {
+        missed.forEach((pc) => {
+          const child = childrenApi.children.find((c) => c.id === pc.childId)
+          if (!child) return
+          const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
+          if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
+          else notifyChoreRequest(child.name, label)
+        })
+        localStorage.setItem('kupati_lastNotified', String(Date.now()))
+      }
+      prevPendingRef.current = current
+      return
+    }
     const prev = prevPendingRef.current
     const newReqs = current.filter(
       (pc) => pc.status === 'pending' && !prev.find((p) => p.id === pc.id)
     )
-    newReqs.forEach((pc) => {
-      const child = childrenApi.children.find((c) => c.id === pc.childId)
-      if (!child) return
-      const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
-      if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
-      else notifyChoreRequest(child.name, label)
-    })
+    if (newReqs.length > 0) {
+      newReqs.forEach((pc) => {
+        const child = childrenApi.children.find((c) => c.id === pc.childId)
+        if (!child) return
+        const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
+        if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
+        else notifyChoreRequest(child.name, label)
+      })
+      localStorage.setItem('kupati_lastNotified', String(Date.now()))
+    }
     prevPendingRef.current = current
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
 
