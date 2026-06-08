@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext.jsx'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
@@ -40,21 +40,28 @@ export default function ChildActivityLog({ onClose }) {
     approvePendingPrize, rejectPendingPrize,
   } = useApp()
 
-  const [busy, setBusy] = useState(null)
-
-  function handleClose() {
-    markChildActivityRead()
-    onClose()
-  }
+  const [busy, setBusy]         = useState(null)
+  const [selected, setSelected] = useState(() => new Set())
 
   function getChildName(childId) {
     return children?.find((c) => c.id === childId)?.name || ''
   }
 
-  // Items awaiting parent action
+  // Items awaiting parent action — defined before hooks that depend on it
   const actionItems = (pendingChores || [])
     .filter((pc) => pc.status === 'pending' || (pc.source === 'parent' && pc.status === 'done'))
     .sort((a, b) => b.timestamp - a.timestamp)
+
+  // Keep selection valid when list shrinks (after approval)
+  useEffect(() => {
+    const validIds = new Set(actionItems.map((pc) => pc.id))
+    setSelected((prev) => new Set([...prev].filter((id) => validIds.has(id))))
+  }, [actionItems.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  function handleClose() {
+    markChildActivityRead()
+    onClose()
+  }
 
   // Resolved pending chores (last 7 days) — show as history cards
   const cutoff = Date.now() - 7 * 86400000
@@ -117,53 +124,104 @@ export default function ChildActivityLog({ onClose }) {
       <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
 
         {/* ── Awaiting approval ───────────────────────────────────────────── */}
-        {actionItems.length > 0 && (
-          <section className="space-y-2">
-            <p className="text-[11px] font-black text-amber-600 uppercase tracking-wider px-1">
-              ⏳ מחכות לאישור שלך
-            </p>
-            {actionItems.map((pc) => {
-              const isDone   = pc.status === 'done'
-              const isPrize  = pc.type === 'prize'
-              const label    = isDone ? '✅ הושלם — ממתין לאישורך' : isPrize ? '🎁 מבקש לממש פרס' : '📝 ביקש אישור מטלה'
-              const labelColor = isDone ? 'text-emerald-600' : isPrize ? 'text-purple-600' : 'text-amber-600'
-              return (
-                <div key={pc.id}
-                  className="rounded-2xl overflow-hidden"
-                  style={{ background: 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(245,158,11,0.25)', boxShadow: '0 2px 10px rgba(245,158,11,0.1)' }}>
-                  <div className="flex items-center gap-3 px-4 pt-3 pb-2">
-                    <span className="text-2xl flex-shrink-0">{pc.choreEmoji || (isPrize ? '🎁' : '✅')}</span>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-black text-gray-800">{getChildName(pc.childId)}</p>
-                      <p className="text-xs font-semibold text-gray-600 truncate">{pc.choreName}</p>
-                      <p className={`text-[11px] font-bold ${labelColor}`}>{label}</p>
+        {actionItems.length > 0 && (() => {
+          const isMulti    = actionItems.length >= 2
+          const allSel     = isMulti && selected.size === actionItems.length
+          const bulkCount  = selected.size
+          const bulkStars  = actionItems.filter((pc) => selected.has(pc.id)).reduce((s, pc) => s + pc.amount, 0)
+
+          function toggleSelect(id) {
+            setSelected((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
+          }
+          function toggleAll() {
+            setSelected(allSel ? new Set() : new Set(actionItems.map((pc) => pc.id)))
+          }
+          async function approveSelected() {
+            const ids = [...selected]
+            sounds.approve()
+            celebrateGoal()
+            for (const id of ids) {
+              const pc = actionItems.find((x) => x.id === id)
+              if (!pc) continue
+              if (pc.type === 'prize') approvePendingPrize(id)
+              else approvePendingChore(id)
+            }
+            setSelected(new Set())
+          }
+
+          return (
+            <section className="space-y-2">
+              <div className="flex items-center justify-between px-1">
+                <p className="text-[11px] font-black text-amber-600 uppercase tracking-wider">
+                  ⏳ מחכות לאישור שלך
+                </p>
+                {isMulti && (
+                  <button onClick={toggleAll}
+                    className="text-xs font-bold text-amber-700 px-2.5 py-1 rounded-full bg-amber-100 active:scale-95">
+                    {allSel ? 'בטל הכל' : 'בחר הכל'}
+                  </button>
+                )}
+              </div>
+
+              {actionItems.map((pc) => {
+                const isDone     = pc.status === 'done'
+                const isPrize    = pc.type === 'prize'
+                const label      = isDone ? '✅ הושלם — ממתין לאישורך' : isPrize ? '🎁 מבקש לממש פרס' : '📝 ביקש אישור מטלה'
+                const labelColor = isDone ? 'text-emerald-600' : isPrize ? 'text-purple-600' : 'text-amber-600'
+                const isSel      = isMulti && selected.has(pc.id)
+                return (
+                  <div key={pc.id}
+                    onClick={isMulti ? () => toggleSelect(pc.id) : undefined}
+                    className={`rounded-2xl overflow-hidden transition-all ${isMulti ? 'cursor-pointer' : ''} ${isSel ? 'ring-2 ring-emerald-400' : ''}`}
+                    style={{ background: isSel ? 'rgba(236,253,245,0.98)' : 'rgba(255,255,255,0.95)', border: '1.5px solid rgba(245,158,11,0.25)', boxShadow: '0 2px 10px rgba(245,158,11,0.1)' }}>
+                    <div className="flex items-center gap-3 px-4 pt-3 pb-2">
+                      {isMulti && (
+                        <div className={`flex-shrink-0 w-6 h-6 rounded-full border-2 flex items-center justify-center transition-all ${isSel ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'}`}>
+                          {isSel && <span className="text-white text-[11px] font-black leading-none">✓</span>}
+                        </div>
+                      )}
+                      <span className="text-2xl flex-shrink-0">{pc.choreEmoji || (isPrize ? '🎁' : '✅')}</span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-black text-gray-800">{getChildName(pc.childId)}</p>
+                        <p className="text-xs font-semibold text-gray-600 truncate">{pc.choreName}</p>
+                        <p className={`text-[11px] font-bold ${labelColor}`}>{label}</p>
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-black text-amber-600">{pc.amount}⭐</p>
+                        <p className="text-[10px] text-gray-400">{timeAgo(pc.timestamp)}</p>
+                      </div>
                     </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-black text-amber-600">{pc.amount}⭐</p>
-                      <p className="text-[10px] text-gray-400">{timeAgo(pc.timestamp)}</p>
+                    <div className="flex border-t border-gray-100" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleApprove(pc)}
+                        disabled={busy === pc.id}
+                        className="flex-1 py-2.5 text-sm font-black text-emerald-600 active:bg-emerald-50 transition-colors disabled:opacity-50"
+                      >
+                        {busy === pc.id ? '...' : isPrize ? '✅ אשר מימוש' : '✅ אשר'}
+                      </button>
+                      <div className="w-px bg-gray-100" />
+                      <button
+                        onClick={() => handleReject(pc)}
+                        className="flex-1 py-2.5 text-sm font-black text-rose-500 active:bg-rose-50 transition-colors"
+                      >
+                        ❌ דחה
+                      </button>
                     </div>
                   </div>
-                  <div className="flex border-t border-gray-100">
-                    <button
-                      onClick={() => handleApprove(pc)}
-                      disabled={busy === pc.id}
-                      className="flex-1 py-2.5 text-sm font-black text-emerald-600 active:bg-emerald-50 transition-colors disabled:opacity-50"
-                    >
-                      {busy === pc.id ? '...' : isPrize ? '✅ אשר מימוש' : '✅ אשר'}
-                    </button>
-                    <div className="w-px bg-gray-100" />
-                    <button
-                      onClick={() => handleReject(pc)}
-                      className="flex-1 py-2.5 text-sm font-black text-rose-500 active:bg-rose-50 transition-colors"
-                    >
-                      ❌ דחה
-                    </button>
-                  </div>
-                </div>
-              )
-            })}
-          </section>
-        )}
+                )
+              })}
+
+              {/* Bulk approve button */}
+              {isMulti && bulkCount >= 2 && (
+                <button onClick={approveSelected}
+                  className="w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all"
+                  style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 18px rgba(16,185,129,0.45)' }}>
+                  ✅ אשר {bulkCount} מטלות · +{bulkStars}⭐
+                </button>
+              )}
+            </section>
+          )
+        })()}
 
         {/* ── History ─────────────────────────────────────────────────────── */}
         {historyItems.length === 0 && actionItems.length === 0 ? (
