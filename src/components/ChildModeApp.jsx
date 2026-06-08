@@ -1155,6 +1155,8 @@ export default function ChildModeApp() {
   const [showPrizes,   setShowPrizes]   = useState(false)
   const [showGoals,    setShowGoals]    = useState(false)
   const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
+  const [selectedChores, setSelectedChores] = useState(new Set())
+  const [submittingBulk, setSubmittingBulk] = useState(false)
 
   const prevPendingRef = useRef(null)
 
@@ -1292,6 +1294,37 @@ export default function ChildModeApp() {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
     }
     setSubmitting(null)
+  }
+
+  async function requestChores(choresToSubmit) {
+    if (!choresToSubmit.length) return
+    setSubmittingBulk(true)
+    sounds.send()
+    navigator.vibrate?.([20, 10, 30])
+    try {
+      const current = await fetchFamilyData(familyCode, 'pendingChores') || []
+      const now = Date.now()
+      const newReqs = choresToSubmit.map((chore) => ({
+        id: generateId(),
+        childId,
+        choreId: chore.id,
+        choreName: chore.name,
+        choreEmoji: chore.emoji,
+        amount: chore.defaultStars,
+        currency: 'stars',
+        timestamp: now,
+        status: 'pending',
+      }))
+      await pushFamilyData(familyCode, 'pendingChores', [...current, ...newReqs])
+      setPendingChores([...current, ...newReqs])
+      showHint(choresToSubmit.length > 1
+        ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
+        : '📝 הבקשה נשלחה להורה לאישור!')
+      setSelectedChores(new Set())
+    } catch {
+      showHint('שגיאה בשליחת הבקשה — נסה שוב')
+    }
+    setSubmittingBulk(false)
   }
 
   async function handleRequestNotifPerm() {
@@ -1628,46 +1661,88 @@ export default function ChildModeApp() {
           </div>
         )}
 
-        {/* Chore request section */}
-        <div className="rounded-[22px] p-4"
-          style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
-          <h3 className="font-black text-gray-800 text-sm mb-3">🏃 בקש אישור מטלה</h3>
-          <div className="space-y-1">
-            {choreList.map((chore) => {
-              const pendingForChore = myPending.find(
-                (pc) => pc.choreId === chore.id && pc.status === 'pending' && pc.timestamp > todayStart
-              )
-              return (
-                <div key={chore.id} className="flex items-center justify-between py-2 border-b border-gray-50 last:border-0">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span className="text-xl flex-shrink-0">{chore.emoji}</span>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-700 truncate">{chore.name}</p>
-                      <p className="text-xs text-amber-600 font-bold">+{chore.defaultStars}⭐</p>
-                    </div>
-                  </div>
-                  {pendingForChore ? (
-                    <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full flex-shrink-0">
-                      ⏳ ממתין
-                    </span>
-                  ) : (
-                    <button
-                      onClick={() => requestChore(chore)}
-                      disabled={submitting === chore.id}
-                      className="text-xs font-bold text-white px-4 py-1.5 rounded-full active:scale-90 transition-all disabled:opacity-50 flex-shrink-0"
-                      style={{
-                        background: 'linear-gradient(135deg,#f59e0b,#f97316)',
-                        boxShadow: '0 2px 8px rgba(245,158,11,0.35)',
-                      }}
-                    >
-                      {submitting === chore.id ? '...' : 'בקש ✓'}
+        {/* Chore request section — multi-select */}
+        {(() => {
+          const selectedList = choreList.filter((c) => selectedChores.has(c.id))
+          const totalStars = selectedList.reduce((s, c) => s + c.defaultStars, 0)
+          return (
+            <div className="rounded-[22px] p-4"
+              style={{ background: 'rgba(255,255,255,0.85)', border: '1.5px solid rgba(255,255,255,0.8)', boxShadow: '0 4px 16px rgba(0,0,0,0.07)' }}>
+              <div className="flex items-center justify-between mb-3">
+                <h3 className="font-black text-gray-800 text-sm">⭐ עשיתי מטלה!</h3>
+                {selectedChores.size > 0 && (
+                  <span className="text-xs font-bold text-emerald-600 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
+                    {selectedChores.size} נבחרו · +{totalStars}⭐
+                  </span>
+                )}
+              </div>
+              <div className="space-y-1.5">
+                {choreList.map((chore) => {
+                  const pendingForChore = myPending.find(
+                    (pc) => pc.choreId === chore.id && pc.status === 'pending' && pc.timestamp > todayStart
+                  )
+                  const isSelected = selectedChores.has(chore.id)
+
+                  if (pendingForChore) {
+                    return (
+                      <div key={chore.id} className="flex items-center justify-between py-2.5 px-3 rounded-2xl opacity-50">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="text-xl flex-shrink-0">{chore.emoji}</span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold text-gray-700 truncate">{chore.name}</p>
+                            <p className="text-xs text-amber-600 font-bold">+{chore.defaultStars}⭐</p>
+                          </div>
+                        </div>
+                        <span className="text-xs font-bold text-amber-600 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-full flex-shrink-0">
+                          ⏳ ממתין
+                        </span>
+                      </div>
+                    )
+                  }
+
+                  return (
+                    <button key={chore.id}
+                      onClick={() => setSelectedChores((prev) => {
+                        const next = new Set(prev)
+                        if (next.has(chore.id)) next.delete(chore.id)
+                        else next.add(chore.id)
+                        return next
+                      })}
+                      disabled={submittingBulk}
+                      className={`w-full flex items-center justify-between py-2.5 px-3 rounded-2xl border-2 transition-all active:scale-[0.98] ${
+                        isSelected ? 'bg-emerald-50 border-emerald-400' : 'bg-gray-50/60 border-transparent'
+                      }`}>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span className="text-xl flex-shrink-0">{chore.emoji}</span>
+                        <div className="min-w-0 text-right">
+                          <p className="text-sm font-semibold text-gray-700 truncate">{chore.name}</p>
+                          <p className="text-xs text-amber-600 font-bold">+{chore.defaultStars}⭐</p>
+                        </div>
+                      </div>
+                      <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                        isSelected ? 'bg-emerald-500 border-emerald-500' : 'border-gray-300 bg-white'
+                      }`}>
+                        {isSelected && <span className="text-white text-[11px] font-black leading-none">✓</span>}
+                      </div>
                     </button>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
+                  )
+                })}
+              </div>
+
+              {selectedChores.size > 0 && (
+                <button
+                  onClick={() => requestChores(selectedList)}
+                  disabled={submittingBulk}
+                  className="mt-3 w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all disabled:opacity-60"
+                  style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.4)' }}>
+                  {submittingBulk ? '...' : selectedChores.size === 1
+                    ? `📝 שלח בקשה — +${totalStars}⭐`
+                    : `📝 שלח ${selectedChores.size} מטלות — +${totalStars}⭐`}
+                </button>
+              )}
+            </div>
+          )
+        })()}
 
         {/* Balance graph */}
         <BalanceGraph transactions={transactions} currentBalance={child.shekelBalance} />
