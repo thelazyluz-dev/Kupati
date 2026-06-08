@@ -604,14 +604,17 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
       if (isFree) {
         newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, freeSpins: Math.max(0, (c.freeSpins || 0) - 1) })
         await pushFamilyData(familyCode, 'children', newChildren)
+        await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'wheel_spin', description: `${child.name} סובב את גלגל המזל (סיבוב חינמי)`, amount: 0, currency: 'stars', timestamp: Date.now() })
         onUpdate(newChildren, null)
       } else {
         const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
-        const newTx = { id: generateId(), type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: '🎰 גלגל המזל — עלות סיבוב', timestamp: Date.now() }
+        const now = Date.now()
+        const newTx = { id: generateId(), type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: '🎰 גלגל המזל — עלות סיבוב', timestamp: now }
         newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, starBalance: Math.max(0, c.starBalance - SPIN_COST) })
         const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
         await pushFamilyData(familyCode, 'children', newChildren)
         await pushFamilyData(familyCode, 'all_transactions', newTxs)
+        await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'wheel_spin', description: `${child.name} סובב את גלגל המזל (-${SPIN_COST}⭐)`, amount: SPIN_COST, currency: 'stars', timestamp: now })
         onUpdate(newChildren, newTx)
       }
     } catch { showHint('שגיאה — נסה שוב'); setSpinning(false); setBusy(false); return }

@@ -20,6 +20,10 @@ const DEVICE_KEY = 'kupati_device_id'
 const LOCAL_TS_KEY = 'kupati_local_ts'
 const DATA_KEYS  = ['children', 'chores', 'all_transactions', 'settings', 'pendingChores', 'childActivity']
 
+// Keys that use append-only merge — always safe to pull from Firestore.
+// Pulling these can never lose local data because applyRemoteData merges them.
+const MERGE_KEYS = new Set(['all_transactions', 'pendingChores', 'childActivity'])
+
 // ── device ID ──────────────────────────────────────────────────────────────
 function getDeviceId() {
   let id = localStorage.getItem(DEVICE_KEY)
@@ -158,7 +162,7 @@ export async function attach(code, statusCb) {
       const localTs  = getLocalTs('children')
 
       if (remoteTs > localTs) {
-        // Firestore is newer — pull everything from remote
+        // Firestore is newer — pull all keys from remote
         for (const key of DATA_KEYS) {
           try {
             const snap = await getDoc(dataDocRef(key))
@@ -171,13 +175,23 @@ export async function attach(code, statusCb) {
           }
         }
       } else {
-        // Local is newer (or same) — protect local data by pushing to Firestore
+        // Local is newer for overwrite keys — push those to protect local balance/settings.
+        // But ALWAYS pull merge-only keys so remote-only entries (child wheel wins,
+        // pending chores submitted while offline) are never lost.
         for (const key of DATA_KEYS) {
           try {
-            const val = get(key)
-            if (val !== null) await push(key, val)
-          } catch (pushErr) {
-            console.warn(`[sync] Initial push failed for ${key}:`, pushErr.message)
+            if (MERGE_KEYS.has(key)) {
+              const snap = await getDoc(dataDocRef(key))
+              if (snap.exists()) {
+                const ts = snap.data()?.updatedAt?.toMillis() || 0
+                applyRemoteData(key, snap.data().payload, ts)
+              }
+            } else {
+              const val = get(key)
+              if (val !== null) await push(key, val)
+            }
+          } catch (err) {
+            console.warn(`[sync] Initial sync failed for ${key}:`, err.message)
           }
         }
       }
