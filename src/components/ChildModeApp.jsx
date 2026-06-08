@@ -665,7 +665,8 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
   function handleClose() {
     tickIds.current.forEach(clearTimeout)
     cancelAnimationFrame(rafRef.current)
-    onClose()
+    if (result && !busy) handleClaim()  // auto-claim if prize pending
+    else onClose()
   }
 
   return (
@@ -736,9 +737,9 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
           )}
           {result ? (
             <button onClick={handleClaim} disabled={busy}
-              className="w-full py-4 rounded-2xl font-black text-base active:scale-95 transition-all disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 6px 22px rgba(16,185,129,0.4)' }}>
-              {busy ? '...' : `✅ קח את הפרס — ${result.shekels}₪`}
+              className="w-full py-5 rounded-2xl font-black text-xl text-white active:scale-95 transition-transform disabled:opacity-50 animate-bounce"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 0 6px rgba(16,185,129,0.25), 0 10px 32px rgba(16,185,129,0.55)' }}>
+              {busy ? '...' : `💰 קח את הפרס — ${result.shekels}₪!`}
             </button>
           ) : (
             <button onClick={spin} disabled={spinning || !canSpin || busy}

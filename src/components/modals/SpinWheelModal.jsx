@@ -162,6 +162,7 @@ export default function SpinWheelModal() {
       stopHighlight(winner)
       setSpinning(false)
       setResult(segments[winner])
+      celebrateGoal()
     })
   }
 
@@ -176,7 +177,8 @@ export default function SpinWheelModal() {
   function handleClose() {
     tickIds.current.forEach(clearTimeout)
     cancelAnimationFrame(rafRef.current)
-    closeModal()
+    if (result) handleClaim()   // auto-claim if prize pending
+    else closeModal()
   }
 
   const rewardLabel = result ? `${result.shekels}₪` : null
@@ -287,7 +289,11 @@ export default function SpinWheelModal() {
             </p>
           )}
           {result ? (
-            <Button size="lg" fullWidth onClick={handleClaim}>✅ קח את הפרס — {rewardLabel}</Button>
+            <button onClick={handleClaim}
+              className="w-full py-5 rounded-2xl font-black text-xl text-white active:scale-95 transition-transform animate-bounce"
+              style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 0 0 6px rgba(16,185,129,0.25), 0 10px 32px rgba(16,185,129,0.55)' }}>
+              💰 קח את הפרס — {rewardLabel}!
+            </button>
           ) : (
             <Button size="lg" fullWidth onClick={spin} disabled={spinning || !canSpin} className={spinning ? 'opacity-60 cursor-not-allowed' : ''}>
               {spinning ? '🎰 מסתובב...' : isFree ? '🎁 סובב חינם!' : `🎰 סובב! (${SPIN_COST}⭐)`}

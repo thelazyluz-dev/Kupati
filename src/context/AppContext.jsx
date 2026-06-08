@@ -47,22 +47,18 @@ export function AppProvider({ children: reactChildren }) {
   const unreadActivityCount = childActivity.filter((e) => e.timestamp > activityViewed).length
 
   function logActivity(childId, childName, type, description, amount, currency) {
-    const now = Date.now()
     const entry = {
       id: generateId(),
       childId, childName, type, description,
       amount: amount || 0,
       currency: currency || 'stars',
       source: 'parent',
-      timestamp: now,
+      timestamp: Date.now(),
     }
     const current = get('childActivity') ?? []
     const next = [entry, ...current].slice(0, 200)
     set('childActivity', next)
     setChildActivity(next)
-    // Mark as viewed so the parent's own action doesn't light up the bell badge
-    localStorage.setItem('kupati_activityViewed', String(now))
-    setActivityViewed(now)
     window.dispatchEvent(new CustomEvent('kupati-storage', { detail: { key: 'childActivity' } }))
   }
 
