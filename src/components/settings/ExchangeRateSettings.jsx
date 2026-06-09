@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 
-export default function ExchangeRateSettings() {
+export default function ExchangeRateSettings({ hideTitle = false }) {
   const { settings, updateSettings, children, updateChild } = useApp()
   const [globalRate, setGlobalRate] = useState(String(settings.globalExchangeRate))
   const [threshold, setThreshold] = useState(String(settings.confettiThreshold))
@@ -18,7 +18,7 @@ export default function ExchangeRateSettings() {
 
   return (
     <div className="space-y-4">
-      <h3 className="font-bold text-gray-700">⚙️ הגדרות כלליות</h3>
+      {!hideTitle && <h3 className="font-bold text-gray-700">⚙️ הגדרות כלליות</h3>}
 
       <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
         {/* Global exchange rate */}

@@ -17,6 +17,7 @@ import LoanModal from './LoanModal.jsx'
 import TransferStarsModal from './TransferStarsModal.jsx'
 import LearningModal from './LearningModal.jsx'
 import WeeklyReportModal from './WeeklyReportModal.jsx'
+import ConvertStarsModal from './ConvertStarsModal.jsx'
 
 export default function ModalRouter() {
   const { openModal } = useApp()
@@ -42,6 +43,7 @@ export default function ModalRouter() {
     transferStars: TransferStarsModal,
     learning: LearningModal,
     weeklyReport: WeeklyReportModal,
+    convertStars: ConvertStarsModal,
   }
 
   const ModalComponent = map[openModal]

@@ -27,9 +27,10 @@ const ACT_META = {
   loan:             { icon: '💳', label: 'הלוואה',        color: 'text-orange-600'  },
   loan_repay:       { icon: '💳', label: 'פרעון',         color: 'text-teal-600'    },
   chore_assign:     { icon: '📋', label: 'מטלה חדשה',    color: 'text-blue-600'    },
+  convert_stars:    { icon: '💱', label: 'המיר כוכבים',  color: 'text-sky-600'     },
 }
 
-const CREDIT_TYPES = new Set(['wheel_win', 'savings_close', 'savings_early', 'parent_stars_add', 'parent_money_add', 'loan'])
+const CREDIT_TYPES = new Set(['wheel_win', 'savings_close', 'savings_early', 'parent_stars_add', 'parent_money_add', 'loan', 'convert_stars'])
 const DEBIT_TYPES  = new Set(['savings_open', 'wheel_spin', 'prize_redeem', 'expense', 'penalty', 'loan_repay', 'transfer_out'])
 
 export default function ChildActivityLog({ onClose }) {

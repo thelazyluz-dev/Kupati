@@ -1002,6 +1002,17 @@ export default function ChildDashboard({ childId }) {
           {[
             { key: 'goal',    label: `🎯 ${goals.length > 0 ? `מטרות (${goals.length})` : 'מטרה'}`, color: 'rgba(99,102,241,0.12)', border: 'rgba(99,102,241,0.3)', text: '#4338ca', shadow: 'rgba(99,102,241,0.2)', onClick: () => showModal('goal', { childId }) },
             { key: 'savings', label: '🏦 חסכון', color: 'rgba(16,185,129,0.1)', border: 'rgba(16,185,129,0.35)', text: '#065f46', shadow: 'rgba(16,185,129,0.2)', onClick: () => showModal('savings', { childId, child }) },
+            {
+              key: 'convert',
+              label: `💱 המר ⭐${child.starBalance > 0 ? ` (${formatNumber(child.starBalance * (child.exchangeRate ?? settings.globalExchangeRate))}₪)` : ''}`,
+              color: child.starBalance > 0 ? 'rgba(14,165,233,0.1)' : 'rgba(243,244,246,0.8)',
+              border: child.starBalance > 0 ? 'rgba(14,165,233,0.35)' : 'rgba(209,213,219,0.6)',
+              text: child.starBalance > 0 ? '#0369a1' : '#9ca3af',
+              shadow: child.starBalance > 0 ? 'rgba(14,165,233,0.2)' : 'rgba(0,0,0,0.04)',
+              onClick: () => child.starBalance > 0
+                ? showModal('convertStars', { childId })
+                : setHint('⭐ אין כוכבים להמרה'),
+            },
             ...(children.length > 1 ? [{ key: 'transfer', label: '🔄 העברה', color: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.35)', text: '#5b21b6', shadow: 'rgba(139,92,246,0.2)', onClick: () => showModal('transferStars', { childId, child }) }] : []),
             { key: 'loan', label: `💳 הלוואה${outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}`, color: outstandingTotal > 0 ? 'rgba(6,182,212,0.12)' : 'rgba(243,244,246,0.8)', border: outstandingTotal > 0 ? 'rgba(6,182,212,0.4)' : 'rgba(209,213,219,0.6)', text: outstandingTotal > 0 ? '#0e7490' : '#374151', shadow: outstandingTotal > 0 ? 'rgba(6,182,212,0.2)' : 'rgba(0,0,0,0.04)', onClick: () => showModal('loan', { childId, child }) },
             { key: 'memories', label: `📖 זכרונות${child.memories?.length > 0 ? ` (${child.memories.length})` : ''}`, color: 'rgba(244,63,94,0.1)', border: 'rgba(244,63,94,0.3)', text: '#9f1239', shadow: 'rgba(244,63,94,0.15)', onClick: () => showModal('memories', { childId }) },

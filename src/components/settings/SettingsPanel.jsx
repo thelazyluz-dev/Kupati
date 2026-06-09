@@ -10,6 +10,7 @@ import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
 import PrizeManager from './PrizeManager.jsx'
 import SyncSettings from './SyncSettings.jsx'
+import ExchangeRateSettings from './ExchangeRateSettings.jsx'
 import { useSwipeBack } from '../../hooks/useSwipeBack.js'
 
 function useAuthSafe() {
@@ -410,6 +411,14 @@ export default function SettingsPanel() {
         </SettingsSection>
 
         <ChildrenManager />
+
+        <SettingsSection
+          icon="💱" label="המרת כוכבים לשקלים"
+          iconColor="bg-sky-100 text-sky-600" accent="border-sky-400"
+          collapsible defaultOpen={false}
+        >
+          <ExchangeRateSettings hideTitle />
+        </SettingsSection>
 
         <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">
           <SoundToggle />
