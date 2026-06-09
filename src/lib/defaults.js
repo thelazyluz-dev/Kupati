@@ -27,11 +27,11 @@ export const DEFAULT_SETTINGS = {
     weeklySummary:  true,
   },
   penaltyReasons: [
-    { id: 'pr_1', emoji: '🦷', text: 'לא צחצח שיניים',         defaultAmount: 3 },
-    { id: 'pr_2', emoji: '👂', text: 'לא ניקה אוזניים',         defaultAmount: 2 },
-    { id: 'pr_3', emoji: '😤', text: 'חוצפה',                   defaultAmount: 5 },
-    { id: 'pr_4', emoji: '📱', text: 'סלופן ללא רשות',          defaultAmount: 5 },
-    { id: 'pr_5', emoji: '🧹', text: 'לא סידר חדר',             defaultAmount: 3 },
+    { id: 'pr_1', emoji: '🦷', text: 'לא צחצח שיניים',         defaultAmount: 3, currency: 'stars'   },
+    { id: 'pr_2', emoji: '👂', text: 'לא ניקה אוזניים',         defaultAmount: 2, currency: 'stars'   },
+    { id: 'pr_3', emoji: '😤', text: 'חוצפה',                   defaultAmount: 5, currency: 'stars'   },
+    { id: 'pr_4', emoji: '📱', text: 'סלופן ללא רשות',          defaultAmount: 5, currency: 'stars'   },
+    { id: 'pr_5', emoji: '🧹', text: 'לא סידר חדר',             defaultAmount: 3, currency: 'stars'   },
   ],
 }
 
