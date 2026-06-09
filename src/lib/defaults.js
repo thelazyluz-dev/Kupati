@@ -26,6 +26,13 @@ export const DEFAULT_SETTINGS = {
     allowance:      true,
     weeklySummary:  true,
   },
+  penaltyReasons: [
+    { id: 'pr_1', emoji: '🦷', text: 'לא צחצח שיניים',         defaultAmount: 3 },
+    { id: 'pr_2', emoji: '👂', text: 'לא ניקה אוזניים',         defaultAmount: 2 },
+    { id: 'pr_3', emoji: '😤', text: 'חוצפה',                   defaultAmount: 5 },
+    { id: 'pr_4', emoji: '📱', text: 'סלופן ללא רשות',          defaultAmount: 5 },
+    { id: 'pr_5', emoji: '🧹', text: 'לא סידר חדר',             defaultAmount: 3 },
+  ],
 }
 
 export const DEFAULT_PRIZES = [

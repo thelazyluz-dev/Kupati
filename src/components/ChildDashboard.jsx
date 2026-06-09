@@ -1016,6 +1016,7 @@ export default function ChildDashboard({ childId }) {
             ...(children.length > 1 ? [{ key: 'transfer', label: '🔄 העברה', color: 'rgba(139,92,246,0.1)', border: 'rgba(139,92,246,0.35)', text: '#5b21b6', shadow: 'rgba(139,92,246,0.2)', onClick: () => showModal('transferStars', { childId, child }) }] : []),
             { key: 'loan', label: `💳 הלוואה${outstandingTotal > 0 ? ` (${formatNumber(outstandingTotal)}₪)` : ''}`, color: outstandingTotal > 0 ? 'rgba(6,182,212,0.12)' : 'rgba(243,244,246,0.8)', border: outstandingTotal > 0 ? 'rgba(6,182,212,0.4)' : 'rgba(209,213,219,0.6)', text: outstandingTotal > 0 ? '#0e7490' : '#374151', shadow: outstandingTotal > 0 ? 'rgba(6,182,212,0.2)' : 'rgba(0,0,0,0.04)', onClick: () => showModal('loan', { childId, child }) },
             { key: 'memories', label: `📖 זכרונות${child.memories?.length > 0 ? ` (${child.memories.length})` : ''}`, color: 'rgba(244,63,94,0.1)', border: 'rgba(244,63,94,0.3)', text: '#9f1239', shadow: 'rgba(244,63,94,0.15)', onClick: () => showModal('memories', { childId }) },
+            { key: 'penalty', label: '⚡ קנס', color: 'rgba(239,68,68,0.1)', border: 'rgba(239,68,68,0.35)', text: '#b91c1c', shadow: 'rgba(239,68,68,0.2)', onClick: () => showModal('penalty', { childId }) },
           ].map(({ key, label, color, border, text, shadow, onClick }) => (
             <button
               key={key}
