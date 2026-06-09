@@ -222,6 +222,10 @@ export async function attach(code, statusCb) {
         const data = snap.data()
         if (data.updatedBy === deviceId) return  // our own write, ignore
         const remoteTs = data.updatedAt?.toMillis() || 0
+        // For overwrite-keys (children, chores, settings) only apply if remote
+        // is strictly newer than last local write — prevents a stale snapshot
+        // from wiping stars/balances the parent just added.
+        if (!MERGE_KEYS.has(key) && remoteTs <= getLocalTs(key)) return
         applyRemoteData(key, data.payload, remoteTs)
       },
       (err) => {
