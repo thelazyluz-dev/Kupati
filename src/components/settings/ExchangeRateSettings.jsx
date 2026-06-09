@@ -4,76 +4,40 @@ import { useApp } from '../../context/AppContext.jsx'
 export default function ExchangeRateSettings({ hideTitle = false }) {
   const { settings, updateSettings, children, updateChild } = useApp()
   const [globalRate, setGlobalRate] = useState(String(settings.globalExchangeRate))
-  const [threshold, setThreshold] = useState(String(settings.confettiThreshold))
 
   function saveGlobal() {
     const rate = parseFloat(globalRate)
     if (rate > 0) updateSettings({ globalExchangeRate: rate })
   }
 
-  function saveThreshold() {
-    const val = parseInt(threshold)
-    if (val >= 1) updateSettings({ confettiThreshold: val })
-  }
-
   return (
     <div className="space-y-4">
       {!hideTitle && <h3 className="font-bold text-gray-700">⚙️ הגדרות כלליות</h3>}
 
-      <div className="bg-white rounded-2xl shadow-sm p-4 space-y-4">
-        {/* Global exchange rate */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            שיעור המרה גלובלי (₪ לכוכב)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              min="0.1"
-              step="0.1"
-              value={globalRate}
-              onChange={(e) => setGlobalRate(e.target.value)}
-              className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 focus:border-indigo-400 focus:outline-none"
-              dir="ltr"
-            />
-            <button
-              onClick={saveGlobal}
-              className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-semibold text-sm hover:bg-indigo-600 transition-colors"
-            >
-              שמור
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            1⭐ = {settings.globalExchangeRate}₪ (כרגע)
-          </p>
+      <div className="bg-white rounded-2xl shadow-sm p-4">
+        <label className="text-sm font-semibold text-gray-600 block mb-1">
+          שיעור המרה גלובלי (₪ לכוכב)
+        </label>
+        <div className="flex gap-2">
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            value={globalRate}
+            onChange={(e) => setGlobalRate(e.target.value)}
+            className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 focus:border-indigo-400 focus:outline-none"
+            dir="ltr"
+          />
+          <button
+            onClick={saveGlobal}
+            className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-semibold text-sm hover:bg-indigo-600 transition-colors"
+          >
+            שמור
+          </button>
         </div>
-
-        {/* Confetti threshold */}
-        <div>
-          <label className="text-sm font-semibold text-gray-600 block mb-1">
-            סף קונפטי (כוכבים)
-          </label>
-          <div className="flex gap-2">
-            <input
-              type="number"
-              min="1"
-              step="1"
-              value={threshold}
-              onChange={(e) => setThreshold(e.target.value)}
-              className="flex-1 rounded-xl border-2 border-gray-200 px-3 py-2 focus:border-indigo-400 focus:outline-none"
-              dir="ltr"
-            />
-            <button
-              onClick={saveThreshold}
-              className="px-4 py-2 bg-indigo-500 text-white rounded-xl font-semibold text-sm hover:bg-indigo-600 transition-colors"
-            >
-              שמור
-            </button>
-          </div>
-          <p className="text-xs text-gray-400 mt-1">
-            קונפטי יופיע בהוספת {settings.confettiThreshold}+ כוכבים
-          </p>
-        </div>
+        <p className="text-xs text-gray-400 mt-1">
+          1⭐ = {settings.globalExchangeRate}₪ (כרגע)
+        </p>
       </div>
 
       {/* Per-child exchange rates */}
