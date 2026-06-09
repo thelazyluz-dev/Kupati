@@ -1,12 +1,25 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
+import { get } from '../lib/storage.js'
 import { notifyPenalty } from '../lib/notifications.js'
 
 function toLocalDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-export function useDailyPenalty(childrenApi, transactionsApi, pendingChores) {
+export function useDailyPenalty(childrenApi, transactionsApi, syncStatus) {
+  const appliedRef = useRef(false)
+
   useEffect(() => {
+    // Wait until sync completes so pendingChores from other devices are loaded.
+    // 'offline' and 'error' also proceed — we use local data as-is.
+    if (syncStatus === 'idle' || syncStatus === 'syncing') return
+    if (appliedRef.current) return
+    appliedRef.current = true
+
+    // Read directly from localStorage (not React state) — sync has already written
+    // fresh data there before setting status to 'ok'.
+    const pendingChores = get('pendingChores') || []
+
     const now = new Date()
     const todayStr = toLocalDateStr(now)
     const pastNoon = now.getHours() >= 12
@@ -96,5 +109,5 @@ export function useDailyPenalty(childrenApi, transactionsApi, pendingChores) {
         },
       })
     })
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [syncStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 }
