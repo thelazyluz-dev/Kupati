@@ -6,19 +6,26 @@ function toLocalDateStr(d) {
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
 }
 
-export function useDailyPenalty(childrenApi, transactionsApi, syncStatus) {
+// hasFamilyCode: when true, wait for sync ('ok'/'error'/'offline') before running.
+//   Without a familyCode syncStatus is always 'idle', so we must not gate on it.
+export function useDailyPenalty(childrenApi, transactionsApi, syncStatus, hasFamilyCode) {
   const appliedRef = useRef(false)
 
   useEffect(() => {
-    // Wait until sync completes so pendingChores from other devices are loaded.
-    // 'offline' and 'error' also proceed — we use local data as-is.
-    if (syncStatus === 'idle' || syncStatus === 'syncing') return
+    // When a family code is set, wait for the initial Firestore pull to finish.
+    // 'idle' = not started yet, 'syncing' = pull in progress — both mean
+    // all_transactions / pendingChores may be stale.
+    if (hasFamilyCode && (syncStatus === 'idle' || syncStatus === 'syncing')) return
     if (appliedRef.current) return
     appliedRef.current = true
 
-    // Read directly from localStorage (not React state) — sync has already written
-    // fresh data there before setting status to 'ok'.
-    const pendingChores = get('pendingChores') || []
+    // Read directly from localStorage, not React state. attach() writes synced
+    // data to localStorage *before* dispatching kupati-storage. React batches
+    // the resulting setState calls and may flush them in the same render as
+    // syncStatus='ok', but reading get() is always safe and consistent.
+    const allTx         = get('all_transactions') ?? {}
+    const pendingChores = get('pendingChores')    ?? []
+    const freshChildren = get('children')         ?? childrenApi.children
 
     const now = new Date()
     const todayStr = toLocalDateStr(now)
@@ -27,7 +34,7 @@ export function useDailyPenalty(childrenApi, transactionsApi, syncStatus) {
     const todayStart   = new Date(todayStr + 'T00:00:00')
     const yesterdayStr = toLocalDateStr(new Date(todayStart.getTime() - 86400000))
 
-    childrenApi.children.forEach(child => {
+    freshChildren.forEach(child => {
       if (child.penaltyEnabled === false) return
 
       const pc = child.penaltyCheck
@@ -43,7 +50,7 @@ export function useDailyPenalty(childrenApi, transactionsApi, syncStatus) {
       const alreadyCheckedToday = pc.lastDate === todayStr && pc.todayChecked
       if (alreadyCheckedToday) return
 
-      const txList = transactionsApi.getTransactions(child.id)
+      const txList = allTx[child.id] || []
 
       // Collect days: catch-up from lastDate+1, always include yesterday, today if past noon
       const daysSet = new Set()
