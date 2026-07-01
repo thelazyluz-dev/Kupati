@@ -151,3 +151,26 @@ export function daysUntilBirthday(birthdayMMDD) {
   const todayMidnight = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   return Math.round((next - todayMidnight) / 86400000)
 }
+
+/**
+ * Recompute expected balances purely from transaction history.
+ * Sign convention shared with deleteTransaction/recalculateBalance:
+ * deduct types subtract, everything else adds.
+ */
+export const DEDUCT_TX_TYPES = new Set([
+  'expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay',
+])
+
+export function computeBalanceFromTransactions(transactions) {
+  let stars = 0, shekels = 0
+  for (const tx of (transactions || [])) {
+    const sign = DEDUCT_TX_TYPES.has(tx.type) ? -1 : 1
+    const amt  = parseFloat(tx.amount) || 0
+    if (tx.currency === 'stars') stars   += sign * amt
+    else                         shekels += sign * amt
+  }
+  return {
+    stars:   Math.max(0, Math.round(stars * 10) / 10),
+    shekels: Math.max(0, Math.round(shekels * 100) / 100),
+  }
+}

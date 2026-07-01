@@ -40,6 +40,22 @@ export function exportAll() {
   return result
 }
 
+/**
+ * Restore a backup produced by exportAll(). Overwrites existing keys.
+ * Returns the list of keys written. Throws on non-object input.
+ */
+export function importAll(data) {
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    throw new Error('קובץ גיבוי לא תקין')
+  }
+  const written = []
+  for (const [key, value] of Object.entries(data)) {
+    set(key, value)
+    written.push(key)
+  }
+  return written
+}
+
 export function clearAll() {
   const keysToRemove = []
   for (let i = 0; i < localStorage.length; i++) {

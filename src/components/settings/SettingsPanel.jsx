@@ -1,7 +1,7 @@
 import { useState, useContext, useCallback } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { AuthContext } from '../../context/AuthContext.jsx'
-import { exportAll } from '../../lib/storage.js'
+import BackupSettings from './BackupSettings.jsx'
 import { getPermission, requestPermission } from '../../lib/notifications.js'
 import { DEFAULT_WHEEL_PRIZES } from '../../lib/defaults.js'
 import { generateId } from '../../lib/utils.js'
@@ -353,16 +353,6 @@ export default function SettingsPanel() {
     window.location.reload(true)
   }
 
-  function handleExport() {
-    const data = exportAll()
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `הארנק-שלי-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-  }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, #ede9fe 0%, #dbeafe 100%)', backgroundAttachment: 'fixed' }}>
@@ -446,14 +436,9 @@ export default function SettingsPanel() {
           </p>
         </SettingsSection>
 
-        <SettingsSection icon="💾" label="גיבוי ועדכון" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
+        <SettingsSection icon="💾" label="גיבוי ושחזור" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
           <div className="space-y-3">
-            <Button variant="secondary" fullWidth onClick={handleExport}>
-              📥 ייצא JSON
-            </Button>
-            <p className="text-xs text-gray-400 text-center">
-              כל הנתונים יורדו כקובץ JSON לגיבוי
-            </p>
+            <BackupSettings />
             <div className="border-t border-gray-100 pt-3">
               <Button variant="ghost" fullWidth onClick={handleForceUpdate} className="border-blue-200 text-blue-600 hover:bg-blue-50">
                 🔄 נקה cache ועדכן אפליקציה
