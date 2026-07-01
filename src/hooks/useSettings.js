@@ -11,9 +11,6 @@ export function useSettings() {
       if (!next.globalExchangeRate || next.globalExchangeRate <= 0) {
         next.globalExchangeRate = DEFAULT_SETTINGS.globalExchangeRate
       }
-      if (!next.confettiThreshold || next.confettiThreshold < 1) {
-        next.confettiThreshold = DEFAULT_SETTINGS.confettiThreshold
-      }
       return next
     })
   }

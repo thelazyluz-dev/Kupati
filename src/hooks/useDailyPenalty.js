@@ -1,10 +1,8 @@
 import { useEffect, useRef } from 'react'
-import { get } from '../lib/storage.js'
+import { get, set } from '../lib/storage.js'
 import { notifyPenalty } from '../lib/notifications.js'
-
-function toLocalDateStr(d) {
-  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`
-}
+import { computeDailyPenalties } from '../lib/penaltyEngine.js'
+import { claimDailyPenaltyLock } from '../lib/syncEngine.js'
 
 // hasFamilyCode: when true, wait for sync ('ok'/'error'/'offline') before running.
 //   Without a familyCode syncStatus is always 'idle', so we must not gate on it.
@@ -19,102 +17,58 @@ export function useDailyPenalty(childrenApi, transactionsApi, syncStatus, hasFam
     if (appliedRef.current) return
     appliedRef.current = true
 
-    // Read directly from localStorage, not React state. attach() writes synced
-    // data to localStorage *before* dispatching kupati-storage. React batches
-    // the resulting setState calls and may flush them in the same render as
-    // syncStatus='ok', but reading get() is always safe and consistent.
-    const allTx         = get('all_transactions') ?? {}
-    const pendingChores = get('pendingChores')    ?? []
-    const freshChildren = get('children')         ?? childrenApi.children
+    async function run() {
+      // Read directly from localStorage, not React state. attach() writes synced
+      // data to localStorage *before* dispatching kupati-storage. React batches
+      // the resulting setState calls and may flush them in the same render as
+      // syncStatus='ok', but reading get() is always safe and consistent.
+      const allTx         = get('all_transactions') ?? {}
+      const pendingChores = get('pendingChores')    ?? []
+      const children      = get('children')         ?? childrenApi.children
+      const settings      = get('settings')         ?? {}
 
-    const now = new Date()
-    const todayStr = toLocalDateStr(now)
-    const pastNoon = now.getHours() >= 12
+      const now = new Date()
+      const { penalties, checks } = computeDailyPenalties({
+        children, allTx, pendingChores, now,
+        amounts: settings.dailyPenalty,
+      })
 
-    const todayStart   = new Date(todayStr + 'T00:00:00')
-    const yesterdayStr = toLocalDateStr(new Date(todayStart.getTime() - 86400000))
+      // penaltyCheck updates are always safe to write (idempotent bookkeeping)
+      checks.forEach(({ childId, penaltyCheck }) =>
+        childrenApi.updateChild(childId, { penaltyCheck })
+      )
 
-    freshChildren.forEach(child => {
-      if (child.penaltyEnabled === false) return
+      if (penalties.length === 0) return
 
-      const pc = child.penaltyCheck
+      // Cross-device guard: when syncing, claim today's lock in Firestore so
+      // two parent phones opened the same morning can't both penalize.
+      // Offline/no-code → claim resolves true (single-device is safe locally).
+      if (hasFamilyCode && syncStatus === 'ok') {
+        const won = await claimDailyPenaltyLock(now)
+        if (!won) return
+      }
 
-      // New child (no penaltyCheck yet) — just initialise, don't penalise for days before joining
-      if (!pc) {
-        childrenApi.updateChild(child.id, {
-          penaltyCheck: { lastDate: todayStr, streak: 0, todayChecked: pastNoon },
+      const appliedTxIds = []
+      penalties.forEach(({ childId, childName, dayStr, amount, timestamp }) => {
+        childrenApi.adjustStars(childId, -amount)
+        const tx = transactionsApi.addTransaction(childId, {
+          type: 'penalty',
+          amount,
+          currency: 'stars',
+          description: `⚡ קנס יומי — לא בוצעה מטלה (${dayStr})`,
+          timestamp,
         })
-        return
-      }
-
-      const alreadyCheckedToday = pc.lastDate === todayStr && pc.todayChecked
-      if (alreadyCheckedToday) return
-
-      const txList = allTx[child.id] || []
-
-      // Collect days: catch-up from lastDate+1, always include yesterday, today if past noon
-      const daysSet = new Set()
-      const cursor = new Date(pc.lastDate + 'T00:00:00')
-      cursor.setDate(cursor.getDate() + 1)
-      while (cursor < todayStart) {
-        daysSet.add(toLocalDateStr(cursor))
-        cursor.setDate(cursor.getDate() + 1)
-      }
-      daysSet.add(yesterdayStr)           // always check yesterday
-      if (pastNoon) daysSet.add(todayStr) // check today only after noon
-
-      const days = [...daysSet].sort()
-
-      let streak = pc.streak || 0
-
-      days.forEach(dayStr => {
-        const dayStart = new Date(dayStr + 'T00:00:00').getTime()
-        const dayEnd   = dayStart + 86400000
-
-        // Count approved chore transactions for this day
-        const hadApprovedChore = txList.some(
-          t => t.type === 'chore' && t.timestamp >= dayStart && t.timestamp < dayEnd
-        )
-
-        // Also count pending/submitted chore requests — child did the work even if not yet approved
-        const hadPendingChore = (pendingChores || []).some(
-          pc => pc.childId === child.id
-            && pc.status !== 'rejected'
-            && pc.timestamp >= dayStart
-            && pc.timestamp < dayEnd
-        )
-
-        const hadChore = hadApprovedChore || hadPendingChore
-
-        // Idempotent: skip if penalty already recorded for this day
-        const alreadyPenalized = txList.some(
-          t => t.type === 'penalty' && t.timestamp >= dayStart && t.timestamp < dayEnd
-        )
-
-        if (hadChore) {
-          streak = 0
-        } else if (!alreadyPenalized) {
-          streak++
-          const amount = streak === 1 ? 5 : 10
-          childrenApi.adjustStars(child.id, -amount)
-          transactionsApi.addTransaction(child.id, {
-            type: 'penalty',
-            amount,
-            currency: 'stars',
-            description: `⚡ קנס יומי — לא בוצעה מטלה (${dayStr})`,
-            timestamp: Math.min(dayEnd - 1000, now.getTime()),
-          })
-          notifyPenalty(child.name, amount, dayStr)
-        }
+        if (tx?.id) appliedTxIds.push({ childId, txId: tx.id, childName, amount, dayStr })
+        notifyPenalty(childName, amount, dayStr)
       })
 
-      childrenApi.updateChild(child.id, {
-        penaltyCheck: {
-          lastDate: todayStr,
-          streak,
-          todayChecked: pastNoon,
-        },
-      })
-    })
+      // Remember what this session applied so the UI can offer one-tap undo
+      if (appliedTxIds.length > 0) {
+        set('lastDailyPenalties', { appliedAt: Date.now(), items: appliedTxIds })
+        window.dispatchEvent(new CustomEvent('kupati-storage', { detail: { key: 'lastDailyPenalties' } }))
+      }
+    }
+
+    run()
   }, [syncStatus]) // eslint-disable-line react-hooks/exhaustive-deps
 }

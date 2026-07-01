@@ -13,11 +13,11 @@ export const DEFAULT_WHEEL_PRIZES = [
 
 export const DEFAULT_SETTINGS = {
   globalExchangeRate: 2,
-  confettiThreshold: 5,
   soundEnabled: true,
   pin: '',
   familyCode: '',
   wheelSpinCost: 70,
+  dailyPenalty: { first: 5, repeat: 10 },
   notify: {
     choreRequest:   true,
     choreCompleted: true,

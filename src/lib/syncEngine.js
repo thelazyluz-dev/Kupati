@@ -12,7 +12,7 @@
  */
 
 import { db } from './firebase.js'
-import { doc, getDoc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore'
+import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'
 import { get, set } from './storage.js'
 
 const LS_EVENT   = 'kupati-storage'
@@ -71,8 +71,9 @@ function sanitizeSettings(s) {
 /**
  * Merge remote pendingChores into local ones.
  * Remote wins for higher-priority statuses (approved/rejected > pending).
+ * (Exported for unit tests.)
  */
-function mergePendingChores(local, remote) {
+export function mergePendingChores(local, remote) {
   // approved/rejected = terminal (2) > done (1.5) > pending (1) > assigned (0.5)
   const priority = { approved: 2, rejected: 2, done: 1.5, pending: 1, assigned: 0.5 }
   const map = new Map()
@@ -88,7 +89,7 @@ function mergePendingChores(local, remote) {
 /**
  * Merge child activity log — append-only by entry id, newest-first, capped at 100.
  */
-function mergeChildActivity(local, remote) {
+export function mergeChildActivity(local, remote) {
   const seen = new Set((local || []).map((e) => e.id))
   const fresh = (remote || []).filter((e) => !seen.has(e.id))
   return [...fresh, ...(local || [])].sort((a, b) => b.timestamp - a.timestamp).slice(0, 100)
@@ -98,7 +99,7 @@ function mergeChildActivity(local, remote) {
  * Merge remote transactions into local ones (append-only by tx id).
  * Both parents can add transactions concurrently — we never lose either.
  */
-function mergeTransactions(local, remote) {
+export function mergeTransactions(local, remote) {
   const merged = { ...(local ?? {}) }
   for (const [childId, remoteTxs] of Object.entries(remote ?? {})) {
     const localTxs = merged[childId] ?? []
@@ -274,4 +275,30 @@ export async function push(key, value) {
     updatedAt: serverTimestamp(),
     updatedBy: getDeviceId(),
   })
+}
+
+/**
+ * Claim today's daily-penalty lock. Returns true if THIS device should apply
+ * penalties, false if another device already did (or is doing) today's check.
+ *
+ * Uses a Firestore transaction on families/{code}/locks/dailyPenalty-{date} so
+ * two parent phones opened the same morning race safely — exactly one wins.
+ * Fail-open: with no sync (or a network error) we return true, because local
+ * per-day idempotency in the penalty engine still protects a single device.
+ */
+export async function claimDailyPenaltyLock(now = new Date()) {
+  if (!db || !familyCode) return true
+  const dateStr = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+  const lockRef = doc(db, 'families', familyCode, 'locks', `dailyPenalty-${dateStr}`)
+  try {
+    return await runTransaction(db, async (txn) => {
+      const snap = await txn.get(lockRef)
+      if (snap.exists()) return false
+      txn.set(lockRef, { deviceId: getDeviceId(), claimedAt: serverTimestamp() })
+      return true
+    })
+  } catch (err) {
+    console.warn('[sync] penalty lock claim failed (fail-open):', err.message)
+    return true
+  }
 }
