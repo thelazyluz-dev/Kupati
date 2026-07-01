@@ -12,6 +12,7 @@ function getTimeGradient() {
   return 'from-[#a18cd1] via-[#764ba2] to-[#667eea]'
 }
 import ChildCard from './ChildCard.jsx'
+import DailyPenaltyBanner from './DailyPenaltyBanner.jsx'
 import Button from './ui/Button.jsx'
 import { formatNumber } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS } from '../lib/defaults.js'
@@ -918,6 +919,7 @@ export default function HomeScreen() {
               ? { animation: 'prank-in 0.55s cubic-bezier(0.68,-0.55,0.27,1.55) forwards' }
               : { transform: 'rotate(0deg) scale(1)', transition: 'transform 0.7s ease-out' }
             }>
+        {children.length > 0 && <DailyPenaltyBanner />}
         {children.length === 0 ? (
           <div className="flex flex-col items-center gap-5 text-center animate-fade-in pt-4">
             <div className="text-8xl animate-float">🐷</div>

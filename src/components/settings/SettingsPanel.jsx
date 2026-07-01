@@ -80,6 +80,54 @@ function SoundToggle() {
   )
 }
 
+function DailyPenaltySettings() {
+  const { settings, updateSettings } = useApp()
+  const dp = settings.dailyPenalty ?? { first: 5, repeat: 10 }
+
+  function setAmount(field, raw) {
+    const v = Math.max(0, parseInt(raw) || 0)
+    updateSettings({ dailyPenalty: { ...dp, [field]: v } })
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between bg-rose-50 rounded-2xl px-4 py-3">
+        <div>
+          <p className="text-sm font-bold text-gray-700">יום ראשון ללא מטלה</p>
+          <p className="text-xs text-gray-400">כוכבים שינוכו</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-base">⭐</span>
+          <input
+            type="number" min="0" max="99" value={dp.first}
+            onChange={(e) => setAmount('first', e.target.value)}
+            dir="ltr"
+            className="w-16 text-center font-bold text-sm rounded-xl border-2 border-rose-200 py-1.5 focus:border-rose-400 focus:outline-none bg-white"
+          />
+        </div>
+      </div>
+      <div className="flex items-center justify-between bg-rose-50 rounded-2xl px-4 py-3">
+        <div>
+          <p className="text-sm font-bold text-gray-700">ימים ברצף</p>
+          <p className="text-xs text-gray-400">כשממשיכים לא לבצע</p>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-base">⭐</span>
+          <input
+            type="number" min="0" max="99" value={dp.repeat}
+            onChange={(e) => setAmount('repeat', e.target.value)}
+            dir="ltr"
+            className="w-16 text-center font-bold text-sm rounded-xl border-2 border-rose-200 py-1.5 focus:border-rose-400 focus:outline-none bg-white"
+          />
+        </div>
+      </div>
+      <p className="text-xs text-gray-400 leading-snug">
+        הקנס נבדק פעם ביום (אחרי הצהריים). אפשר לכבות קנסות לילד מסוים במסך עריכת הילד.
+      </p>
+    </div>
+  )
+}
+
 function PinSettings() {
   const { settings, updateSettings, showModal, requirePin } = useApp()
   const hasPin = !!(settings.pinHash || settings.pin)
@@ -409,6 +457,14 @@ export default function SettingsPanel() {
           collapsible defaultOpen={false}
         >
           <ExchangeRateSettings hideTitle />
+        </SettingsSection>
+
+        <SettingsSection
+          icon="⚡" label="קנס יומי"
+          iconColor="bg-rose-100 text-rose-600" accent="border-rose-400"
+          collapsible defaultOpen={false}
+        >
+          <DailyPenaltySettings />
         </SettingsSection>
 
         <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">
