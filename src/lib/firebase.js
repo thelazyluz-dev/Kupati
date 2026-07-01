@@ -16,6 +16,20 @@ let _auth = null
 
 try {
   const app = initializeApp(firebaseConfig)
+
+  // App Check (optional): set VITE_FIREBASE_APPCHECK_KEY to a reCAPTCHA v3
+  // site key (Firebase console → App Check) to block requests that don't
+  // come from the real app. Loaded lazily so it costs nothing when unset.
+  const appCheckKey = import.meta.env.VITE_FIREBASE_APPCHECK_KEY
+  if (appCheckKey) {
+    import('firebase/app-check').then(({ initializeAppCheck, ReCaptchaV3Provider }) => {
+      initializeAppCheck(app, {
+        provider: new ReCaptchaV3Provider(appCheckKey),
+        isTokenAutoRefreshEnabled: true,
+      })
+    }).catch((e) => console.warn('[firebase] App Check init failed:', e.message))
+  }
+
   _db   = getFirestore(app)
   _auth = getAuth(app)
 } catch (e) {

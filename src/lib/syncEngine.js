@@ -64,7 +64,7 @@ function dataDocRef(key) {
 
 /** Strip device-local fields before pushing settings to Firestore. */
 function sanitizeSettings(s) {
-  const { pin: _p, familyCode: _fc, ...safe } = s ?? {}
+  const { pin: _p, pinHash: _ph, pinSalt: _ps, familyCode: _fc, ...safe } = s ?? {}
   return safe
 }
 
@@ -119,7 +119,7 @@ function applyRemoteData(key, payload, remoteTs) {
   try {
     if (key === 'settings') {
       const local  = get('settings') ?? {}
-      const merged = { ...payload, pin: local.pin, familyCode: local.familyCode }
+      const merged = { ...payload, pin: local.pin, pinHash: local.pinHash, pinSalt: local.pinSalt, familyCode: local.familyCode }
       set('settings', merged)
     } else if (key === 'all_transactions') {
       const local  = get('all_transactions') ?? {}

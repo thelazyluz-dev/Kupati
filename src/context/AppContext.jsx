@@ -88,7 +88,7 @@ export function AppProvider({ children: reactChildren }) {
   }
 
   function requirePin(onSuccess) {
-    if (!settingsApi.settings.pin) {
+    if (!settingsApi.settings.pin && !settingsApi.settings.pinHash) {
       onSuccess()
     } else {
       showModal('pin', { onSuccess })

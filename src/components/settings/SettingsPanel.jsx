@@ -5,6 +5,7 @@ import { exportAll } from '../../lib/storage.js'
 import { getPermission, requestPermission } from '../../lib/notifications.js'
 import { DEFAULT_WHEEL_PRIZES } from '../../lib/defaults.js'
 import { generateId } from '../../lib/utils.js'
+import { CLEAR_PIN_SETTINGS } from '../../lib/pin.js'
 import Button from '../ui/Button.jsx'
 import ChoreManager from './ChoreManager.jsx'
 import ChildrenManager from './ChildrenManager.jsx'
@@ -81,14 +82,14 @@ function SoundToggle() {
 
 function PinSettings() {
   const { settings, updateSettings, showModal, requirePin } = useApp()
-  const hasPin = !!settings.pin
+  const hasPin = !!(settings.pinHash || settings.pin)
 
   function handleSetup() {
     showModal('pin', { mode: hasPin ? 'change' : 'setup' })
   }
 
   function handleRemove() {
-    requirePin(() => updateSettings({ pin: '' }))
+    requirePin(() => updateSettings(CLEAR_PIN_SETTINGS))
   }
 
   return (

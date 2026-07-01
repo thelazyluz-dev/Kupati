@@ -2,8 +2,12 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 
 function generateFamilyCode() {
+  // The family code doubles as the family's "password" (it is the Firestore
+  // document path), so it needs real entropy: crypto-random, 10 chars over a
+  // 31-char alphabet ≈ 2^49 combinations. Existing shorter codes keep working.
   const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
-  return Array.from({ length: 6 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
+  const bytes = crypto.getRandomValues(new Uint8Array(10))
+  return Array.from(bytes, (b) => chars[b % chars.length]).join('')
 }
 
 async function shareCode(code) {

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
+import { verifyPin, makePinSettings } from '../../lib/pin.js'
 import Modal from '../ui/Modal.jsx'
 
 export default function PinModal() {
@@ -34,9 +35,12 @@ export default function PinModal() {
     setError('')
   }
 
-  function handleComplete(pin) {
+  async function handleComplete(pin) {
     if (mode === 'check') {
-      if (pin === settings.pin) {
+      const { ok, upgrade } = await verifyPin(pin, settings)
+      if (ok) {
+        // Opportunistic migration: legacy plain-text PIN → salted hash
+        if (upgrade) updateSettings(upgrade)
         closeModal()
         onSuccess?.()
       } else {
@@ -47,10 +51,13 @@ export default function PinModal() {
       // setup / change
       if (step === 'enter') {
         // If changing, verify current PIN first
-        if (mode === 'change' && settings.pin && pin !== settings.pin) {
-          setDigits([])
-          setError('הקוד הנוכחי שגוי')
-          return
+        if (mode === 'change') {
+          const { ok } = await verifyPin(pin, settings)
+          if (!ok) {
+            setDigits([])
+            setError('הקוד הנוכחי שגוי')
+            return
+          }
         }
         setFirstPin(pin)
         setDigits([])
@@ -62,7 +69,7 @@ export default function PinModal() {
         setStep('confirm')
       } else if (step === 'confirm') {
         if (pin === firstPin) {
-          updateSettings({ pin: firstPin })
+          updateSettings(await makePinSettings(firstPin))
           closeModal()
         } else {
           setDigits([])

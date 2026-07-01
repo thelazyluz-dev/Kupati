@@ -4,11 +4,37 @@ service cloud.firestore {
     match /users/{userId}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
-    // Family data is access-controlled by the family code (which is the document path).
-    // Child devices are not authenticated via Firebase Auth, so we allow public access.
-    // Knowing the family code is the only "password" needed.
+
+    // Family data is access-controlled by the family code (the document path).
+    // Child devices are not Firebase-authenticated, so knowing the code grants
+    // access — which is why codes are crypto-random (see generateFamilyCode).
+    //
+    // Hardening applied even without auth:
+    //  - only the known data keys can be written (no arbitrary docs)
+    //  - documents must match the { payload, updatedAt, updatedBy } shape
+    //  - updatedAt must be a server timestamp (no forging history for the
+    //    "newer wins" merge logic in syncEngine)
+    //  - deletes are forbidden — the app only ever overwrites, so any delete
+    //    is either a bug or an attack
+    //  - short codes (< 6 chars) are rejected to block scanning tiny code spaces
     match /families/{familyCode}/data/{key} {
-      allow read, write: if true;
+      allow read: if familyCode.size() >= 6;
+      allow create, update: if familyCode.size() >= 6
+        && key in ['children', 'chores', 'all_transactions', 'settings', 'pendingChores', 'childActivity']
+        && request.resource.data.keys().hasOnly(['payload', 'updatedAt', 'updatedBy'])
+        && request.resource.data.updatedAt == request.time
+        && request.resource.data.updatedBy is string;
+      allow delete: if false;
+    }
+
+    // Daily-penalty locks: create-once per day (claim), never updated or
+    // deleted, so two parent devices can race safely.
+    match /families/{familyCode}/locks/{lockId} {
+      allow read: if familyCode.size() >= 6;
+      allow create: if familyCode.size() >= 6
+        && request.resource.data.keys().hasOnly(['deviceId', 'claimedAt'])
+        && request.resource.data.claimedAt == request.time;
+      allow update, delete: if false;
     }
   }
 }
