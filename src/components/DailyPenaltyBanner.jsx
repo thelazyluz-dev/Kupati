@@ -13,7 +13,11 @@ const MAX_AGE_MS = 48 * 3600000   // stop offering undo after 2 days
  */
 export default function DailyPenaltyBanner() {
   const { deleteTransaction } = useApp()
-  const [record, setRecord] = useState(() => get(KEY))
+  const [record, setRecord] = useState(() => {
+    const r = get(KEY)
+    // Expired records are as good as absent — drop them at mount time
+    return r && Date.now() - (r.appliedAt || 0) <= MAX_AGE_MS ? r : null
+  })
 
   useEffect(() => {
     function onSync(e) {
@@ -24,7 +28,6 @@ export default function DailyPenaltyBanner() {
   }, [])
 
   if (!record?.items?.length) return null
-  if (Date.now() - (record.appliedAt || 0) > MAX_AGE_MS) return null
 
   function clear() {
     remove(KEY)

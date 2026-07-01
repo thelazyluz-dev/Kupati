@@ -558,7 +558,7 @@ export default function SettingsPanel() {
         )}
 
         <div className="text-center text-xs text-gray-400 pb-8">
-          <p>הארנק שלי 🐷 · גרסה 1.4</p>
+          <p>הארנק שלי 🐷 · גרסה {__APP_VERSION__}</p>
           <p>נתונים מסונכרנים דרך Firebase</p>
         </div>
       </main>

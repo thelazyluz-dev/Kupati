@@ -1,52 +1,49 @@
+import { lazy, Suspense } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import AddStarsModal from './AddStarsModal.jsx'
-import AddMoneyModal from './AddMoneyModal.jsx'
-import ExpenseModal from './ExpenseModal.jsx'
-import AddChildModal from './AddChildModal.jsx'
-import EditChildModal from './EditChildModal.jsx'
-import GoalModal from './GoalModal.jsx'
-import PinModal from './PinModal.jsx'
-import EditTransactionModal from './EditTransactionModal.jsx'
-import RedeemPrizeModal from './RedeemPrizeModal.jsx'
-import SavingsModal from './SavingsModal.jsx'
-import PenaltyModal from './PenaltyModal.jsx'
-import SpinWheelModal from './SpinWheelModal.jsx'
-import ParentNoteModal from './ParentNoteModal.jsx'
-import MemoriesModal from './MemoriesModal.jsx'
-import LoanModal from './LoanModal.jsx'
-import TransferStarsModal from './TransferStarsModal.jsx'
-import LearningModal from './LearningModal.jsx'
-import WeeklyReportModal from './WeeklyReportModal.jsx'
-import ConvertStarsModal from './ConvertStarsModal.jsx'
+
+// All modals are lazy — none of them is needed for first paint, and together
+// they are a large share of the bundle. Each becomes its own chunk that loads
+// on first open (then stays cached by the service worker).
+const map = {
+  addStars:        lazy(() => import('./AddStarsModal.jsx')),
+  addMoney:        lazy(() => import('./AddMoneyModal.jsx')),
+  expense:         lazy(() => import('./ExpenseModal.jsx')),
+  addChild:        lazy(() => import('./AddChildModal.jsx')),
+  editChild:       lazy(() => import('./EditChildModal.jsx')),
+  goal:            lazy(() => import('./GoalModal.jsx')),
+  pin:             lazy(() => import('./PinModal.jsx')),
+  editTransaction: lazy(() => import('./EditTransactionModal.jsx')),
+  redeemPrize:     lazy(() => import('./RedeemPrizeModal.jsx')),
+  savings:         lazy(() => import('./SavingsModal.jsx')),
+  penalty:         lazy(() => import('./PenaltyModal.jsx')),
+  spinWheel:       lazy(() => import('./SpinWheelModal.jsx')),
+  parentNote:      lazy(() => import('./ParentNoteModal.jsx')),
+  memories:        lazy(() => import('./MemoriesModal.jsx')),
+  loan:            lazy(() => import('./LoanModal.jsx')),
+  transferStars:   lazy(() => import('./TransferStarsModal.jsx')),
+  learning:        lazy(() => import('./LearningModal.jsx')),
+  weeklyReport:    lazy(() => import('./WeeklyReportModal.jsx')),
+  convertStars:    lazy(() => import('./ConvertStarsModal.jsx')),
+}
+
+function ModalSpinner() {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
+      <div className="text-4xl animate-bounce">🐷</div>
+    </div>
+  )
+}
 
 export default function ModalRouter() {
   const { openModal } = useApp()
 
   if (!openModal) return null
 
-  const map = {
-    addStars: AddStarsModal,
-    addMoney: AddMoneyModal,
-    expense: ExpenseModal,
-    addChild: AddChildModal,
-    editChild: EditChildModal,
-    goal: GoalModal,
-    pin: PinModal,
-    editTransaction: EditTransactionModal,
-    redeemPrize: RedeemPrizeModal,
-    savings: SavingsModal,
-    penalty: PenaltyModal,
-    spinWheel: SpinWheelModal,
-    parentNote: ParentNoteModal,
-    memories: MemoriesModal,
-    loan: LoanModal,
-    transferStars: TransferStarsModal,
-    learning: LearningModal,
-    weeklyReport: WeeklyReportModal,
-    convertStars: ConvertStarsModal,
-  }
-
   const ModalComponent = map[openModal]
   if (!ModalComponent) return null
-  return <ModalComponent />
+  return (
+    <Suspense fallback={<ModalSpinner />}>
+      <ModalComponent />
+    </Suspense>
+  )
 }
