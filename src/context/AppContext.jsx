@@ -338,6 +338,14 @@ export function AppProvider({ children: reactChildren }) {
   // Notify parent when a new chore request arrives (via Firestore sync)
   const prevPendingRef = useRef(null)
   useEffect(() => {
+    const notifyIncomingRequest = (pc) => {
+      const child = childrenApi.children.find((c) => c.id === pc.childId)
+      const name = child?.name || pc.childName || ''
+      if (!name) return
+      const d = describeRequest(pc)
+      const body = [d.title, d.amount, pc.note].filter(Boolean).join(' · ')
+      notifyRequest(name, d.notifyTitle, body)
+    }
     const current = pendingChoresApi.pendingChores
     if (prevPendingRef.current === null) {
       // First mount — notify about pending chores submitted in the last 10 min
@@ -368,15 +376,6 @@ export function AppProvider({ children: reactChildren }) {
     prevPendingRef.current = current
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
 
-  function notifyIncomingRequest(pc) {
-    const child = childrenApi.children.find((c) => c.id === pc.childId)
-    const name = child?.name || pc.childName || ''
-    if (!name) return
-    const d = describeRequest(pc)
-    const body = [d.title, d.amount, pc.note].filter(Boolean).join(' · ')
-    notifyRequest(name, d.notifyTitle, body)
-  }
-
   function addAssignedChore(childId, { choreId, choreName, choreEmoji, amount, currency = 'stars' }) {
     const child = childrenApi.children.find((c) => c.id === childId)
     logActivity(childId, child?.name || '', 'chore_assign',
@@ -398,7 +397,6 @@ export function AppProvider({ children: reactChildren }) {
     const cid  = req.childId
     const amount = opts.amount != null ? opts.amount : req.amount
     const label  = req.title || `${req.choreEmoji || ''} ${req.choreName || ''}`.trim() || REQUEST_TYPES[type]?.label || ''
-    const child  = childrenApi.children.find((c) => c.id === cid)
 
     switch (type) {
       case 'chore':
@@ -473,7 +471,7 @@ export function AppProvider({ children: reactChildren }) {
         break
     }
 
-    logActivity(cid, child?.name || req.childName || '', 'request_approved', `${req.emoji || '✅'} ${label}`, amount || 0, req.currency || 'stars')
+    // No separate activity entry — the resolved request itself shows in history.
     pendingChoresApi.setPendingChoreStatus(reqId, 'approved', { decidedAt: Date.now() })
   }
 
