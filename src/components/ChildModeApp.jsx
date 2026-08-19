@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react'
 import { get, remove } from '../lib/storage.js'
-import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity } from '../lib/childSync.js'
+import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity, appendToFamilyArray } from '../lib/childSync.js'
 import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
-import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected, notifyChoreSubmitted } from '../lib/notifications.js'
+import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected, notifyChoreSubmitted, notifyRequestApproved, notifyRequestRejected } from '../lib/notifications.js'
+import { describeRequest } from '../lib/requests.js'
+import ChildRequestHub from './child/ChildRequestHub.jsx'
 
 const GRAPH_PERIODS = [
   { days: 30,  label: 'חודש'    },
@@ -1157,6 +1159,7 @@ export default function ChildModeApp() {
   const [showWheel,    setShowWheel]    = useState(false)
   const [showPrizes,   setShowPrizes]   = useState(false)
   const [showGoals,    setShowGoals]    = useState(false)
+  const [showRequestHub, setShowRequestHub] = useState(false)
   const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
   const [selectedChores, setSelectedChores] = useState(new Set())
   const [submittingBulk, setSubmittingBulk] = useState(false)
@@ -1227,16 +1230,20 @@ export default function ChildModeApp() {
       }
       const wasAwaitingApproval = prevPc.status === 'pending' || prevPc.status === 'done'
       if (!wasAwaitingApproval) return
+      const isChore = !pc.type || pc.type === 'chore'
+      const label = pc.title || pc.choreName || describeRequest(pc).title
       if (pc.status === 'approved') {
-        showHint(`✅ "${pc.choreName}" אושר! +${pc.amount}⭐`)
+        showHint(isChore ? `✅ "${label}" אושר! +${pc.amount}⭐` : `✅ "${label}" אושר!`)
         sounds.approve()
         navigator.vibrate?.([40, 20, 80])
-        notifyChoreApproved(pc.choreName, pc.amount)
+        if (isChore) notifyChoreApproved(label, pc.amount)
+        else notifyRequestApproved(label)
       } else if (pc.status === 'rejected') {
-        showHint(`❌ "${pc.choreName}" לא אושרה`)
+        showHint(`❌ "${label}" לא אושרה`)
         sounds.error()
         navigator.vibrate?.([80])
-        notifyChoreRejected(pc.choreName)
+        if (isChore) notifyChoreRejected(label)
+        else notifyRequestRejected(label, pc.parentNote)
       }
     })
     prevPendingRef.current = pendingChores
@@ -1336,6 +1343,31 @@ export default function ChildModeApp() {
     setSubmittingBulk(false)
   }
 
+  // Submit a generic parent-approval request from the request hub.
+  // Rate-limited and de-duplicated so a child can't flood the parent.
+  async function submitRequest(req) {
+    const mine = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending')
+    if (mine.length >= 20) {
+      showHint('יש כבר הרבה בקשות שממתינות — חכה שההורה יאשר')
+      return false
+    }
+    const dup = mine.find((pc) => pc.type === req.type && pc.title === req.title && pc.amount === req.amount)
+    if (dup) {
+      showHint('כבר שלחת בקשה כזו — היא ממתינה לאישור')
+      return false
+    }
+    try {
+      const next = await appendToFamilyArray(familyCode, 'pendingChores', [req])
+      setPendingChores(next)
+      showHint('📨 הבקשה נשלחה להורה לאישור!')
+      navigator.vibrate?.([20, 10, 30])
+      return true
+    } catch {
+      showHint('שגיאה בשליחה — בדוק חיבור לאינטרנט ונסה שוב')
+      return false
+    }
+  }
+
   async function handleRequestNotifPerm() {
     const result = await requestPermission()
     setNotifPerm(result)
@@ -1419,6 +1451,15 @@ export default function ChildModeApp() {
       {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
       {showPrizes   && <ChildPrizesModal   {...commonProps} settings={settings} pendingChores={pendingChores} onClose={() => setShowPrizes(false)} />}
       {showGoals    && <ChildGoalsModal    {...commonProps} onClose={() => setShowGoals(false)} />}
+      {showRequestHub && (
+        <ChildRequestHub
+          child={child}
+          settings={settings}
+          myRequests={pendingChores.filter((pc) => pc.childId === childId)}
+          onSubmit={submitRequest}
+          onClose={() => setShowRequestHub(false)}
+        />
+      )}
 
       {showFreeSpinCelebration && (
         <FreeSpinCelebrationOverlay
@@ -1476,6 +1517,27 @@ export default function ChildModeApp() {
 
       {/* Content */}
       <main className="flex-1 px-4 py-5 space-y-4">
+        {/* Big "ask a parent" call to action */}
+        {(() => {
+          const myPending = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending').length
+          return (
+            <button onClick={() => setShowRequestHub(true)}
+              className="relative w-full flex items-center gap-4 rounded-[22px] px-5 py-4 active:scale-95 transition-all text-white"
+              style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)', boxShadow: '0 6px 24px rgba(99,102,241,0.45)' }}>
+              <span className="text-4xl flex-shrink-0">✋</span>
+              <div className="flex-1 text-right">
+                <p className="font-black text-lg leading-tight">בקשה להורה</p>
+                <p className="text-indigo-100 text-sm font-semibold">כוכבים, כסף, מטרה, לקנות משהו ועוד ←</p>
+              </div>
+              {myPending > 0 && (
+                <span className="flex-shrink-0 bg-white text-indigo-600 rounded-full min-w-7 h-7 px-2 flex items-center justify-center font-black text-sm">
+                  {myPending}
+                </span>
+              )}
+            </button>
+          )
+        })()}
+
         {/* Notification permission prompt */}
         {notifPerm === 'default' && (
           <button onClick={handleRequestNotifPerm}
