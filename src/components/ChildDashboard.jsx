@@ -5,6 +5,7 @@ import { useSwipeBack } from '../hooks/useSwipeBack.js'
 import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel, buildBalanceHistory } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
+import { describeRequest } from '../lib/requests.js'
 import GoalProgressBar from './GoalProgressBar.jsx'
 import TransactionList from './TransactionList.jsx'
 import WeeklySummary from './WeeklySummary.jsx'
@@ -304,7 +305,6 @@ function PendingChoresCard({ requests, onApprove, onApproveMany, onReject }) {
     setSelected(new Set())
   }
 
-  const totalStars = requests.filter((r) => selected.has(r.id)).reduce((s, r) => s + r.amount, 0)
 
   return (
     <div className="rounded-[22px] p-4 space-y-3 animate-slide-up"
@@ -339,14 +339,19 @@ function PendingChoresCard({ requests, onApprove, onApproveMany, onReject }) {
                   {isSel && <span className="text-white text-[11px] font-black leading-none">✓</span>}
                 </div>
               )}
-              <span className="text-xl flex-shrink-0">{req.choreEmoji || '✅'}</span>
-              <div className="flex-1 min-w-0">
-                <p className="text-sm font-bold text-gray-800 truncate">{req.choreName}</p>
-                <p className="text-xs text-amber-600 font-bold">+{req.amount}⭐</p>
-                {req.source === 'parent' && req.status === 'done' && (
-                  <p className="text-[10px] text-indigo-500 font-semibold">📌 משימה שהוקצתה — הילד סיים</p>
-                )}
-              </div>
+              {(() => { const d = describeRequest(req); return (
+                <>
+                  <span className="text-xl flex-shrink-0">{d.emoji}</span>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-bold text-gray-800 truncate">{d.title}</p>
+                    {d.amount && <p className="text-xs text-amber-600 font-bold" dir="ltr">{d.amount}</p>}
+                    {d.note && <p className="text-[11px] text-gray-400 truncate">💬 {d.note}</p>}
+                    {req.source === 'parent' && req.status === 'done' && (
+                      <p className="text-[10px] text-indigo-500 font-semibold">📌 משימה שהוקצתה — הילד סיים</p>
+                    )}
+                  </div>
+                </>
+              )})()}
             </div>
             {/* Individual approve / reject */}
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
@@ -379,7 +384,7 @@ function PendingChoresCard({ requests, onApprove, onApproveMany, onReject }) {
         <button onClick={approveSelected}
           className="w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all"
           style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 18px rgba(16,185,129,0.45)' }}>
-          ✅ אשר {bulkCount} מטלות · +{totalStars}⭐
+          ✅ אשר {bulkCount} בקשות
         </button>
       )}
     </div>

@@ -106,3 +106,88 @@ export function prunePendingChores(list, { now = Date.now(), maxAgeMs = 14 * 864
     .slice(0, maxResolved)
   return [...active, ...keptResolved]
 }
+
+/**
+ * Apply the balance/data effect of APPROVING a request. Pure w.r.t. this module
+ * — all mutations go through the injected `api` callbacks, which makes the
+ * type→effect mapping fully unit-testable. Called ONLY on approval; rejection
+ * never touches balances.
+ *
+ * api: { addStars, adjustStars, adjustShekels, addTransaction, convertStars,
+ *        addGoal, updateGoal, updateChild, startSavings, finishSavings,
+ *        doTransferStars, doTransferMoney, settings }
+ * opts: { amount?, rewardStars?, rewardShekels? }
+ */
+export function applyApproval(req, api, opts = {}) {
+  const type   = req.type || 'chore'
+  const cid    = req.childId
+  const amount = opts.amount != null ? opts.amount : req.amount
+  const label  = req.title || `${req.choreEmoji || ''} ${req.choreName || ''}`.trim() || REQUEST_TYPES[type]?.label || ''
+
+  switch (type) {
+    case 'chore':
+      api.addStars(cid, amount)
+      api.addTransaction(cid, { type: 'chore', amount, currency: req.currency || 'stars',
+        description: `${req.choreEmoji || '✅'} ${req.choreName || label} (אושר)`, timestamp: req.timestamp, _skipLog: true })
+      break
+    case 'prize':
+      api.adjustStars(cid, -amount)
+      api.addTransaction(cid, { type: 'prize_redeem', amount, currency: 'stars',
+        description: `${req.emoji || req.choreEmoji || '🎁'} ${req.choreName || label}`, _skipLog: true })
+      break
+    case 'stars':
+      api.addStars(cid, amount)
+      api.addTransaction(cid, { type: 'other', amount, currency: 'stars', description: `⭐ ${label || 'כוכבים'}` })
+      break
+    case 'money':
+      api.adjustShekels(cid, amount)
+      api.addTransaction(cid, { type: 'other', amount, currency: 'shekels', description: `💝 ${label || 'הפקדה'}` })
+      break
+    case 'purchase':
+      api.adjustShekels(cid, -amount)
+      api.addTransaction(cid, { type: 'expense', amount, currency: 'shekels', description: `🛍️ ${label || 'קנייה'}` })
+      break
+    case 'convert': {
+      const converted = api.convertStars(cid, amount, api.settings)
+      const desc = `💱 המרת ${amount}⭐ ← ${converted}₪`
+      api.addTransaction(cid, { type: 'convert_out', amount, currency: 'stars', description: desc, _skipLog: true })
+      api.addTransaction(cid, { type: 'convert_in', amount: converted, currency: 'shekels', description: desc, _skipLog: true })
+      break
+    }
+    case 'goal': {
+      const m = req.meta || {}
+      if (m.goalId) api.updateGoal(cid, m.goalId, { name: m.name, emoji: m.emoji, targetAmount: m.targetAmount })
+      else api.addGoal(cid, { name: m.name, emoji: m.emoji, targetAmount: m.targetAmount, goalImage: m.goalImage })
+      break
+    }
+    case 'transfer': {
+      const m = req.meta || {}
+      if ((req.currency || 'stars') === 'stars') api.doTransferStars(cid, m.toChildId, amount, m.price || 0)
+      else api.doTransferMoney(cid, m.toChildId, amount)
+      break
+    }
+    case 'savings_open':
+      api.startSavings(cid, { amount })
+      break
+    case 'savings_withdraw': {
+      const m = req.meta || {}
+      api.finishSavings(cid, m.savingId, m.mode || 'normal')
+      break
+    }
+    case 'profile':
+      api.updateChild(cid, (req.meta && req.meta.changes) || {})
+      break
+    case 'free':
+      if (opts.rewardStars > 0) {
+        api.addStars(cid, opts.rewardStars)
+        api.addTransaction(cid, { type: 'other', amount: opts.rewardStars, currency: 'stars', description: `⭐ ${label}` })
+      }
+      if (opts.rewardShekels > 0) {
+        api.adjustShekels(cid, opts.rewardShekels)
+        api.addTransaction(cid, { type: 'other', amount: opts.rewardShekels, currency: 'shekels', description: `💝 ${label}` })
+      }
+      break
+    default:
+      break
+  }
+}
