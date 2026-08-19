@@ -23,7 +23,9 @@ function dataDocRef(uid, key) {
 }
 
 function sanitizeSettings(s) {
-  const { pin: _p, pinHash: _ph, pinSalt: _ps, familyCode: _fc, ...safe } = s ?? {}
+  // Keep pinHash/pinSalt (never the plaintext pin) so the exit lock survives
+  // a cross-device restore; drop plaintext pin and the family code.
+  const { pin: _p, familyCode: _fc, ...safe } = s ?? {}
   return safe
 }
 

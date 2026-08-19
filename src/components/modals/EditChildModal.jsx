@@ -137,6 +137,7 @@ export default function EditChildModal() {
   const [allowancePeriod, setAllowancePeriod]   = useState(initAllowance.period || 'weekly')
   // Penalty
   const [penaltyEnabled, setPenaltyEnabled] = useState(child?.penaltyEnabled !== false)
+  const [accessCode, setAccessCode] = useState(child?.accessCode || '')
   // Streak bonus
   const initStreak = child?.streakBonus || {}
   const [streakEnabled,   setStreakEnabled]   = useState(!!initStreak.enabled)
@@ -169,6 +170,7 @@ export default function EditChildModal() {
         lastPaid: child.allowance?.lastPaid || null,
       },
       penaltyEnabled,
+      accessCode: /^\d{4}$/.test(accessCode) ? accessCode : '',
       streakBonus: {
         enabled:   streakEnabled,
         threshold: streakThreshold,
@@ -333,6 +335,27 @@ export default function EditChildModal() {
           >
             <span className={`absolute top-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${penaltyEnabled ? 'left-6' : 'left-0.5'}`} />
           </button>
+        </div>
+
+        {/* Personal access code (child mode) */}
+        <div className="py-1">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 min-w-0 ml-3">
+              <p className="text-sm font-semibold text-gray-600">🔑 קוד אישי לכניסה (טאבלט)</p>
+              <p className="text-xs text-gray-400 mt-0.5">4 ספרות — יידרש כדי להיכנס במצב ילד</p>
+            </div>
+            <input
+              type="text" inputMode="numeric" maxLength={4}
+              value={accessCode}
+              onChange={(e) => setAccessCode(e.target.value.replace(/\D/g, '').slice(0, 4))}
+              placeholder="—"
+              className="w-20 text-center text-lg font-black tracking-widest rounded-xl border-2 border-gray-200 py-2 focus:border-indigo-400 focus:outline-none flex-shrink-0"
+              dir="ltr"
+            />
+          </div>
+          {accessCode && accessCode.length > 0 && accessCode.length < 4 && (
+            <p className="text-[11px] text-rose-400 mt-1 text-left" dir="ltr">4 ספרות בדיוק (או ריק לביטול)</p>
+          )}
         </div>
 
         {/* Streak bonus */}

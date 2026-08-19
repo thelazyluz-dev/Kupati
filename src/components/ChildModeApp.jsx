@@ -7,7 +7,43 @@ import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected, notifyChoreSubmitted, notifyRequestApproved, notifyRequestRejected } from '../lib/notifications.js'
 import { describeRequest } from '../lib/requests.js'
+import { verifyPin } from '../lib/pin.js'
 import ChildRequestHub from './child/ChildRequestHub.jsx'
+
+// Overlay that asks for the parent PIN before letting a child leave child mode.
+function ExitPinOverlay({ settings, onSuccess, onCancel }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  async function check(value) {
+    const { ok } = await verifyPin(value, settings)
+    if (ok) onSuccess()
+    else { setPin(''); setError('קוד שגוי') }
+  }
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}>
+      <div className="w-full max-w-xs rounded-3xl bg-white p-6 text-center space-y-4">
+        <div className="text-4xl">🔒</div>
+        <p className="font-black text-gray-800">קוד הורים כדי לצאת</p>
+        <div className="flex justify-center gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={`w-4 h-4 rounded-full border-2 ${i < pin.length ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`} />
+          ))}
+        </div>
+        {error && <p className="text-rose-500 text-sm font-semibold">{error}</p>}
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
+            <button key={d} onClick={() => { const n = (pin + d).slice(0, 4); setPin(n); setError(''); if (n.length === 4) check(n) }}
+              className="h-12 rounded-2xl bg-gray-100 text-lg font-bold text-gray-800 active:scale-90 transition-all">{d}</button>
+          ))}
+          <button onClick={onCancel} className="h-12 rounded-2xl text-sm font-bold text-gray-400 active:scale-90">ביטול</button>
+          <button onClick={() => { const n = (pin + '0').slice(0, 4); setPin(n); setError(''); if (n.length === 4) check(n) }}
+            className="h-12 rounded-2xl bg-gray-100 text-lg font-bold text-gray-800 active:scale-90 transition-all">0</button>
+          <button onClick={() => setPin((p) => p.slice(0, -1))} className="h-12 rounded-2xl text-lg text-gray-500 active:scale-90">⌫</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const GRAPH_PERIODS = [
   { days: 30,  label: 'חודש'    },
@@ -1160,6 +1196,7 @@ export default function ChildModeApp() {
   const [showPrizes,   setShowPrizes]   = useState(false)
   const [showGoals,    setShowGoals]    = useState(false)
   const [showRequestHub, setShowRequestHub] = useState(false)
+  const [showExitPin, setShowExitPin] = useState(false)
   const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
   const [selectedChores, setSelectedChores] = useState(new Set())
   const [submittingBulk, setSubmittingBulk] = useState(false)
@@ -1373,11 +1410,15 @@ export default function ChildModeApp() {
     setNotifPerm(result)
   }
 
+  function doExit() {
+    remove('childMode')
+    window.location.reload()
+  }
+
   function exitChildMode() {
-    if (window.confirm('לצאת ממצב ילד?')) {
-      remove('childMode')
-      window.location.reload()
-    }
+    // Locked with the parent PIN when one is set (synced as a hash).
+    if (settings.pinHash) { setShowExitPin(true); return }
+    if (window.confirm('לצאת ממצב ילד?')) doExit()
   }
 
   if (loading) {
@@ -1459,6 +1500,9 @@ export default function ChildModeApp() {
           onSubmit={submitRequest}
           onClose={() => setShowRequestHub(false)}
         />
+      )}
+      {showExitPin && (
+        <ExitPinOverlay settings={settings} onSuccess={doExit} onCancel={() => setShowExitPin(false)} />
       )}
 
       {showFreeSpinCelebration && (

@@ -63,9 +63,14 @@ function dataDocRef(key) {
   return doc(db, 'families', familyCode, 'data', key)
 }
 
-/** Strip device-local fields before pushing settings to Firestore. */
+/**
+ * Strip device-local fields before pushing settings to Firestore.
+ * The plaintext `pin` and `familyCode` never leave the device. `pinHash`/
+ * `pinSalt` DO sync so the child tablet can verify the parent's exit code
+ * offline — a salted SHA-256 of a short PIN, never the PIN itself.
+ */
 function sanitizeSettings(s) {
-  const { pin: _p, pinHash: _ph, pinSalt: _ps, familyCode: _fc, ...safe } = s ?? {}
+  const { pin: _p, familyCode: _fc, ...safe } = s ?? {}
   return safe
 }
 

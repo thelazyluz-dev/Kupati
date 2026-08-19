@@ -79,11 +79,46 @@ function OtpInput({ value, onChange, onComplete }) {
   )
 }
 
+// 4-digit personal-code prompt shown before a child with an access code enters.
+function CodeGate({ child, onSuccess, onCancel }) {
+  const [pin, setPin] = useState('')
+  const [error, setError] = useState('')
+  function check(value) {
+    if (value === String(child.accessCode)) onSuccess()
+    else { setPin(''); setError('קוד שגוי') }
+  }
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-6" style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(4px)' }}>
+      <div className="w-full max-w-xs rounded-3xl bg-white p-6 text-center space-y-4">
+        <div className="text-3xl">{child.avatar || '🔒'}</div>
+        <p className="font-black text-gray-800">הקוד האישי של {child.name}</p>
+        <div className="flex justify-center gap-2">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className={`w-4 h-4 rounded-full border-2 ${i < pin.length ? 'bg-indigo-500 border-indigo-500' : 'border-gray-300'}`} />
+          ))}
+        </div>
+        {error && <p className="text-rose-500 text-sm font-semibold">{error}</p>}
+        <div className="grid grid-cols-3 gap-2">
+          {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => (
+            <button key={d} onClick={() => { const n = (pin + d).slice(0, 4); setPin(n); setError(''); if (n.length === 4) check(n) }}
+              className="h-12 rounded-2xl bg-gray-100 text-lg font-bold text-gray-800 active:scale-90 transition-all">{d}</button>
+          ))}
+          <button onClick={onCancel} className="h-12 rounded-2xl text-sm font-bold text-gray-400 active:scale-90">ביטול</button>
+          <button onClick={() => { const n = (pin + '0').slice(0, 4); setPin(n); setError(''); if (n.length === 4) check(n) }}
+            className="h-12 rounded-2xl bg-gray-100 text-lg font-bold text-gray-800 active:scale-90 transition-all">0</button>
+          <button onClick={() => setPin((p) => p.slice(0, -1))} className="h-12 rounded-2xl text-lg text-gray-500 active:scale-90">⌫</button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function ChildLogin({ onBack }) {
   const [code, setCode] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [children, setChildren] = useState(null)
+  const [codeChild, setCodeChild] = useState(null)
 
   // Clear error when code changes
   useEffect(() => { setError('') }, [code])
@@ -106,13 +141,19 @@ export default function ChildLogin({ onBack }) {
     setLoading(false)
   }
 
-  function selectChild(child) {
+  function enterAs(child) {
     set('childMode', {
       familyCode: code.trim().toLowerCase(),
       childId: child.id,
       childName: child.name,
     })
     window.location.reload()
+  }
+
+  function selectChild(child) {
+    // Gate behind the personal code when the parent set one for this child.
+    if (child.accessCode) setCodeChild(child)
+    else enterAs(child)
   }
 
   const panelStyle = {
@@ -156,6 +197,10 @@ export default function ChildLogin({ onBack }) {
         </div>
 
         <button onClick={() => setChildren(null)} className="text-sm text-gray-400 font-medium">← הזן קוד שוב</button>
+
+        {codeChild && (
+          <CodeGate child={codeChild} onSuccess={() => enterAs(codeChild)} onCancel={() => setCodeChild(null)} />
+        )}
       </div>
     )
   }
