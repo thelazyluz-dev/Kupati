@@ -14,6 +14,7 @@
 import { db } from './firebase.js'
 import { doc, getDoc, setDoc, onSnapshot, serverTimestamp, runTransaction } from 'firebase/firestore'
 import { get, set } from './storage.js'
+import { prunePendingChores } from './requests.js'
 
 const LS_EVENT   = 'kupati-storage'
 const DEVICE_KEY = 'kupati_device_id'
@@ -126,7 +127,7 @@ function applyRemoteData(key, payload, remoteTs) {
       set('all_transactions', mergeTransactions(local, payload))
     } else if (key === 'pendingChores') {
       const local  = get('pendingChores') ?? []
-      set('pendingChores', mergePendingChores(local, payload))
+      set('pendingChores', prunePendingChores(mergePendingChores(local, payload)))
     } else if (key === 'childActivity') {
       const local  = get('childActivity') ?? []
       set('childActivity', mergeChildActivity(local, payload))

@@ -51,6 +51,11 @@ export const notifyChoreRequest = (childName, choreName) =>
 export const notifyPrizeRequest = (childName, prizeName) =>
   notifyIfEnabled('choreRequest', `🎁 בקשת פרס — ${childName}`, prizeName)
 
+// Generic request notification (any request type). `title` is the type's
+// notify label (e.g. "⭐ בקשת כוכבים"); body carries the request details.
+export const notifyRequest = (childName, title, body) =>
+  notifyIfEnabled('choreRequest', `${title} — ${childName}`, body)
+
 export const notifyMoneyAdded = (childName, amount) =>
   notifyIfEnabled('moneyAdded', `💵 הפקדה — ${childName}`, `+${amount}₪ הופקדו`)
 
@@ -69,6 +74,13 @@ export const notifyChoreApproved = (choreName, stars) =>
 
 export const notifyChoreRejected = (choreName) =>
   notify(`❌ מטלה לא אושרה`, choreName)
+
+// Generic child-side decision notification for any request type.
+export const notifyRequestApproved = (title) =>
+  notify(`✅ אושר!`, title)
+
+export const notifyRequestRejected = (title, reason) =>
+  notify(`❌ לא אושר`, reason ? `${title} — ${reason}` : title)
 
 export const notifyChoreSubmitted = (childName, count, firstChoreName) => {
   const body = count > 1

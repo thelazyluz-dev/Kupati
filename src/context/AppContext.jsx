@@ -11,8 +11,9 @@ import { useWeeklySummary } from '../hooks/useWeeklySummary.js'
 import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get, set } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
-import { notifyChore, notifyChoreRequest, notifyPrizeRequest } from '../lib/notifications.js'
+import { notifyChore, notifyRequest } from '../lib/notifications.js'
 import { calculateStreak, generateId } from '../lib/utils.js'
+import { REQUEST_TYPES, describeRequest, isActionable } from '../lib/requests.js'
 
 const AppContext = createContext(null)
 
@@ -345,37 +346,36 @@ export function AppProvider({ children: reactChildren }) {
       const tenMinAgo = Date.now() - 10 * 60 * 1000
       const cutoff = Math.max(lastNotified, tenMinAgo)
       const missed = current.filter(
-        (pc) => pc.status === 'pending' && pc.timestamp > cutoff
+        (pc) => isActionable(pc) && pc.timestamp > cutoff
       )
       if (missed.length > 0) {
-        missed.forEach((pc) => {
-          const child = childrenApi.children.find((c) => c.id === pc.childId)
-          if (!child) return
-          const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
-          if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
-          else notifyChoreRequest(child.name, label)
-        })
+        missed.forEach((pc) => notifyIncomingRequest(pc))
         localStorage.setItem('kupati_lastNotified', String(Date.now()))
       }
       prevPendingRef.current = current
       return
     }
     const prev = prevPendingRef.current
+    // Notify on requests that just became actionable (new pending, or a
+    // parent-assigned chore the child just marked done).
     const newReqs = current.filter(
-      (pc) => pc.status === 'pending' && !prev.find((p) => p.id === pc.id)
+      (pc) => isActionable(pc) && !prev.find((p) => p.id === pc.id && p.status === pc.status)
     )
     if (newReqs.length > 0) {
-      newReqs.forEach((pc) => {
-        const child = childrenApi.children.find((c) => c.id === pc.childId)
-        if (!child) return
-        const label = `${pc.choreEmoji || ''} ${pc.choreName}`.trim()
-        if (pc.type === 'prize') notifyPrizeRequest(child.name, label)
-        else notifyChoreRequest(child.name, label)
-      })
+      newReqs.forEach((pc) => notifyIncomingRequest(pc))
       localStorage.setItem('kupati_lastNotified', String(Date.now()))
     }
     prevPendingRef.current = current
   }, [pendingChoresApi.pendingChores]) // eslint-disable-line
+
+  function notifyIncomingRequest(pc) {
+    const child = childrenApi.children.find((c) => c.id === pc.childId)
+    const name = child?.name || pc.childName || ''
+    if (!name) return
+    const d = describeRequest(pc)
+    const body = [d.title, d.amount, pc.note].filter(Boolean).join(' · ')
+    notifyRequest(name, d.notifyTitle, body)
+  }
 
   function addAssignedChore(childId, { choreId, choreName, choreEmoji, amount, currency = 'stars' }) {
     const child = childrenApi.children.find((c) => c.id === childId)
@@ -384,42 +384,110 @@ export function AppProvider({ children: reactChildren }) {
     return pendingChoresApi.addPendingChore({ childId, choreId, choreName, choreEmoji, amount, currency, source: 'parent' })
   }
 
-  function approvePendingChore(choreReqId) {
-    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === choreReqId)
-    if (!req || (req.status !== 'pending' && req.status !== 'done')) return
-    pendingChoresApi.setPendingChoreStatus(choreReqId, 'approved')
-    childrenApi.addStars(req.childId, req.amount)
-    addTransaction(req.childId, {
-      type: 'chore',
-      amount: req.amount,
-      currency: req.currency,
-      description: `${req.choreEmoji || '✅'} ${req.choreName} (אושר)`,
-      timestamp: req.timestamp,
-      _skipLog: true,
-    })
+  // ── Unified request approval ────────────────────────────────────────────
+  // Applies the balance/data effect for ANY request type, then marks it
+  // approved. `opts.amount` lets the parent approve a different amount than
+  // requested ("approve with edit"). Chore/prize keep their exact old behaviour.
+  function approveRequest(reqId, opts = {}) {
+    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === reqId)
+    if (!req) return
+    // Terminal, or a parent-assigned chore the child hasn't marked done yet
+    if (req.status === 'approved' || req.status === 'rejected' || req.status === 'assigned') return
+
+    const type = req.type || 'chore'
+    const cid  = req.childId
+    const amount = opts.amount != null ? opts.amount : req.amount
+    const label  = req.title || `${req.choreEmoji || ''} ${req.choreName || ''}`.trim() || REQUEST_TYPES[type]?.label || ''
+    const child  = childrenApi.children.find((c) => c.id === cid)
+
+    switch (type) {
+      case 'chore':
+        childrenApi.addStars(cid, amount)
+        addTransaction(cid, {
+          type: 'chore', amount, currency: req.currency || 'stars',
+          description: `${req.choreEmoji || '✅'} ${req.choreName || label} (אושר)`,
+          timestamp: req.timestamp, _skipLog: true,
+        })
+        break
+      case 'prize':
+        childrenApi.adjustStars(cid, -amount)
+        addTransaction(cid, {
+          type: 'prize_redeem', amount, currency: 'stars',
+          description: `${req.emoji || req.choreEmoji || '🎁'} ${req.choreName || label}`, _skipLog: true,
+        })
+        break
+      case 'stars':
+        childrenApi.addStars(cid, amount)
+        addTransaction(cid, { type: 'other', amount, currency: 'stars', description: `⭐ ${label || 'כוכבים'}` })
+        break
+      case 'money':
+        childrenApi.adjustShekels(cid, amount)
+        addTransaction(cid, { type: 'gift', amount, currency: 'shekels', description: `💵 ${label || 'כסף'}` })
+        break
+      case 'purchase':
+        childrenApi.adjustShekels(cid, -amount)
+        addTransaction(cid, { type: 'expense', amount, currency: 'shekels', description: `🛍️ ${label || 'קנייה'}` })
+        break
+      case 'convert': {
+        const converted = childrenApi.convertStars(cid, amount, settingsApi.settings)
+        const desc = `💱 המרת ${amount}⭐ ← ${converted}₪`
+        addTransaction(cid, { type: 'convert_out', amount, currency: 'stars', description: desc, _skipLog: true })
+        addTransaction(cid, { type: 'convert_in', amount: converted, currency: 'shekels', description: desc, _skipLog: true })
+        break
+      }
+      case 'goal': {
+        const m = req.meta || {}
+        if (m.goalId) childrenApi.updateGoal(cid, m.goalId, { name: m.name, emoji: m.emoji, targetAmount: m.targetAmount })
+        else childrenApi.addGoal(cid, { name: m.name, emoji: m.emoji, targetAmount: m.targetAmount, goalImage: m.goalImage })
+        break
+      }
+      case 'transfer': {
+        const m = req.meta || {}
+        if ((req.currency || 'stars') === 'stars') doTransferStars(cid, m.toChildId, amount, m.price || 0)
+        else doTransferMoney(cid, m.toChildId, amount)
+        break
+      }
+      case 'savings_open':
+        startSavings(cid, { amount })
+        break
+      case 'savings_withdraw': {
+        const m = req.meta || {}
+        finishSavings(cid, m.savingId, m.mode || 'normal')
+        break
+      }
+      case 'profile':
+        childrenApi.updateChild(cid, (req.meta && req.meta.changes) || {})
+        break
+      case 'free':
+        // No automatic balance effect — parent may attach a reward on approve.
+        if (opts.rewardStars > 0) {
+          childrenApi.addStars(cid, opts.rewardStars)
+          addTransaction(cid, { type: 'other', amount: opts.rewardStars, currency: 'stars', description: `⭐ ${label}` })
+        }
+        if (opts.rewardShekels > 0) {
+          childrenApi.adjustShekels(cid, opts.rewardShekels)
+          addTransaction(cid, { type: 'gift', amount: opts.rewardShekels, currency: 'shekels', description: `💵 ${label}` })
+        }
+        break
+      default:
+        break
+    }
+
+    logActivity(cid, child?.name || req.childName || '', 'request_approved', `${req.emoji || '✅'} ${label}`, amount || 0, req.currency || 'stars')
+    pendingChoresApi.setPendingChoreStatus(reqId, 'approved', { decidedAt: Date.now() })
   }
 
-  function approvePendingPrize(prizeReqId) {
-    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === prizeReqId)
-    if (!req || req.type !== 'prize' || req.status !== 'pending') return
-    pendingChoresApi.setPendingChoreStatus(prizeReqId, 'approved')
-    childrenApi.adjustStars(req.childId, -req.amount)
-    addTransaction(req.childId, {
-      type: 'prize_redeem',
-      amount: req.amount,
-      currency: 'stars',
-      description: `${req.choreEmoji || '🎁'} ${req.choreName}`,
-      _skipLog: true,
-    })
+  function rejectRequest(reqId, reason = '') {
+    const req = pendingChoresApi.pendingChores.find((pc) => pc.id === reqId)
+    if (!req) return
+    pendingChoresApi.setPendingChoreStatus(reqId, 'rejected', { decidedAt: Date.now(), parentNote: reason })
   }
 
-  function rejectPendingPrize(prizeReqId) {
-    pendingChoresApi.setPendingChoreStatus(prizeReqId, 'rejected')
-  }
-
-  function rejectPendingChore(choreReqId) {
-    pendingChoresApi.setPendingChoreStatus(choreReqId, 'rejected')
-  }
+  // Backward-compatible aliases (used by ChildActivityLog / ChildDashboard)
+  const approvePendingChore = (id) => approveRequest(id)
+  const approvePendingPrize = (id) => approveRequest(id)
+  const rejectPendingChore  = (id) => rejectRequest(id)
+  const rejectPendingPrize  = (id) => rejectRequest(id)
 
   const value = {
     ...childrenApi,
@@ -450,6 +518,8 @@ export function AppProvider({ children: reactChildren }) {
     },
     pendingChores: pendingChoresApi.pendingChores,
     addAssignedChore,
+    approveRequest,
+    rejectRequest,
     approvePendingChore,
     rejectPendingChore,
     approvePendingPrize,
