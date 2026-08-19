@@ -20,7 +20,7 @@ export const REQUEST_TYPES = {
   chore:            { emoji: '✅',  label: 'מטלה',          dir: 'credit',  currency: 'stars',   notify: '📝 בקשת מטלה' },
   prize:            { emoji: '🎁',  label: 'פרס',           dir: 'debit',   currency: 'stars',   notify: '🎁 בקשת פרס' },
   stars:            { emoji: '⭐',  label: 'בקשת כוכבים',   dir: 'credit',  currency: 'stars',   notify: '⭐ בקשת כוכבים' },
-  money:            { emoji: '💵',  label: 'בקשת כסף',      dir: 'credit',  currency: 'shekels', notify: '💵 בקשת כסף' },
+  money:            { emoji: '💝',  label: 'בקשת הפקדה',    dir: 'credit',  currency: 'shekels', notify: '💝 בקשת הפקדה' },
   purchase:         { emoji: '🛍️',  label: 'קנייה',         dir: 'debit',   currency: 'shekels', notify: '🛍️ בקשת קנייה' },
   convert:          { emoji: '💱',  label: 'המרה לכסף',     dir: 'special', currency: 'stars',   notify: '💱 בקשת המרה' },
   goal:             { emoji: '🎯',  label: 'מטרה',          dir: 'none',    currency: null,      notify: '🎯 בקשת מטרה' },

@@ -6,7 +6,7 @@ import { sounds } from '../../lib/sounds.js'
 
 const CATEGORIES = [
   { key: 'stars',    emoji: '⭐', label: 'לבקש כוכבים',  bg: 'linear-gradient(135deg,#f59e0b,#d97706)' },
-  { key: 'money',    emoji: '💵', label: 'לבקש כסף',      bg: 'linear-gradient(135deg,#10b981,#059669)' },
+  { key: 'money',    emoji: '💝', label: 'לבקש הפקדה',    bg: 'linear-gradient(135deg,#10b981,#059669)' },
   { key: 'purchase', emoji: '🛍️', label: 'לקנות משהו',    bg: 'linear-gradient(135deg,#f43f5e,#e11d48)' },
   { key: 'convert',  emoji: '💱', label: 'להמיר לכסף',    bg: 'linear-gradient(135deg,#0ea5e9,#0284c7)' },
   { key: 'goal',     emoji: '🎯', label: 'מטרה חדשה',     bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
@@ -65,7 +65,7 @@ export default function ChildRequestHub({ child, settings, myRequests, onSubmit,
   function submitMoney() {
     const n = parseFloat(amount)
     if (!(n > 0)) return
-    send(newRequest({ ...base, type: 'money', amount: n, currency: 'shekels', note, title: `בקשת ${formatNumber(n)}₪` }))
+    send(newRequest({ ...base, type: 'money', amount: n, currency: 'shekels', note, title: `בקשת הפקדה ${formatNumber(n)}₪` }))
   }
   function submitPurchase() {
     const n = parseFloat(amount)
@@ -154,11 +154,11 @@ export default function ChildRequestHub({ child, settings, myRequests, onSubmit,
 
             {cat === 'money' && (
               <>
-                <Field label="כמה כסף לבקש? (₪)">
+                <Field label="כמה כסף להפקיד? (₪)">
                   <input type="number" min="1" value={amount} onChange={(e) => setAmount(e.target.value)} className={inputCls} dir="ltr" placeholder="20" autoFocus />
                 </Field>
                 <Field label="למה? (אופציונלי)">
-                  <input value={note} onChange={(e) => setNote(e.target.value)} className={inputCls.replace('text-lg', 'text-base')} placeholder="דמי כיס..." />
+                  <input value={note} onChange={(e) => setNote(e.target.value)} className={inputCls.replace('text-lg', 'text-base')} placeholder="דמי כיס, מתנה מסבתא..." />
                 </Field>
                 <Submit onClick={submitMoney} busy={busy} disabled={!(parseFloat(amount) > 0)} label="שלח בקשה להורה" />
               </>
