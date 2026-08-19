@@ -1244,6 +1244,7 @@ export default function ChildModeApp() {
         setTransactions((tx[childId] || []).sort((a, b) => b.timestamp - a.timestamp))
       ),
       subscribeFamilyData(familyCode, 'pendingChores', setPendingChores),
+      subscribeFamilyData(familyCode, 'settings', (s) => { if (s) setSettings(s) }),
     ]
     return () => unsubs.forEach((u) => u())
   }, [familyCode, childId])

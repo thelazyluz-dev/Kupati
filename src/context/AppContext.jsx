@@ -14,6 +14,7 @@ import { checkBadges } from '../lib/badges.js'
 import { notifyChore, notifyRequest } from '../lib/notifications.js'
 import { calculateStreak, generateId } from '../lib/utils.js'
 import { REQUEST_TYPES, describeRequest, isActionable } from '../lib/requests.js'
+import { makePinSettings } from '../lib/pin.js'
 
 const AppContext = createContext(null)
 
@@ -45,6 +46,21 @@ export function AppProvider({ children: reactChildren }) {
     localStorage.setItem('kupati_activityViewed', String(now))
     setActivityViewed(now)
   }
+
+  // Ensure the parent PIN reaches the child tablet as a hash so the child-mode
+  // exit lock can work. Two cases handled once on mount:
+  //  - legacy plaintext `pin` (pre-hash) → upgrade to a salted hash
+  //  - already-hashed pin whose family settings doc predates the sync change →
+  //    re-save once to push pinHash/pinSalt up to Firestore for the tablet
+  useEffect(() => {
+    const s = settingsApi.settings
+    if (s.pin && !s.pinHash) {
+      makePinSettings(s.pin).then((patch) => settingsApi.updateSettings(patch)).catch(() => {})
+    } else if (s.pinHash && !localStorage.getItem('kupati_pinSynced_v1')) {
+      settingsApi.updateSettings({})   // no-op merge → triggers a settings push
+      localStorage.setItem('kupati_pinSynced_v1', '1')
+    }
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const unreadActivityCount = childActivity.filter((e) => e.timestamp > activityViewed).length
 
   function logActivity(childId, childName, type, description, amount, currency) {
