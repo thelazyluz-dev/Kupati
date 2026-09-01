@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { get, remove } from '../lib/storage.js'
+import { get, set, remove } from '../lib/storage.js'
 import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity, appendToFamilyArray } from '../lib/childSync.js'
 import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
@@ -9,6 +9,8 @@ import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejec
 import { describeRequest } from '../lib/requests.js'
 import { verifyPin } from '../lib/pin.js'
 import ChildRequestHub from './child/ChildRequestHub.jsx'
+import ChildSwitcher from './child/ChildSwitcher.jsx'
+import CodeGate from './child/CodeGate.jsx'
 
 // Overlay that asks for the parent PIN before letting a child leave child mode.
 function ExitPinOverlay({ settings, onSuccess, onCancel }) {
@@ -50,6 +52,9 @@ const GRAPH_PERIODS = [
   { days: 180, label: 'חצי שנה' },
   { days: 365, label: 'שנה'     },
 ]
+
+// How long a personal-code confirmation stays valid for significant actions.
+const VERIFY_WINDOW = 3 * 60 * 1000
 
 function samplePoints(pts, maxN) {
   if (pts.length <= maxN) return pts
@@ -1197,6 +1202,8 @@ export default function ChildModeApp() {
   const [showGoals,    setShowGoals]    = useState(false)
   const [showRequestHub, setShowRequestHub] = useState(false)
   const [showExitPin, setShowExitPin] = useState(false)
+  const [showSwitch, setShowSwitch] = useState(false)
+  const [gateAction, setGateAction] = useState(null)   // pending fn awaiting the personal code
   const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
   const [selectedChores, setSelectedChores] = useState(new Set())
   const [submittingBulk, setSubmittingBulk] = useState(false)
@@ -1484,6 +1491,16 @@ export default function ChildModeApp() {
   const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
   const commonProps = { child, familyCode, childId, onClose: () => {}, onUpdate: handleChildUpdate, showHint }
 
+  // Personal-code gate for significant actions. If the child has an access code
+  // and hasn't confirmed it within VERIFY_WINDOW, ask for it before acting —
+  // so a sibling can't act on the wrong (already-open) account.
+  function guard(fn) {
+    if (!child.accessCode) { fn(); return }
+    const verifiedAt = parseInt(get('childVerifiedAt') || '0', 10)
+    if (Date.now() - verifiedAt < VERIFY_WINDOW) { fn(); return }
+    setGateAction(() => fn)
+  }
+
   return (
     <div className="min-h-screen flex flex-col pb-20"
       style={{ background: 'linear-gradient(180deg,#eef2ff 0%,#f5f3ff 100%)' }}>
@@ -1505,6 +1522,17 @@ export default function ChildModeApp() {
       {showExitPin && (
         <ExitPinOverlay settings={settings} onSuccess={doExit} onCancel={() => setShowExitPin(false)} />
       )}
+      {showSwitch && (
+        <ChildSwitcher children={children} currentChildId={childId} onClose={() => setShowSwitch(false)} />
+      )}
+      {gateAction && (
+        <CodeGate
+          child={child}
+          title="הזן את הקוד שלך כדי להמשיך"
+          onSuccess={() => { const fn = gateAction; setGateAction(null); fn && fn() }}
+          onCancel={() => setGateAction(null)}
+        />
+      )}
 
       {showFreeSpinCelebration && (
         <FreeSpinCelebrationOverlay
@@ -1519,6 +1547,21 @@ export default function ChildModeApp() {
       {/* Header */}
       <header className={`bg-gradient-to-br ${gradient} px-5 pt-10 pb-6 text-white`}
         style={{ borderRadius: '0 0 36px 36px', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' }}>
+        {/* Who's logged in — always visible, one tap to switch */}
+        <div className="flex items-center gap-2 mb-4 rounded-full pl-1.5 pr-3 py-1.5"
+          style={{ background: 'rgba(255,255,255,0.18)', border: '1.5px solid rgba(255,255,255,0.35)' }}>
+          {child.avatarImage
+            ? <img src={child.avatarImage} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
+            : <span className="text-lg flex-shrink-0">{child.avatar || '🦁'}</span>}
+          <span className="text-sm font-bold flex-1 truncate">מחובר/ת: {child.name}</span>
+          {children.length > 1 && (
+            <button onClick={() => setShowSwitch(true)}
+              className="text-xs font-black bg-white/25 rounded-full px-3 py-1 active:scale-95 transition-all flex-shrink-0">
+              🔄 החלף
+            </button>
+          )}
+        </div>
+
         <div className="flex flex-col items-center gap-2 mb-5">
           {child.avatarImage
             ? <img src={child.avatarImage} alt={child.name}
@@ -1566,7 +1609,7 @@ export default function ChildModeApp() {
         {(() => {
           const myPending = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending').length
           return (
-            <button onClick={() => setShowRequestHub(true)}
+            <button onClick={() => guard(() => setShowRequestHub(true))}
               className="relative w-full flex items-center gap-4 rounded-[22px] px-5 py-4 active:scale-95 transition-all text-white"
               style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6,#a855f7)', boxShadow: '0 6px 24px rgba(99,102,241,0.45)' }}>
               <span className="text-4xl flex-shrink-0">✋</span>
@@ -1609,7 +1652,7 @@ export default function ChildModeApp() {
 
         {/* Free spin persistent banner */}
         {(child.freeSpins || 0) > 0 && (
-          <button onClick={() => setShowWheel(true)}
+          <button onClick={() => guard(() => setShowWheel(true))}
             className="relative w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
             style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)', boxShadow: '0 6px 28px rgba(245,158,11,0.55), 0 0 0 2px rgba(251,191,36,0.4)' }}>
             {/* shimmer sweep */}
@@ -1633,11 +1676,11 @@ export default function ChildModeApp() {
         {(() => {
           const freeSpins = child.freeSpins || 0
           const actions = [
-            { icon: '🏦', label: 'חסכון',  onClick: () => setShowSavings(true),  bg: 'linear-gradient(135deg,#38bdf8,#14b8a6)' },
+            { icon: '🏦', label: 'חסכון',  onClick: () => guard(() => setShowSavings(true)),  bg: 'linear-gradient(135deg,#38bdf8,#14b8a6)' },
             { icon: '🎯', label: 'מטרה',   onClick: () => setShowGoals(true),    bg: 'linear-gradient(135deg,#6366f1,#8b5cf6)' },
-            { icon: '💸', label: 'העברה',  onClick: () => setShowTransfer(true), bg: 'linear-gradient(135deg,#818cf8,#a855f7)', disabled: siblings.length === 0 },
-            { icon: '🎁', label: 'פרסים',  onClick: () => setShowPrizes(true),   bg: 'linear-gradient(135deg,#a855f7,#7c3aed)' },
-            { icon: '🎰', label: 'גלגל',   onClick: () => setShowWheel(true),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)', freeSpin: freeSpins > 0 },
+            { icon: '💸', label: 'העברה',  onClick: () => guard(() => setShowTransfer(true)), bg: 'linear-gradient(135deg,#818cf8,#a855f7)', disabled: siblings.length === 0 },
+            { icon: '🎁', label: 'פרסים',  onClick: () => guard(() => setShowPrizes(true)),   bg: 'linear-gradient(135deg,#a855f7,#7c3aed)' },
+            { icon: '🎰', label: 'גלגל',   onClick: () => guard(() => setShowWheel(true)),    bg: 'linear-gradient(135deg,#7c3aed,#6d28d9)', freeSpin: freeSpins > 0 },
           ]
           return (
             <div className="grid grid-cols-3 gap-2">
@@ -1743,7 +1786,7 @@ export default function ChildModeApp() {
                   <p className="text-xs text-amber-600 font-bold">+{pc.amount}⭐ אחרי אישור</p>
                 </div>
                 <button
-                  onClick={() => markAssignedDone(pc)}
+                  onClick={() => guard(() => markAssignedDone(pc))}
                   className="text-xs font-black text-white px-3 py-2 rounded-xl flex-shrink-0 active:scale-90 transition-all"
                   style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 2px 8px rgba(16,185,129,0.4)' }}
                 >
@@ -1847,7 +1890,7 @@ export default function ChildModeApp() {
 
               {selectedChores.size > 0 && (
                 <button
-                  onClick={() => requestChores(selectedList)}
+                  onClick={() => guard(() => requestChores(selectedList))}
                   disabled={submittingBulk}
                   className="mt-3 w-full py-4 rounded-2xl font-black text-white text-base active:scale-95 transition-all disabled:opacity-60"
                   style={{ background: 'linear-gradient(135deg,#10b981,#059669)', boxShadow: '0 4px 14px rgba(16,185,129,0.4)' }}>
