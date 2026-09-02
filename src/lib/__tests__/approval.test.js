@@ -82,6 +82,13 @@ describe('applyApproval — balance direction & currency per type', () => {
     expect(calls.addTransaction[0][1]).toMatchObject({ type: 'convert_out', currency: 'stars', amount: 10 })
     expect(calls.addTransaction[1][1]).toMatchObject({ type: 'convert_in', currency: 'shekels', amount: 20 })
   })
+
+  it('convert with amount 0 (clamped) does nothing — no phantom debit tx', () => {
+    const { api, calls } = mockApi()
+    applyApproval({ type: 'convert', childId: 'c1', amount: 10, currency: 'stars' }, api, { amount: 0 })
+    expect(calls.convertStars).toEqual([])
+    expect(calls.addTransaction).toEqual([])
+  })
 })
 
 describe('applyApproval — non-balance types', () => {

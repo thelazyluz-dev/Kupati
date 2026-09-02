@@ -12,7 +12,7 @@ import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get, set } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore, notifyRequest } from '../lib/notifications.js'
-import { calculateStreak, generateId } from '../lib/utils.js'
+import { calculateStreak, generateId, DEDUCT_TX_TYPES } from '../lib/utils.js'
 import { describeRequest, isActionable, applyApproval } from '../lib/requests.js'
 import { makePinSettings } from '../lib/pin.js'
 
@@ -218,15 +218,14 @@ export function AppProvider({ children: reactChildren }) {
 
   // Wraps deleteTransaction to keep freeSpins in sync.
   // Reads directly from localStorage so it's correct even inside a synchronous loop.
-  const DEDUCT_TYPES = ['expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay']
   function deleteTransaction(childId, txId) {
     const allTx = get('all_transactions') || {}
     const txList = allTx[childId] || []
     const tx = txList.find((t) => t.id === txId)
 
     if (tx) {
-      // Reverse balance effect
-      const isDeduct = DEDUCT_TYPES.includes(tx.type)
+      // Reverse balance effect — single source of truth for debit types.
+      const isDeduct = DEDUCT_TX_TYPES.has(tx.type)
       const delta = isDeduct ? tx.amount : -tx.amount
       if (tx.currency === 'stars') childrenApi.adjustStars(childId, delta)
       else childrenApi.adjustShekels(childId, delta)
@@ -264,32 +263,35 @@ export function AppProvider({ children: reactChildren }) {
     const child = childrenApi.children.find((c) => c.id === childId)
     const saving = (child?.savings || []).find((s) => s.id === savingId)
     if (!saving) return
-    const interest = saving.amount * 0.10 * saving.termMonths
+
+    // One interest model for every path: 10% per completed month, compounded.
+    // (Savings have no fixed term — the old 'matured' branch referenced a
+    // non-existent termMonths field and produced NaN.)
+    const start = new Date(saving.startDate)
+    const now   = new Date()
+    let cm = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
+    if (now.getDate() < start.getDate()) cm--
+    cm = Math.max(0, cm)
+    const total    = Math.round(saving.amount * Math.pow(1.10, cm) * 100) / 100
+    const interest = Math.round((total - saving.amount) * 100) / 100
+    const monthsLabel = `${cm} חודש${cm > 1 ? 'ים' : ''}`
+
     if (mode === 'matured') {
-      const total = saving.amount + interest
       childrenApi.closeSavings(childId, savingId, 'matured', total)
       addTransaction(childId, {
         type: 'savings_close',
         amount: total,
         currency: 'shekels',
-        description: `💰 חסכון הבשיל! (${saving.termMonths} חודש${saving.termMonths > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`,
+        description: `💰 חסכון הבשיל! (${monthsLabel}, ריבית: +${Math.round(interest)}₪)`,
       })
     } else {
-      // Compound interest for completed months (10% per month, compounded)
-      const start = new Date(saving.startDate)
-      const now   = new Date()
-      let cm = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
-      if (now.getDate() < start.getDate()) cm--
-      cm = Math.max(0, cm)
-      const earlyTotal     = saving.amount * Math.pow(1.10, cm)
-      const earnedInterest = earlyTotal - saving.amount
-      childrenApi.closeSavings(childId, savingId, 'early', earlyTotal)
+      childrenApi.closeSavings(childId, savingId, 'early', total)
       addTransaction(childId, {
         type: 'savings_early',
-        amount: earlyTotal,
+        amount: total,
         currency: 'shekels',
         description: cm > 0
-          ? `⚠️ פדיון מוקדם — ${cm} חודש${cm > 1 ? 'ים' : ''} ריבית: +${Math.round(earnedInterest)}₪`
+          ? `⚠️ פדיון מוקדם — ${monthsLabel} ריבית: +${Math.round(interest)}₪`
           : `⚠️ פדיון מוקדם — פחות מחודש, ללא ריבית`,
       })
     }
@@ -408,6 +410,16 @@ export function AppProvider({ children: reactChildren }) {
     if (!req) return
     // Terminal, or a parent-assigned chore the child hasn't marked done yet
     if (req.status === 'approved' || req.status === 'rejected' || req.status === 'assigned') return
+
+    // A convert can't take more stars than the child currently has (the child's
+    // balance may have dropped since they asked, or the parent edited the amount
+    // up). Clamp so the balance change and the logged transaction always agree.
+    if ((req.type || 'chore') === 'convert') {
+      const c = childrenApi.children.find((x) => x.id === req.childId)
+      const avail = c?.starBalance ?? 0
+      const want = opts.amount != null ? opts.amount : req.amount
+      opts = { ...opts, amount: Math.max(0, Math.min(want, avail)) }
+    }
 
     applyApproval(req, {
       addStars:        childrenApi.addStars,

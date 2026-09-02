@@ -32,6 +32,30 @@ describe('computeBalanceFromTransactions', () => {
     expect(result.stars).toBe(0)
   })
 
+  it('treats transfer/sale OUT as a debit (regression: was added back)', () => {
+    // Sender: earned 20⭐, gifted 8⭐ away → 12 should remain
+    expect(computeBalanceFromTransactions([
+      tx('chore', 20),
+      tx('stars_transfer_out', 8),
+    ]).stars).toBe(12)
+    // Sold stars out
+    expect(computeBalanceFromTransactions([
+      tx('chore', 20),
+      tx('stars_sold_out', 5),
+    ]).stars).toBe(15)
+    // Sent money out
+    expect(computeBalanceFromTransactions([
+      tx('gift', 50, 'shekels'),
+      tx('money_transfer_out', 20, 'shekels'),
+    ]).shekels).toBe(30)
+  })
+
+  it('treats transfer/sale IN as a credit', () => {
+    expect(computeBalanceFromTransactions([tx('stars_transfer_in', 8)]).stars).toBe(8)
+    expect(computeBalanceFromTransactions([tx('stars_bought_in', 5)]).stars).toBe(5)
+    expect(computeBalanceFromTransactions([tx('money_transfer_in', 20, 'shekels')]).shekels).toBe(20)
+  })
+
   it('ignores malformed amounts', () => {
     const result = computeBalanceFromTransactions([tx('chore', 'abc'), tx('chore', 5)])
     expect(result.stars).toBe(5)

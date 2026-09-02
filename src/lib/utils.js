@@ -159,6 +159,8 @@ export function daysUntilBirthday(birthdayMMDD) {
  */
 export const DEDUCT_TX_TYPES = new Set([
   'expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay',
+  // Transfer/sale OUT of the sender — these subtract, same as any other debit.
+  'stars_transfer_out', 'stars_sold_out', 'money_transfer_out',
 ])
 
 export function computeBalanceFromTransactions(transactions) {

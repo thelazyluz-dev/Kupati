@@ -148,6 +148,7 @@ export function applyApproval(req, api, opts = {}) {
       api.addTransaction(cid, { type: 'expense', amount, currency: 'shekels', description: `🛍️ ${label || 'קנייה'}` })
       break
     case 'convert': {
+      if (!(amount > 0)) break   // nothing to convert (clamped to 0)
       const converted = api.convertStars(cid, amount, api.settings)
       const desc = `💱 המרת ${amount}⭐ ← ${converted}₪`
       api.addTransaction(cid, { type: 'convert_out', amount, currency: 'stars', description: desc, _skipLog: true })

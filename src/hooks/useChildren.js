@@ -130,7 +130,7 @@ export function useChildren() {
         if (c.id !== id) return c
         if (stars > c.starBalance) return c
         const rate = c.exchangeRate ?? (settings?.globalExchangeRate ?? DEFAULT_SETTINGS.globalExchangeRate)
-        converted = stars * rate
+        converted = Math.round(stars * rate * 100) / 100   // keep shekels to 2 decimals
         return { ...c, starBalance: c.starBalance - stars, shekelBalance: c.shekelBalance + converted }
       })
     )
