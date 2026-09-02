@@ -98,7 +98,7 @@ export function mergePendingChores(local, remote) {
 export function mergeChildActivity(local, remote) {
   const seen = new Set((local || []).map((e) => e.id))
   const fresh = (remote || []).filter((e) => !seen.has(e.id))
-  return [...fresh, ...(local || [])].sort((a, b) => b.timestamp - a.timestamp).slice(0, 100)
+  return [...fresh, ...(local || [])].sort((a, b) => b.timestamp - a.timestamp).slice(0, 200)
 }
 
 /**

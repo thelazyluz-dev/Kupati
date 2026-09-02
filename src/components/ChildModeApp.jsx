@@ -255,7 +255,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
     setBusy(true)
     try {
       const cm = calcCompletedMonths(saving.startDate)
-      const payout = cv(saving.amount, cm)
+      const payout = Math.round(cv(saving.amount, cm) * 100) / 100   // 2 decimals, matches the logged tx
       const interest = payout - saving.amount
       const mode = cm >= 1 ? 'matured' : 'early'
       const freshChildren = await fetchFamilyData(familyCode, 'children') || []
@@ -271,7 +271,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
       const txDesc = cm >= 1
         ? `💰 חסכון הבשיל! (${cm} חודש${cm > 1 ? 'ים' : ''}, ריבית: +${Math.round(interest)}₪)`
         : '⚠️ פדיון מוקדם — פחות מחודש, ללא ריבית'
-      const newTx = { id: generateId(), type: txType, amount: Math.round(payout), currency: 'shekels', description: txDesc, timestamp: Date.now() }
+      const newTx = { id: generateId(), type: txType, amount: payout, currency: 'shekels', description: txDesc, timestamp: Date.now() }
       const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
       await pushFamilyData(familyCode, 'children', newChildren)
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
@@ -1342,7 +1342,6 @@ export default function ChildModeApp() {
     sounds.send()
     navigator.vibrate?.([20, 10, 30])
     try {
-      const current = await fetchFamilyData(familyCode, 'pendingChores') || []
       const newReq = {
         id: generateId(),
         childId,
@@ -1354,8 +1353,8 @@ export default function ChildModeApp() {
         timestamp: Date.now(),
         status: 'pending',
       }
-      await pushFamilyData(familyCode, 'pendingChores', [...current, newReq])
-      setPendingChores([...current, newReq])
+      const next = await appendToFamilyArray(familyCode, 'pendingChores', [newReq])
+      setPendingChores(next)
       showHint('📝 הבקשה נשלחה להורה לאישור!')
     } catch {
       showHint('שגיאה בשליחת הבקשה — נסה שוב')
@@ -1372,7 +1371,6 @@ export default function ChildModeApp() {
     sounds.send()
     navigator.vibrate?.([20, 10, 30])
     try {
-      const current = await fetchFamilyData(familyCode, 'pendingChores') || []
       const now = Date.now()
       const newReqs = choresToSubmit.map((chore) => ({
         id: generateId(),
@@ -1385,8 +1383,8 @@ export default function ChildModeApp() {
         timestamp: now,
         status: 'pending',
       }))
-      await pushFamilyData(familyCode, 'pendingChores', [...current, ...newReqs])
-      setPendingChores([...current, ...newReqs])
+      const next = await appendToFamilyArray(familyCode, 'pendingChores', newReqs)
+      setPendingChores(next)
       showHint(choresToSubmit.length > 1
         ? `📝 ${choresToSubmit.length} בקשות נשלחו להורה!`
         : '📝 הבקשה נשלחה להורה לאישור!')
@@ -1893,11 +1891,14 @@ export default function ChildModeApp() {
           <div className="rounded-[22px] p-4 space-y-2"
             style={{ background: 'rgba(238,242,255,0.9)', border: '1.5px solid rgba(99,102,241,0.25)', boxShadow: '0 4px 16px rgba(99,102,241,0.1)' }}>
             <h3 className="text-sm font-black text-indigo-700">📋 הבקשות שלי היום</h3>
-            {myPending.filter((pc) => pc.timestamp > todayStart).map((pc) => (
+            {myPending.filter((pc) => pc.timestamp > todayStart).map((pc) => {
+              const d = describeRequest(pc)
+              return (
               <div key={pc.id} className="flex items-center justify-between">
                 <span className="text-sm text-gray-700 flex items-center gap-1.5">
-                  <span>{pc.choreEmoji || '✅'}</span>
-                  <span>{pc.choreName}</span>
+                  <span>{d.emoji}</span>
+                  <span>{d.title}</span>
+                  {d.amount && <span className="text-xs text-gray-400">{d.amount}</span>}
                 </span>
                 <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${
                   pc.status === 'approved' ? 'bg-emerald-100 text-emerald-700' :
@@ -1907,7 +1908,7 @@ export default function ChildModeApp() {
                   {pc.status === 'approved' ? '✓ אושר' : pc.status === 'rejected' ? '✗ נדחה' : '⏳ ממתין'}
                 </span>
               </div>
-            ))}
+            )})}
           </div>
         )}
 

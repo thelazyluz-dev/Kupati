@@ -161,9 +161,12 @@ export function AppProvider({ children: reactChildren }) {
       // Notify on chore
       if (txData.type === 'chore') notifyChore(child.name, txData.description)
 
-      // Free spin + streak bonus
-      if (txData.type === 'chore') {
-        const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+      // Free spin + streak bonus — only for chores actually done TODAY.
+      // An approved chore request carries the ORIGINAL submit timestamp, which
+      // may be a previous day; counting it toward today's tally over-granted
+      // free spins (and the revoke path wouldn't undo them).
+      const dayStart = new Date(); dayStart.setHours(0, 0, 0, 0)
+      if (txData.type === 'chore' && (tx.timestamp ?? Date.now()) >= dayStart.getTime()) {
         const todayStr  = dayStart.toDateString()
 
         // Use a ref so the count is correct even when addTransaction is called
@@ -411,12 +414,15 @@ export function AppProvider({ children: reactChildren }) {
     // Terminal, or a parent-assigned chore the child hasn't marked done yet
     if (req.status === 'approved' || req.status === 'rejected' || req.status === 'assigned') return
 
-    // A convert can't take more stars than the child currently has (the child's
-    // balance may have dropped since they asked, or the parent edited the amount
-    // up). Clamp so the balance change and the logged transaction always agree.
-    if ((req.type || 'chore') === 'convert') {
+    // Spend requests can't take more than the child currently has (their balance
+    // may have dropped since they asked, or the parent edited the amount up).
+    // Clamp so the balance change and the logged transaction always agree —
+    // otherwise adjust* floors at 0 while the tx logs the full amount, and a
+    // later recalculateBalance diverges.
+    const type = req.type || 'chore'
+    if (type === 'convert' || type === 'prize' || type === 'purchase') {
       const c = childrenApi.children.find((x) => x.id === req.childId)
-      const avail = c?.starBalance ?? 0
+      const avail = (type === 'purchase' ? c?.shekelBalance : c?.starBalance) ?? 0
       const want = opts.amount != null ? opts.amount : req.amount
       opts = { ...opts, amount: Math.max(0, Math.min(want, avail)) }
     }

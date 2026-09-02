@@ -65,11 +65,11 @@ describe('mergeChildActivity', () => {
     expect(merged.map(e => e.id).sort()).toEqual(['a', 'b'])
   })
 
-  it('caps at 100 entries, keeping the newest', () => {
-    const local  = Array.from({ length: 80 }, (_, i) => ev(`l${i}`, i))
-    const remote = Array.from({ length: 80 }, (_, i) => ev(`r${i}`, 1000 + i))
+  it('caps at 200 entries, keeping the newest', () => {
+    const local  = Array.from({ length: 150 }, (_, i) => ev(`l${i}`, i))
+    const remote = Array.from({ length: 150 }, (_, i) => ev(`r${i}`, 1000 + i))
     const merged = mergeChildActivity(local, remote)
-    expect(merged).toHaveLength(100)
-    expect(merged[0].id).toBe('r79')   // newest first
+    expect(merged).toHaveLength(200)
+    expect(merged[0].id).toBe('r149')   // newest first
   })
 })
