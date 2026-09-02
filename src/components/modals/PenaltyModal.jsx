@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { sounds } from '../../lib/sounds.js'
+import { notifyPenalty } from '../../lib/notifications.js'
 import { generateId, formatNumber } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
@@ -88,6 +89,7 @@ export default function PenaltyModal() {
       currency,
       description: `⚡ קנס: ${finalEmoji} ${finalText}`,
     })
+    notifyPenalty(child.name, amount, finalText, currency)
     sounds.error?.()
     closeModal()
   }

@@ -59,8 +59,8 @@ export const notifyRequest = (childName, title, body) =>
 export const notifyMoneyAdded = (childName, amount) =>
   notifyIfEnabled('moneyAdded', `💵 הפקדה — ${childName}`, `+${amount}₪ הופקדו`)
 
-export const notifyPenalty = (childName, amount, day) =>
-  notifyIfEnabled('penalty', `⚡ קנס — ${childName}`, `-${amount}⭐ (${day})`)
+export const notifyPenalty = (childName, amount, day, currency = 'stars') =>
+  notifyIfEnabled('penalty', `⚡ קנס — ${childName}`, `-${amount}${currency === 'shekels' ? '₪' : '⭐'}${day ? ` (${day})` : ''}`)
 
 export const notifyAllowance = (childName, amount) =>
   notifyIfEnabled('allowance', `💰 קצבה — ${childName}`, `+${amount}₪ הופקדו`)
