@@ -1633,7 +1633,7 @@ export default function ChildModeApp() {
         const myPending = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending').length
         const heroes = [
           { key: 'chore',   emoji: '⭐', label: 'עשיתי מטלה', bg: 'linear-gradient(135deg,#f59e0b,#d97706)', onClick: () => { speak('עשיתי מטלה', speakOn); guard(() => setShowChores(true)) } },
-          { key: 'money',   emoji: '💝', label: 'רוצה כסף',    bg: 'linear-gradient(135deg,#10b981,#059669)', onClick: () => { speak('רוצה כסף', speakOn); openRequest('money') } },
+          { key: 'money',   emoji: '💝', label: 'רוצה להפקיד', bg: 'linear-gradient(135deg,#10b981,#059669)', onClick: () => { speak('רוצה להפקיד', speakOn); openRequest('money') } },
           { key: 'buy',     emoji: '🛍️', label: 'רוצה לקנות',  bg: 'linear-gradient(135deg,#f43f5e,#e11d48)', onClick: () => { speak('רוצה לקנות', speakOn); openRequest('purchase') } },
         ]
         return (
