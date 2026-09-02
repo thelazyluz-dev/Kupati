@@ -13,6 +13,8 @@ import ChildSwitcher from './child/ChildSwitcher.jsx'
 import CodeGate from './child/CodeGate.jsx'
 import ChoreOverlay from './child/ChoreOverlay.jsx'
 import AnimatedNumber from './ui/AnimatedNumber.jsx'
+import PigRun from './child/PigRun.jsx'
+import PigPeek from './child/PigPeek.jsx'
 import { speak } from '../lib/speech.js'
 
 // Overlay that asks for the parent PIN before letting a child leave child mode.
@@ -1210,6 +1212,7 @@ export default function ChildModeApp() {
   const [showExitPin, setShowExitPin] = useState(false)
   const [showSwitch, setShowSwitch] = useState(false)
   const [gateAction, setGateAction] = useState(null)   // pending fn awaiting the personal code
+  const [pigRun, setPigRun] = useState(0)              // celebration pig (timestamp key)
   const [showFreeSpinCelebration, setShowFreeSpinCelebration] = useState(false)
   const [selectedChores, setSelectedChores] = useState(new Set())
   const [submittingBulk, setSubmittingBulk] = useState(false)
@@ -1288,6 +1291,7 @@ export default function ChildModeApp() {
       if (pc.status === 'approved') {
         showHint(isChore ? `✅ "${label}" אושר! +${pc.amount}⭐` : `✅ "${label}" אושר!`)
         sounds.approve()
+        setPigRun(Date.now())   // 🐷 dashes across in celebration
         navigator.vibrate?.([40, 20, 80])
         if (isChore) notifyChoreApproved(label, pc.amount)
         else notifyRequestApproved(label)
@@ -1520,6 +1524,9 @@ export default function ChildModeApp() {
     <div className="min-h-screen flex flex-col pb-20"
       style={{ background: 'linear-gradient(180deg,#eef2ff 0%,#f5f3ff 100%)' }}>
 
+      <PigPeek corner="left" />
+      {pigRun > 0 && <PigRun key={pigRun} onDone={() => setPigRun(0)} />}
+
       {showSavings  && <ChildSavingsModal  {...commonProps} onClose={() => setShowSavings(false)} />}
       {showTransfer && <ChildTransferModal {...commonProps} siblings={siblings} onClose={() => setShowTransfer(false)} />}
       {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
@@ -1608,7 +1615,7 @@ export default function ChildModeApp() {
               <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
                 style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
                 <ShekelIconCloud balance={child.shekelBalance} />
-                <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.shekelBalance} format={formatNumber} />₪</div>
+                <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.shekelBalance} format={formatNumber} celebrate />₪</div>
                 <div className="relative text-sm opacity-90 mt-1">{activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}</div>
                 {activeSavingsTotal > 0 && (
                   <div className="relative mt-2 pt-1.5 border-t border-white/25 flex items-center justify-center gap-1.5 text-white/85">
@@ -1623,7 +1630,7 @@ export default function ChildModeApp() {
           <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
             style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
             <StarIconCloud count={child.starBalance} />
-            <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.starBalance} format={formatNumber} /></div>
+            <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.starBalance} format={formatNumber} celebrate /></div>
             <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
           </div>
         </div>

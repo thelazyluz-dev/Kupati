@@ -538,4 +538,27 @@
     display: inline-block;
     animation: pig-bob 0.45s ease-in-out infinite;
   }
+
+  /* Pig dashes across the whole screen (celebration) */
+  @keyframes pig-run {
+    0%   { transform: translateX(-30vw); }
+    100% { transform: translateX(130vw); }
+  }
+  .pig-run { animation: pig-run 1.5s cubic-bezier(0.4,0,0.5,1) forwards; }
+
+  /* Pig peeks up from a corner now and then */
+  @keyframes pig-peek {
+    0%, 100% { transform: translateY(115%); }
+    7%, 20%  { transform: translateY(6%); }
+    13%      { transform: translateY(-4%); }
+  }
+  .pig-peek { animation: pig-peek 9s ease-in-out infinite; }
+
+  /* Pig rolls across when a number jumps up a lot */
+  @keyframes pig-tumble {
+    0%   { transform: translateX(-14px) rotate(0deg);   opacity: 0; }
+    25%  { opacity: 1; }
+    100% { transform: translateX(34px)  rotate(380deg); opacity: 0; }
+  }
+  .pig-tumble { animation: pig-tumble 1s ease-in forwards; }
 }

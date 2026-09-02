@@ -775,7 +775,7 @@ export default function ChildDashboard({ childId }) {
           <div className="relative overflow-hidden rounded-[22px] p-4 text-center animate-slide-up" style={{ animationDelay: '60ms', animationFillMode: 'both', background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)', boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.6)' }}>
             <ShekelIconCloud balance={child.shekelBalance} />
             <div className="relative text-4xl font-bold" dir="ltr">
-              <AnimatedNumber value={child.shekelBalance} format={formatNumber} />₪
+              <AnimatedNumber value={child.shekelBalance} format={formatNumber} celebrate />₪
             </div>
             <div className="relative text-sm opacity-90 mt-1">
               {activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}
@@ -804,7 +804,7 @@ export default function ChildDashboard({ childId }) {
           <div className="relative overflow-hidden rounded-[22px] p-4 text-center animate-slide-up" style={{ animationDelay: '130ms', animationFillMode: 'both', background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)', boxShadow: '0 8px 24px rgba(0,0,0,0.15), inset 0 1px 2px rgba(255,255,255,0.6)' }}>
             <StarIconCloud count={child.starBalance} />
             <div className="relative text-4xl font-bold" dir="ltr">
-              <AnimatedNumber value={child.starBalance} format={formatNumber} />
+              <AnimatedNumber value={child.starBalance} format={formatNumber} celebrate />
             </div>
             <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
             {(child.starBalancePeak || 0) > 0 && (
