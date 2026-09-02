@@ -11,6 +11,8 @@ import { verifyPin } from '../lib/pin.js'
 import ChildRequestHub from './child/ChildRequestHub.jsx'
 import ChildSwitcher from './child/ChildSwitcher.jsx'
 import CodeGate from './child/CodeGate.jsx'
+import ChoreOverlay from './child/ChoreOverlay.jsx'
+import { speak } from '../lib/speech.js'
 
 // Overlay that asks for the parent PIN before letting a child leave child mode.
 function ExitPinOverlay({ settings, onSuccess, onCancel }) {
@@ -1201,6 +1203,9 @@ export default function ChildModeApp() {
   const [showPrizes,   setShowPrizes]   = useState(false)
   const [showGoals,    setShowGoals]    = useState(false)
   const [showRequestHub, setShowRequestHub] = useState(false)
+  const [hubInitialCat, setHubInitialCat] = useState(null)
+  const [showChores, setShowChores] = useState(false)
+  const [advancedOpen, setAdvancedOpen] = useState(false)
   const [showExitPin, setShowExitPin] = useState(false)
   const [showSwitch, setShowSwitch] = useState(false)
   const [gateAction, setGateAction] = useState(null)   // pending fn awaiting the personal code
@@ -1212,6 +1217,8 @@ export default function ChildModeApp() {
 
   function showHint(msg) {
     setHint(msg)
+    // Read the message aloud for pre-readers (strip emojis first).
+    speak(String(msg).replace(/[^\p{L}\p{N}\s%₪.,!?-]/gu, '').trim(), settings.soundEnabled !== false)
     setTimeout(() => setHint(null), 3500)
   }
 
@@ -1489,7 +1496,14 @@ export default function ChildModeApp() {
 
   const siblings = children.filter((c) => c.id !== childId)
   const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
+  const simpleMode = settings.childSimpleMode !== false   // default ON for young kids
+  const speakOn = settings.soundEnabled !== false
   const commonProps = { child, familyCode, childId, onClose: () => {}, onUpdate: handleChildUpdate, showHint }
+
+  // Opens the request hub, optionally deep-linked to a category form.
+  function openRequest(catKey = null) {
+    guard(() => { setHubInitialCat(catKey); setShowRequestHub(true) })
+  }
 
   // Personal-code gate for significant actions. If the child has an access code
   // and hasn't confirmed it within VERIFY_WINDOW, ask for it before acting —
@@ -1516,7 +1530,18 @@ export default function ChildModeApp() {
           settings={settings}
           myRequests={pendingChores.filter((pc) => pc.childId === childId)}
           onSubmit={submitRequest}
-          onClose={() => setShowRequestHub(false)}
+          initialCat={hubInitialCat}
+          onClose={() => { setShowRequestHub(false); setHubInitialCat(null) }}
+        />
+      )}
+      {showChores && (
+        <ChoreOverlay
+          chores={choreList}
+          pendingChores={pendingChores}
+          childId={childId}
+          speakOn={settings.soundEnabled !== false}
+          onSubmit={(list) => { setShowChores(false); requestChores(list) }}
+          onClose={() => setShowChores(false)}
         />
       )}
       {showExitPin && (
@@ -1553,7 +1578,7 @@ export default function ChildModeApp() {
           {child.avatarImage
             ? <img src={child.avatarImage} alt="" className="w-7 h-7 rounded-full object-cover flex-shrink-0" />
             : <span className="text-lg flex-shrink-0">{child.avatar || '🦁'}</span>}
-          <span className="text-sm font-bold flex-1 truncate">מחובר/ת: {child.name}</span>
+          <span className="text-sm font-bold flex-1 truncate">זה אני 👋 {child.name}</span>
           {children.length > 1 && (
             <button onClick={() => setShowSwitch(true)}
               className="text-xs font-black bg-white/25 rounded-full px-3 py-1 active:scale-95 transition-all flex-shrink-0">
@@ -1603,8 +1628,66 @@ export default function ChildModeApp() {
         </div>
       </header>
 
-      {/* Content */}
+      {/* ── Clean home for young kids: three big actions + "more" ─────────── */}
+      {simpleMode && !advancedOpen && (() => {
+        const myPending = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending').length
+        const heroes = [
+          { key: 'chore',   emoji: '⭐', label: 'עשיתי מטלה', bg: 'linear-gradient(135deg,#f59e0b,#d97706)', onClick: () => { speak('עשיתי מטלה', speakOn); guard(() => setShowChores(true)) } },
+          { key: 'money',   emoji: '💝', label: 'רוצה כסף',    bg: 'linear-gradient(135deg,#10b981,#059669)', onClick: () => { speak('רוצה כסף', speakOn); openRequest('money') } },
+          { key: 'buy',     emoji: '🛍️', label: 'רוצה לקנות',  bg: 'linear-gradient(135deg,#f43f5e,#e11d48)', onClick: () => { speak('רוצה לקנות', speakOn); openRequest('purchase') } },
+        ]
+        return (
+          <main className="flex-1 px-4 py-5 space-y-4">
+            {myAssigned.length > 0 && (
+              <div className="rounded-[22px] p-3 flex items-center gap-2.5"
+                style={{ background: 'rgba(238,242,255,0.95)', border: '1.5px solid rgba(99,102,241,0.25)' }}>
+                <span className="text-2xl">📌</span>
+                <p className="text-sm font-bold text-indigo-700 flex-1">יש לך {myAssigned.length} מטלות מההורה</p>
+                <button onClick={() => { speak('עשיתי מטלה', speakOn); guard(() => setShowChores(true)) }}
+                  className="text-xs font-black text-white px-3 py-2 rounded-xl active:scale-90"
+                  style={{ background: 'linear-gradient(135deg,#6366f1,#8b5cf6)' }}>הצג</button>
+              </div>
+            )}
+
+            {heroes.map((h) => (
+              <button key={h.key} onClick={h.onClick}
+                className="w-full flex items-center gap-4 rounded-[26px] px-6 py-7 active:scale-95 transition-all text-white"
+                style={{ background: h.bg, boxShadow: '0 6px 24px rgba(0,0,0,0.18)' }}>
+                <span className="text-5xl flex-shrink-0">{h.emoji}</span>
+                <span className="text-2xl font-black flex-1 text-right">{h.label}</span>
+                <span className="text-3xl opacity-70">←</span>
+              </button>
+            ))}
+
+            {/* Waiting-for-parent hint */}
+            {myPending > 0 && (
+              <div className="rounded-[22px] px-4 py-3 flex items-center gap-2.5"
+                style={{ background: 'rgba(255,251,235,0.9)', border: '1.5px solid rgba(245,158,11,0.3)' }}>
+                <span className="text-2xl">⏳</span>
+                <p className="text-sm font-bold text-amber-700 flex-1">{myPending} בקשות מחכות לאבא/אמא</p>
+              </div>
+            )}
+
+            {/* Everything else */}
+            <button onClick={() => { speak('עוד דברים', speakOn); setAdvancedOpen(true) }}
+              className="w-full flex items-center justify-center gap-2 rounded-[22px] px-5 py-4 active:scale-95 transition-all"
+              style={{ background: 'rgba(255,255,255,0.85)', border: '2px solid rgba(148,163,184,0.3)', color: '#475569' }}>
+              <span className="text-2xl">➕</span>
+              <span className="text-base font-black">עוד דברים</span>
+            </button>
+          </main>
+        )
+      })()}
+
+      {/* ── Full content (advanced / older kids) ─────────────────────────── */}
+      {(!simpleMode || advancedOpen) && (
       <main className="flex-1 px-4 py-5 space-y-4">
+        {simpleMode && advancedOpen && (
+          <button onClick={() => setAdvancedOpen(false)}
+            className="flex items-center gap-1.5 text-sm font-black text-indigo-500 active:scale-95">
+            <span className="text-lg">‹</span> חזרה למסך הפשוט
+          </button>
+        )}
         {/* Big "ask a parent" call to action */}
         {(() => {
           const myPending = pendingChores.filter((pc) => pc.childId === childId && pc.status === 'pending').length
@@ -1945,6 +2028,7 @@ export default function ChildModeApp() {
 
         <div className="h-2" />
       </main>
+      )}
     </div>
   )
 }

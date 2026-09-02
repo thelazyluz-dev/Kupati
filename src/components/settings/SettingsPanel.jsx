@@ -80,6 +80,30 @@ function SoundToggle() {
   )
 }
 
+function SimpleModeToggle() {
+  const { settings, updateSettings } = useApp()
+  const enabled = settings.childSimpleMode !== false   // default ON
+  return (
+    <div className="space-y-2">
+      <button
+        type="button"
+        onClick={() => updateSettings({ childSimpleMode: !enabled })}
+        className="w-full flex items-center justify-between py-1"
+      >
+        <span className="font-semibold text-gray-700">
+          {enabled ? '🧒 מצב פשוט פעיל' : '🧑 מצב מלא'}
+        </span>
+        <div className={`relative w-12 h-6 rounded-full transition-colors duration-200 ${enabled ? 'bg-indigo-500' : 'bg-gray-300'}`}>
+          <div className={`absolute top-1 w-4 h-4 bg-white rounded-full shadow transition-all duration-200 ${enabled ? 'right-1' : 'right-7'}`} />
+        </div>
+      </button>
+      <p className="text-xs text-gray-400 leading-snug">
+        מצב פשוט: מסך הילד מציג 3 כפתורים גדולים (מטלה · כסף · לקנות) + "עוד דברים" לכל השאר. מומלץ לגילאי 6–8.
+      </p>
+    </div>
+  )
+}
+
 function DailyPenaltySettings() {
   const { settings, updateSettings } = useApp()
   const dp = settings.dailyPenalty ?? { first: 5, repeat: 10 }
@@ -465,6 +489,10 @@ export default function SettingsPanel() {
           collapsible defaultOpen={false}
         >
           <DailyPenaltySettings />
+        </SettingsSection>
+
+        <SettingsSection icon="🧒" label="מצב ילד" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+          <SimpleModeToggle />
         </SettingsSection>
 
         <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">

@@ -3,6 +3,7 @@ import { newRequest, describeRequest, isResolved } from '../../lib/requests.js'
 import { formatNumber } from '../../lib/utils.js'
 import { AVATAR_EMOJIS, GOAL_EMOJIS, COLOR_OPTIONS } from '../../lib/defaults.js'
 import { sounds } from '../../lib/sounds.js'
+import { speak } from '../../lib/speech.js'
 
 const CATEGORIES = [
   { key: 'stars',    emoji: '⭐', label: 'לבקש כוכבים',  bg: 'linear-gradient(135deg,#f59e0b,#d97706)' },
@@ -25,9 +26,17 @@ function Field({ label, children }) {
 
 const inputCls = 'w-full rounded-2xl border-2 border-gray-200 px-4 py-3 text-lg font-bold focus:outline-none focus:border-indigo-400'
 
-export default function ChildRequestHub({ child, settings, myRequests, onSubmit, onClose }) {
-  const [cat, setCat]   = useState(null)
+export default function ChildRequestHub({ child, settings, myRequests, onSubmit, onClose, initialCat = null }) {
+  const [cat, setCat]   = useState(initialCat)
   const [busy, setBusy] = useState(false)
+  const speakOn = settings.soundEnabled !== false
+
+  function openCat(key) {
+    const c = CATEGORIES.find((x) => x.key === key)
+    speak(c ? c.label : '', speakOn)
+    sounds.tap?.()
+    setCat(key)
+  }
 
   // form fields (shared/reused per category)
   const [amount, setAmount]   = useState('')
@@ -127,7 +136,7 @@ export default function ChildRequestHub({ child, settings, myRequests, onSubmit,
             {/* Category grid */}
             <div className="grid grid-cols-2 gap-3">
               {CATEGORIES.map((c) => (
-                <button key={c.key} onClick={() => { setCat(c.key); sounds.tap?.() }}
+                <button key={c.key} onClick={() => openCat(c.key)}
                   className="flex flex-col items-center justify-center gap-2 py-6 rounded-[22px] text-white active:scale-95 transition-all"
                   style={{ background: c.bg, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }}>
                   <span className="text-4xl">{c.emoji}</span>

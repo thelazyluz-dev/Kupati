@@ -18,6 +18,7 @@ export const DEFAULT_SETTINGS = {
   familyCode: '',
   wheelSpinCost: 70,
   dailyPenalty: { first: 5, repeat: 10 },
+  childSimpleMode: true,
   notify: {
     choreRequest:   true,
     choreCompleted: true,
