@@ -12,6 +12,7 @@ import ChildRequestHub from './child/ChildRequestHub.jsx'
 import ChildSwitcher from './child/ChildSwitcher.jsx'
 import CodeGate from './child/CodeGate.jsx'
 import ChoreOverlay from './child/ChoreOverlay.jsx'
+import AnimatedNumber from './ui/AnimatedNumber.jsx'
 import { speak } from '../lib/speech.js'
 
 // Overlay that asks for the parent PIN before letting a child leave child mode.
@@ -1607,7 +1608,7 @@ export default function ChildModeApp() {
               <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
                 style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
                 <ShekelIconCloud balance={child.shekelBalance} />
-                <div className="relative text-4xl font-black" dir="ltr">{formatNumber(child.shekelBalance)}₪</div>
+                <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.shekelBalance} format={formatNumber} />₪</div>
                 <div className="relative text-sm opacity-90 mt-1">{activeSavingsTotal > 0 ? '💵 זמין' : '💵 שקלים'}</div>
                 {activeSavingsTotal > 0 && (
                   <div className="relative mt-2 pt-1.5 border-t border-white/25 flex items-center justify-center gap-1.5 text-white/85">
@@ -1622,7 +1623,7 @@ export default function ChildModeApp() {
           <div className="relative overflow-hidden rounded-[22px] p-4 text-center"
             style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(12px)', border: '2px solid rgba(255,255,255,0.5)' }}>
             <StarIconCloud count={child.starBalance} />
-            <div className="relative text-4xl font-black" dir="ltr">{formatNumber(child.starBalance)}</div>
+            <div className="relative text-4xl font-black" dir="ltr"><AnimatedNumber value={child.starBalance} format={formatNumber} /></div>
             <div className="relative text-sm opacity-90 mt-1">⭐ כוכבים</div>
           </div>
         </div>

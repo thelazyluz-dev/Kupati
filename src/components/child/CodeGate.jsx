@@ -22,7 +22,13 @@ export default function CodeGate({ child, onSuccess, onCancel, title }) {
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center p-6" style={{ background: 'rgba(15,23,42,0.55)', backdropFilter: 'blur(4px)' }}>
-      <div className="w-full max-w-xs rounded-3xl bg-white p-6 text-center space-y-4">
+      <div className="w-full max-w-xs rounded-3xl bg-white p-6 pt-2 text-center space-y-4 overflow-hidden">
+        {/* Pig strolling across the top */}
+        <div className="relative h-8 -mx-2">
+          <span className="pig-stroll text-2xl" style={{ bottom: 0 }}>
+            <span className="pig-bob">🐷</span>
+          </span>
+        </div>
         <div className="text-4xl">{child.avatarImage ? '🔒' : (child.avatar || '🔒')}</div>
         <p className="font-black text-gray-800">{title || `הקוד האישי של ${child.name}`}</p>
         <div className="flex justify-center gap-2">

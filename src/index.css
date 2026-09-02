@@ -516,4 +516,26 @@
   .wheel-free-spin {
     animation: wheel-free-glow 1.3s ease-in-out infinite;
   }
+
+  /* Pig that strolls left↔right across a strip, facing its direction of travel */
+  @keyframes pig-stroll {
+    0%   { left: 4%;  transform: scaleX(1); }
+    47%  { left: 82%; transform: scaleX(1); }
+    50%  { left: 82%; transform: scaleX(-1); }
+    97%  { left: 4%;  transform: scaleX(-1); }
+    100% { left: 4%;  transform: scaleX(1); }
+  }
+  .pig-stroll {
+    position: absolute;
+    animation: pig-stroll 6s ease-in-out infinite;
+  }
+  /* Gentle waddle bob — on a nested element so it doesn't fight scaleX */
+  @keyframes pig-bob {
+    0%, 100% { transform: translateY(0)   rotate(-3deg); }
+    50%       { transform: translateY(-3px) rotate(3deg); }
+  }
+  .pig-bob {
+    display: inline-block;
+    animation: pig-bob 0.45s ease-in-out infinite;
+  }
 }
