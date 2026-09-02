@@ -30,6 +30,15 @@ function SectionHeader({ icon, label, color }) {
   )
 }
 
+function GroupHeader({ label }) {
+  return (
+    <div className="flex items-center gap-2 pt-3 pb-0.5 px-1">
+      <span className="text-[11px] font-black text-indigo-400 uppercase tracking-widest">{label}</span>
+      <span className="flex-1 h-px bg-indigo-200/60" />
+    </div>
+  )
+}
+
 function SettingsSection({ icon, label, iconColor, accent, children, collapsible = false, defaultOpen = true }) {
   const [open, setOpen] = useState(defaultOpen)
   return (
@@ -448,70 +457,51 @@ export default function SettingsPanel() {
         </div>
       </header>
 
-      <main className="flex-1 px-4 py-5 space-y-5">
-        <SettingsSection
-          icon="📋" label="רשימת מטלות"
-          iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400"
-          collapsible defaultOpen={false}
-        >
+      <main className="flex-1 px-4 py-5 space-y-2.5">
+
+        <GroupHeader label="הילדים" />
+        <ChildrenManager />
+
+        <GroupHeader label="מטלות ופרסים" />
+        <SettingsSection icon="📋" label="רשימת מטלות" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400" collapsible defaultOpen={false}>
           <ChoreManager hideTitle />
         </SettingsSection>
-
-        <SettingsSection
-          icon="🎁" label="מחירון פרסים בכוכבים"
-          iconColor="bg-purple-100 text-purple-600" accent="border-purple-400"
-          collapsible defaultOpen={false}
-        >
+        <SettingsSection icon="🎁" label="מחירון פרסים בכוכבים" iconColor="bg-purple-100 text-purple-600" accent="border-purple-400" collapsible defaultOpen={false}>
           <PrizeManager />
         </SettingsSection>
-
-        <SettingsSection
-          icon="🎰" label="פרסי גלגל המזל"
-          iconColor="bg-violet-100 text-violet-600" accent="border-violet-400"
-          collapsible defaultOpen={false}
-        >
+        <SettingsSection icon="🎰" label="פרסי גלגל המזל" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400" collapsible defaultOpen={false}>
           <WheelPrizeManager />
         </SettingsSection>
 
-        <ChildrenManager />
-
-        <SettingsSection
-          icon="💱" label="המרת כוכבים לשקלים"
-          iconColor="bg-sky-100 text-sky-600" accent="border-sky-400"
-          collapsible defaultOpen={false}
-        >
+        <GroupHeader label="כלכלה" />
+        <SettingsSection icon="💱" label="המרת כוכבים לשקלים" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400" collapsible defaultOpen={false}>
           <ExchangeRateSettings hideTitle />
         </SettingsSection>
-
-        <SettingsSection
-          icon="⚡" label="קנס יומי"
-          iconColor="bg-rose-100 text-rose-600" accent="border-rose-400"
-          collapsible defaultOpen={false}
-        >
+        <SettingsSection icon="⚡" label="קנס יומי" iconColor="bg-rose-100 text-rose-600" accent="border-rose-400" collapsible defaultOpen={false}>
           <DailyPenaltySettings />
         </SettingsSection>
 
-        <SettingsSection icon="🧒" label="מצב ילד" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+        <GroupHeader label="חוויית הילד" />
+        <SettingsSection icon="🧒" label="מצב ילד (טאבלט)" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400" collapsible defaultOpen={false}>
           <SimpleModeToggle />
         </SettingsSection>
-
-        <SettingsSection icon="🔊" label="צלילים" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400">
+        <SettingsSection icon="🔊" label="צלילים והקראה" iconColor="bg-violet-100 text-violet-600" accent="border-violet-400" collapsible defaultOpen={false}>
           <SoundToggle />
         </SettingsSection>
-
-        <SettingsSection icon="🔔" label="התראות" iconColor="bg-amber-100 text-amber-600" accent="border-amber-400">
+        <SettingsSection icon="🔔" label="התראות" iconColor="bg-amber-100 text-amber-600" accent="border-amber-400" collapsible defaultOpen={false}>
           <NotificationSettings />
         </SettingsSection>
 
-        <SettingsSection icon="🔒" label="קוד הורים" iconColor="bg-slate-100 text-slate-600" accent="border-slate-400">
+        <GroupHeader label="אבטחה וסנכרון" />
+        <SettingsSection icon="🔒" label="קוד הורים" iconColor="bg-slate-100 text-slate-600" accent="border-slate-400" collapsible defaultOpen={false}>
           <PinSettings />
         </SettingsSection>
-
-        <SettingsSection icon="☁️" label="סנכרון בין מכשירים" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+        <SettingsSection icon="☁️" label="סנכרון בין מכשירים" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400" collapsible defaultOpen={false}>
           <SyncSettings />
         </SettingsSection>
 
-        <SettingsSection icon="📊" label="דוח פעילות" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400">
+        <GroupHeader label="נתונים וגיבוי" />
+        <SettingsSection icon="📊" label="דוח פעילות" iconColor="bg-indigo-100 text-indigo-600" accent="border-indigo-400" collapsible defaultOpen={false}>
           <Button variant="secondary" fullWidth onClick={() => showModal('weeklyReport')}>
             📊 פתח דוח פעילות
           </Button>
@@ -519,8 +509,7 @@ export default function SettingsPanel() {
             מטלות, לימודים, שינויי כוכבים וכספים לכל ילד
           </p>
         </SettingsSection>
-
-        <SettingsSection icon="💾" label="גיבוי ושחזור" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400">
+        <SettingsSection icon="💾" label="גיבוי ושחזור" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400" collapsible defaultOpen={false}>
           <div className="space-y-3">
             <BackupSettings />
             <div className="border-t border-gray-100 pt-3">
