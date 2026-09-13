@@ -240,8 +240,10 @@ function ChildSavingsModal({ child, settings, familyCode, childId, onClose, onUp
       const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
       const newTx = { id: generateId(), type: 'savings_open', amount: parsed, currency: 'shekels', description: `🏦 חסכון נפתח — ${ratePct}% ריבית לחודש`, timestamp: Date.now() }
       const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
-      await pushFamilyData(familyCode, 'children', newChildren)
+      // Ledger first (no balance effect), then the balance change LAST so any
+      // failure before it leaves nothing committed and a retry is safe.
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await pushFamilyData(familyCode, 'children', newChildren)
       await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'savings_open', description: `${child.name} פתח חסכון של ${formatNumber(parsed)}₪`, amount: parsed, currency: 'shekels', timestamp: Date.now() })
       onUpdate(newChildren, newTx)
       sounds.approve()
@@ -274,8 +276,10 @@ function ChildSavingsModal({ child, settings, familyCode, childId, onClose, onUp
         : '⚠️ פדיון מוקדם — פחות מחודש, ללא ריבית'
       const newTx = { id: generateId(), type: txType, amount: payout, currency: 'shekels', description: txDesc, timestamp: Date.now() }
       const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
-      await pushFamilyData(familyCode, 'children', newChildren)
+      // Ledger first (no balance effect), then the balance change LAST so any
+      // failure before it leaves nothing committed and a retry is safe.
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await pushFamilyData(familyCode, 'children', newChildren)
       await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: txType, description: txDesc, amount: Math.round(payout), currency: 'shekels', timestamp: Date.now() })
       onUpdate(newChildren, newTx)
       sounds.goal()
@@ -461,8 +465,10 @@ function ChildTransferModal({ child, siblings, familyCode, childId, onClose, onU
       }
       const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
       const newTxs = { ...freshTxs, [childId]: [tx1, ...(freshTxs[childId] || [])], [targetId]: [tx2, ...(freshTxs[targetId] || [])] }
-      await pushFamilyData(familyCode, 'children', newChildren)
+      // Ledger first (no balance effect), then the balance change LAST so any
+      // failure before it leaves nothing committed and a retry is safe.
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await pushFamilyData(familyCode, 'children', newChildren)
       await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'transfer_out', description: tx1.description, amount: parsed, currency, timestamp: Date.now() })
       onUpdate(newChildren, tx1)
       sounds.approve()
@@ -661,8 +667,10 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
         const newTx = { id: generateId(), type: 'wheel_spin', amount: SPIN_COST, currency: 'stars', description: '🎰 גלגל המזל — עלות סיבוב', timestamp: now }
         newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, starBalance: Math.max(0, c.starBalance - SPIN_COST) })
         const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
-        await pushFamilyData(familyCode, 'children', newChildren)
+        // Ledger first (no balance effect), then the star deduction LAST so any
+        // failure before it leaves nothing committed and a retry is safe.
         await pushFamilyData(familyCode, 'all_transactions', newTxs)
+        await pushFamilyData(familyCode, 'children', newChildren)
         await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'wheel_spin', description: `${child.name} סובב את גלגל המזל (-${SPIN_COST}⭐)`, amount: SPIN_COST, currency: 'stars', timestamp: now })
         onUpdate(newChildren, newTx)
       }
@@ -703,8 +711,10 @@ function ChildWheelModal({ child, settings, familyCode, childId, onClose, onUpda
       const newTx = { id: generateId(), type: 'wheel_win', amount: result.shekels, currency: 'shekels', description: '🎰 גלגל המזל — זכייה', timestamp: Date.now() }
       const newChildren = freshChildren.map((c) => c.id !== childId ? c : { ...c, shekelBalance: c.shekelBalance + result.shekels })
       const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
-      await pushFamilyData(familyCode, 'children', newChildren)
+      // Ledger first (no balance effect), then the winnings credit LAST so any
+      // failure before it leaves nothing committed and a retry is safe.
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
+      await pushFamilyData(familyCode, 'children', newChildren)
       await appendChildActivity(familyCode, { id: generateId(), childId, childName: child.name, type: 'wheel_win', description: `${child.name} זכה ב-${result.shekels}₪ בגלגל`, amount: result.shekels, currency: 'shekels', timestamp: Date.now() })
       onUpdate(newChildren, newTx)
       sounds.goal?.()

@@ -56,10 +56,19 @@ export async function appendToFamilyArray(familyCode, key, entries) {
 }
 
 export async function appendChildActivity(familyCode, entry) {
-  if (!db) return
-  const ref = dataRef(familyCode, 'childActivity')
-  const snap = await getDoc(ref)
-  const current = snap.exists() ? (snap.data().payload || []) : []
-  const next = [entry, ...current].slice(0, 100)
-  await setDoc(ref, { payload: next, updatedAt: serverTimestamp(), updatedBy: 'child_mode' })
+  if (!db) return false
+  // Best-effort: the child-activity feed is a non-critical, parent-facing log.
+  // Its extra read-modify-write must NEVER fail the caller's real operation
+  // (a balance change that has already committed) — otherwise the child sees
+  // "שגיאה — נסה שוב" after the money already moved, and a retry double-charges.
+  try {
+    const ref = dataRef(familyCode, 'childActivity')
+    const snap = await getDoc(ref)
+    const current = snap.exists() ? (snap.data().payload || []) : []
+    const next = [entry, ...current].slice(0, 100)
+    await setDoc(ref, { payload: next, updatedAt: serverTimestamp(), updatedBy: 'child_mode' })
+    return true
+  } catch {
+    return false
+  }
 }
