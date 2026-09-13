@@ -1346,11 +1346,15 @@ export default function ChildModeApp() {
       const newReq = {
         id: generateId(),
         childId,
+        type: 'chore',
         choreId: chore.id,
         choreName: chore.name ?? '',
         choreEmoji: chore.emoji ?? '',
+        title: chore.name ?? '',
+        emoji: chore.emoji ?? '✅',
         amount: chore.defaultStars ?? 1,
         currency: 'stars',
+        source: 'child',
         timestamp: Date.now(),
         status: 'pending',
       }
@@ -1376,11 +1380,15 @@ export default function ChildModeApp() {
       const newReqs = choresToSubmit.map((chore) => ({
         id: generateId(),
         childId,
+        type: 'chore',
         choreId: chore.id,
         choreName: chore.name ?? '',
         choreEmoji: chore.emoji ?? '',
+        title: chore.name ?? '',
+        emoji: chore.emoji ?? '✅',
         amount: chore.defaultStars ?? 1,
         currency: 'stars',
+        source: 'child',
         timestamp: now,
         status: 'pending',
       }))
@@ -1500,6 +1508,7 @@ export default function ChildModeApp() {
 
   const siblings = children.filter((c) => c.id !== childId)
   const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
+  const freeSpins = child.freeSpins || 0
   const simpleMode = settings.childSimpleMode !== false   // default ON for young kids
   const speakOn = settings.soundEnabled !== false
   const commonProps = { child, familyCode, childId, onClose: () => {}, onUpdate: handleChildUpdate, showHint }
@@ -1665,6 +1674,29 @@ export default function ChildModeApp() {
                 <span className="text-3xl opacity-70">←</span>
               </button>
             ))}
+
+            {/* Fun / money row — wheel of fortune + convert stars to money */}
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={() => { speak('גלגל המזל', speakOn); guard(() => setShowWheel(true)) }}
+                className="relative flex flex-col items-center justify-center gap-1.5 rounded-[22px] px-4 py-5 active:scale-95 transition-all text-white overflow-hidden"
+                style={{ background: 'linear-gradient(135deg,#7c3aed,#6d28d9)', boxShadow: freeSpins > 0 ? '0 6px 22px rgba(251,191,36,0.5), 0 0 0 2px rgba(251,191,36,0.5)' : '0 6px 20px rgba(124,58,237,0.35)' }}>
+                {freeSpins > 0 && (
+                  <span className="free-spin-badge absolute top-2 left-2 bg-amber-400 text-white text-xs font-black rounded-full min-w-6 h-6 px-1.5 flex items-center justify-center shadow-lg">
+                    🎟️{freeSpins > 1 ? freeSpins : ''}
+                  </span>
+                )}
+                <span className="text-4xl">🎰</span>
+                <span className="text-base font-black">גלגל המזל</span>
+                {freeSpins > 0 && <span className="text-[11px] font-bold text-amber-200">סיבוב חינם!</span>}
+              </button>
+              <button onClick={() => { speak('להמיר כוכבים לכסף', speakOn); openRequest('convert') }}
+                className="flex flex-col items-center justify-center gap-1.5 rounded-[22px] px-4 py-5 active:scale-95 transition-all text-white"
+                style={{ background: 'linear-gradient(135deg,#0ea5e9,#0284c7)', boxShadow: '0 6px 20px rgba(14,165,233,0.35)' }}>
+                <span className="text-4xl">💱</span>
+                <span className="text-base font-black">להמיר לכסף</span>
+                <span className="text-[11px] font-bold text-sky-100" dir="ltr">{formatNumber(child.starBalance || 0)}⭐</span>
+              </button>
+            </div>
 
             {/* Waiting-for-parent hint */}
             {myPending > 0 && (

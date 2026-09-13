@@ -63,7 +63,10 @@ export function newRequest({ type, childId, childName, title, emoji, amount, cur
 
 /** Human-readable amount line for a request card, e.g. "+10⭐" / "-5₪" / "10⭐ → ₪". */
 export function amountText(req) {
-  const t = REQUEST_TYPES[req.type] || {}
+  // Legacy chore requests (from the child app) may carry choreName/choreId but
+  // no `type` field — treat them as chores so the sign/label render correctly.
+  const effType = req.type || (req.choreId != null || req.choreName ? 'chore' : req.type)
+  const t = REQUEST_TYPES[effType] || {}
   const n = req.amount
   if (n == null) return ''
   const unit = req.currency === 'shekels' ? '₪' : '⭐'
@@ -76,11 +79,15 @@ export function amountText(req) {
 
 /** Everything a request card needs to render, in one place. */
 export function describeRequest(req) {
-  const t = REQUEST_TYPES[req.type] || REQUEST_TYPES.free
+  // Fall back to 'chore' for legacy chore requests that predate the `type` field
+  // (they only carry choreName/choreId), so the parent sees the actual chore
+  // instead of the generic "בקשה חופשית".
+  const effType = req.type || (req.choreId != null || req.choreName ? 'chore' : req.type)
+  const t = REQUEST_TYPES[effType] || REQUEST_TYPES.free
   return {
-    emoji: req.emoji || t.emoji,
+    emoji: req.emoji || req.choreEmoji || t.emoji,
     typeLabel: t.label,
-    title: req.title || t.label,
+    title: req.title || req.choreName || t.label,
     amount: amountText(req),
     note: req.note || '',
     notifyTitle: t.notify,

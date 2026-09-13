@@ -53,6 +53,22 @@ describe('describeRequest', () => {
     expect(d).toMatchObject({ emoji: '🍦', typeLabel: 'פרס', title: 'גלידה', amount: '-8⭐' })
     expect(d.notifyTitle).toBe(REQUEST_TYPES.prize.notify)
   })
+
+  it('renders a chore request with an explicit type', () => {
+    const d = describeRequest({ type: 'chore', choreName: 'לסדר את החדר', choreEmoji: '🧹', amount: 3, currency: 'stars' })
+    expect(d).toMatchObject({ emoji: '🧹', typeLabel: 'מטלה', title: 'לסדר את החדר', amount: '+3⭐' })
+  })
+
+  it('treats a legacy chore request (no type field) as a chore, not a free request', () => {
+    // Child-app chore requests used to omit `type` and only carry choreName/choreId.
+    // They must still show the chosen chore, never fall through to "בקשה חופשית".
+    const legacy = { choreId: 'ch1', choreName: 'להוציא זבל', choreEmoji: '🗑️', amount: 2, currency: 'stars', status: 'pending' }
+    const d = describeRequest(legacy)
+    expect(d.typeLabel).toBe('מטלה')
+    expect(d.title).toBe('להוציא זבל')
+    expect(d.emoji).toBe('🗑️')
+    expect(d.amount).toBe('+2⭐')
+  })
 })
 
 describe('isActionable / isResolved', () => {
