@@ -113,6 +113,57 @@ function SimpleModeToggle() {
   )
 }
 
+function PercentRow({ label, desc, value, onChange, accentBg = 'bg-sky-50', accentBorder = 'border-sky-200', focusBorder = 'focus:border-sky-400' }) {
+  return (
+    <div className={`flex items-center justify-between ${accentBg} rounded-2xl px-4 py-3`}>
+      <div className="flex-1 min-w-0 ml-3">
+        <p className="text-sm font-bold text-gray-700">{label}</p>
+        {desc && <p className="text-xs text-gray-400 mt-0.5">{desc}</p>}
+      </div>
+      <div className="flex items-center gap-1 flex-shrink-0">
+        <input
+          type="number" min="0" max="100" step="0.5" value={value}
+          onChange={(e) => onChange(Math.max(0, parseFloat(e.target.value) || 0))}
+          dir="ltr"
+          className={`w-16 text-center font-bold text-sm rounded-xl border-2 ${accentBorder} py-1.5 ${focusBorder} focus:outline-none bg-white`}
+        />
+        <span className="text-sm text-gray-500">%</span>
+      </div>
+    </div>
+  )
+}
+
+function SavingsInterestSettings() {
+  const { settings, updateSettings } = useApp()
+  return (
+    <div className="space-y-2">
+      <PercentRow
+        label="ריבית חודשית על חיסכון"
+        desc="מצטברת כל חודש (ריבית דריבית)"
+        value={settings.savingsInterestPercent ?? 10}
+        onChange={(v) => updateSettings({ savingsInterestPercent: v })}
+      />
+      <p className="text-xs text-gray-400 leading-snug">כשילד חוסך, הכסף צובר את הריבית הזו על כל חודש שלם שעבר.</p>
+    </div>
+  )
+}
+
+function DepositFeeSettings() {
+  const { settings, updateSettings } = useApp()
+  return (
+    <div className="space-y-2">
+      <PercentRow
+        label="עמלת הפקדה"
+        desc="אחוז שנלקח מכל הפקדה (0 = ללא עמלה)"
+        value={settings.depositFeePercent ?? 0}
+        onChange={(v) => updateSettings({ depositFeePercent: v })}
+        accentBg="bg-rose-50" accentBorder="border-rose-200" focusBorder="focus:border-rose-400"
+      />
+      <p className="text-xs text-gray-400 leading-snug">חל על הפקדות כסף (בקשת "רוצה להפקיד" והפקדה ידנית). נרשם כתנועת עמלה נפרדת.</p>
+    </div>
+  )
+}
+
 function DailyPenaltySettings() {
   const { settings, updateSettings } = useApp()
   const dp = settings.dailyPenalty ?? { first: 5, repeat: 10 }
@@ -476,6 +527,12 @@ export default function SettingsPanel() {
         <GroupHeader label="כלכלה" />
         <SettingsSection icon="💱" label="המרת כוכבים לשקלים" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400" collapsible defaultOpen={false}>
           <ExchangeRateSettings hideTitle />
+        </SettingsSection>
+        <SettingsSection icon="🏦" label="ריבית חיסכון" iconColor="bg-sky-100 text-sky-600" accent="border-sky-400" collapsible defaultOpen={false}>
+          <SavingsInterestSettings />
+        </SettingsSection>
+        <SettingsSection icon="💸" label="עמלת הפקדה" iconColor="bg-rose-100 text-rose-600" accent="border-rose-400" collapsible defaultOpen={false}>
+          <DepositFeeSettings />
         </SettingsSection>
         <SettingsSection icon="⚡" label="קנס יומי" iconColor="bg-rose-100 text-rose-600" accent="border-rose-400" collapsible defaultOpen={false}>
           <DailyPenaltySettings />

@@ -12,7 +12,7 @@ import { usePendingChores } from '../hooks/usePendingChores.js'
 import { clearAll, get, set } from '../lib/storage.js'
 import { checkBadges } from '../lib/badges.js'
 import { notifyChore, notifyRequest } from '../lib/notifications.js'
-import { calculateStreak, generateId, DEDUCT_TX_TYPES } from '../lib/utils.js'
+import { calculateStreak, generateId, DEDUCT_TX_TYPES, savingsMonthlyRate, savingsInterestPercent, depositFee } from '../lib/utils.js'
 import { describeRequest, isActionable, applyApproval } from '../lib/requests.js'
 import { makePinSettings } from '../lib/pin.js'
 
@@ -257,7 +257,7 @@ export function AppProvider({ children: reactChildren }) {
       type: 'savings_open',
       amount,
       currency: 'shekels',
-      description: `🏦 חסכון נפתח — 10% ריבית לחודש`,
+      description: `🏦 חסכון נפתח — ${savingsInterestPercent(settingsApi.settings)}% ריבית לחודש`,
     })
     return saving
   }
@@ -275,7 +275,7 @@ export function AppProvider({ children: reactChildren }) {
     let cm = (now.getFullYear() - start.getFullYear()) * 12 + (now.getMonth() - start.getMonth())
     if (now.getDate() < start.getDate()) cm--
     cm = Math.max(0, cm)
-    const total    = Math.round(saving.amount * Math.pow(1.10, cm) * 100) / 100
+    const total    = Math.round(saving.amount * Math.pow(savingsMonthlyRate(settingsApi.settings), cm) * 100) / 100
     const interest = Math.round((total - saving.amount) * 100) / 100
     const monthsLabel = `${cm} חודש${cm > 1 ? 'ים' : ''}`
 

@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback, useState, useMemo } from 'react'
 import { registerCoinTarget } from '../lib/animations.js'
 import { useApp } from '../context/AppContext.jsx'
 import { useSwipeBack } from '../hooks/useSwipeBack.js'
-import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel, buildBalanceHistory } from '../lib/utils.js'
+import { getTotalValue, getGoals, getGoalProgress, formatNumber, daysUntilBirthday, calculateStreak, getLevel, buildBalanceHistory, savingsMonthlyRate } from '../lib/utils.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { sounds } from '../lib/sounds.js'
 import { describeRequest } from '../lib/requests.js'
@@ -616,7 +616,7 @@ export default function ChildDashboard({ childId }) {
       const sd = new Date(s.startDate)
       let m = (now.getFullYear() - sd.getFullYear()) * 12 + (now.getMonth() - sd.getMonth())
       if (now.getDate() < sd.getDate()) m--
-      return sum + s.amount * Math.pow(1.10, Math.max(0, m))
+      return sum + s.amount * Math.pow(savingsMonthlyRate(settings), Math.max(0, m))
     }, 0)
   })()
   const streak     = calculateStreak(transactions)

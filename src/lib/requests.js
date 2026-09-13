@@ -9,7 +9,7 @@
 // of *approving* a request (moving balances) lives in AppContext.approveRequest,
 // where all the balance functions are in scope.
 
-import { formatNumber, generateId } from './utils.js'
+import { formatNumber, generateId, depositFee, depositFeePercent } from './utils.js'
 
 // dir: how the approved amount moves the child's balance —
 //   'credit'  = balance goes up (child receives)
@@ -139,10 +139,16 @@ export function applyApproval(req, api, opts = {}) {
       api.addStars(cid, amount)
       api.addTransaction(cid, { type: 'other', amount, currency: 'stars', description: `⭐ ${label || 'כוכבים'}` })
       break
-    case 'money':
+    case 'money': {
       api.adjustShekels(cid, amount)
       api.addTransaction(cid, { type: 'other', amount, currency: 'shekels', description: `💝 ${label || 'הפקדה'}` })
+      const fee = depositFee(amount, api.settings)
+      if (fee > 0) {
+        api.adjustShekels(cid, -fee)
+        api.addTransaction(cid, { type: 'fee', amount: fee, currency: 'shekels', description: `💸 עמלת הפקדה (${depositFeePercent(api.settings)}%)` })
+      }
       break
+    }
     case 'purchase':
       api.adjustShekels(cid, -amount)
       api.addTransaction(cid, { type: 'expense', amount, currency: 'shekels', description: `🛍️ ${label || 'קנייה'}` })

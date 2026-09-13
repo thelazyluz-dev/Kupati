@@ -19,6 +19,8 @@ export const DEFAULT_SETTINGS = {
   wheelSpinCost: 70,
   dailyPenalty: { first: 5, repeat: 10 },
   childSimpleMode: true,
+  savingsInterestPercent: 10,   // compound interest per month on savings
+  depositFeePercent: 0,          // fee taken when money is deposited (0 = none)
   notify: {
     choreRequest:   true,
     choreCompleted: true,

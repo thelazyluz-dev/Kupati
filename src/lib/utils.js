@@ -161,7 +161,29 @@ export const DEDUCT_TX_TYPES = new Set([
   'expense', 'convert_out', 'prize_redeem', 'savings_open', 'penalty', 'wheel_spin', 'loan_repay',
   // Transfer/sale OUT of the sender — these subtract, same as any other debit.
   'stars_transfer_out', 'stars_sold_out', 'money_transfer_out',
+  'fee',   // deposit fee
 ])
+
+// ── Savings interest (compound, per month) — configurable via settings ──────
+export function savingsInterestPercent(settings) {
+  const p = settings?.savingsInterestPercent
+  return p == null ? 10 : Math.max(0, p)
+}
+export function savingsMonthlyRate(settings) {
+  return 1 + savingsInterestPercent(settings) / 100
+}
+export function savingsValue(principal, months, settings) {
+  return principal * Math.pow(savingsMonthlyRate(settings), months)
+}
+
+// ── Deposit fee — configurable via settings ─────────────────────────────────
+export function depositFeePercent(settings) {
+  const p = settings?.depositFeePercent
+  return p == null ? 0 : Math.max(0, p)
+}
+export function depositFee(amount, settings) {
+  return Math.round((amount * depositFeePercent(settings) / 100) * 100) / 100
+}
 
 export function computeBalanceFromTransactions(transactions) {
   let stars = 0, shekels = 0

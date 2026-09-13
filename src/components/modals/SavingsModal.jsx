@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
-import { formatNumber } from '../../lib/utils.js'
+import { formatNumber, savingsValue, savingsInterestPercent } from '../../lib/utils.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
@@ -12,13 +12,14 @@ function calcCompletedMonths(startTimestamp) {
 }
 
 // Compound interest: principal × 1.10^months
-function cv(principal, months) {
-  return principal * Math.pow(1.10, months)
+function cv(principal, months, settings) {
+  return savingsValue(principal, months, settings)
 }
 
-function SavingCard({ saving, onWithdraw }) {
+function SavingCard({ saving, onWithdraw, settings }) {
   const now = Date.now()
   const cm  = calcCompletedMonths(saving.startDate)
+  const ratePct = savingsInterestPercent(settings)
 
   // Next exit point
   const nextExit = new Date(saving.startDate)
@@ -30,11 +31,11 @@ function SavingCard({ saving, onWithdraw }) {
   prevExit.setMonth(prevExit.getMonth() + cm)
   const monthProgress = Math.min(1, (now - prevExit.getTime()) / (nextExit.getTime() - prevExit.getTime()))
 
-  const currentPayout = cv(saving.amount, cm)
-  const nextPayout    = cv(saving.amount, cm + 1)
+  const currentPayout = cv(saving.amount, cm, settings)
+  const nextPayout    = cv(saving.amount, cm + 1, settings)
 
   const [preview, setPreview] = useState(Math.max(1, cm + 1))
-  const previewPayout = cv(saving.amount, preview)
+  const previewPayout = cv(saving.amount, preview, settings)
 
   return (
     <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4 space-y-3">
@@ -107,7 +108,8 @@ function SavingCard({ saving, onWithdraw }) {
 }
 
 export default function SavingsModal() {
-  const { closeModal, modalData, startSavings, finishSavings, requirePin } = useApp()
+  const { closeModal, modalData, startSavings, finishSavings, requirePin, settings } = useApp()
+  const ratePct = savingsInterestPercent(settings)
   const { childId, child } = modalData || {}
 
   const [amount,      setAmount]      = useState('')
@@ -142,7 +144,7 @@ export default function SavingsModal() {
         {/* Early withdrawal confirmation */}
         {earlyTarget && (() => {
           const cm = calcCompletedMonths(earlyTarget.startDate)
-          const ep = cv(earlyTarget.amount, cm)
+          const ep = cv(earlyTarget.amount, cm, settings)
           const ei = ep - earlyTarget.amount
           return (
             <div className="bg-orange-50 border border-orange-200 rounded-2xl p-4 space-y-3">
@@ -172,7 +174,7 @@ export default function SavingsModal() {
           <div className="space-y-3">
             <h3 className="font-bold text-gray-700 text-sm">חסכונות פעילים</h3>
             {activeSavings.map((s) => (
-              <SavingCard key={s.id} saving={s} onWithdraw={setEarlyTarget} />
+              <SavingCard key={s.id} saving={s} onWithdraw={setEarlyTarget} settings={settings} />
             ))}
           </div>
         )}
@@ -210,12 +212,12 @@ export default function SavingsModal() {
             {/* Monthly exit point preview chips */}
             {parsedAmount >= 1 && parsedAmount <= child.shekelBalance && (
               <div>
-                <p className="text-xs text-gray-400 text-center mb-2">נקודות יציאה חודשיות (10% ריבית לחודש)</p>
+                <p className="text-xs text-gray-400 text-center mb-2">נקודות יציאה חודשיות ({ratePct}% ריבית לחודש)</p>
                 <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
                   {[1, 2, 3, 4, 5, 6].map((m) => (
                     <div key={m} className="flex-shrink-0 bg-gradient-to-b from-blue-50 to-teal-50 border border-blue-100 rounded-xl p-2 text-center min-w-[56px]">
                       <p className="text-[10px] text-gray-400 font-semibold">חד׳ {m}</p>
-                      <p className="text-sm font-black text-teal-700">{formatNumber(cv(parsedAmount, m))}₪</p>
+                      <p className="text-sm font-black text-teal-700">{formatNumber(cv(parsedAmount, m, settings))}₪</p>
                     </div>
                   ))}
                 </div>
@@ -225,7 +227,7 @@ export default function SavingsModal() {
             {confirmOpen ? (
               <div className="space-y-2">
                 <p className="text-sm text-indigo-700 font-semibold text-center bg-indigo-50 rounded-xl py-2 px-3">
-                  הכסף ינעל ויצבור 10% ריבית לחודש.<br />
+                  הכסף ינעל ויצבור {ratePct}% ריבית לחודש.<br />
                   ניתן לפדות בכל נקודת יציאה חודשית.
                 </p>
                 <div className="flex gap-2">

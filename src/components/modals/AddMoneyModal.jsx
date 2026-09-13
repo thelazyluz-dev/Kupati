@@ -2,13 +2,13 @@ import { useState } from 'react'
 import { useApp } from '../../context/AppContext.jsx'
 import { celebrateGoal, celebrateSmall, celebrateMoney } from '../../lib/confetti.js'
 import { sounds } from '../../lib/sounds.js'
-import { getGoalProgress, getGoals, formatNumber } from '../../lib/utils.js'
+import { getGoalProgress, getGoals, formatNumber, depositFee, depositFeePercent } from '../../lib/utils.js'
 import { notifyMoneyAdded } from '../../lib/notifications.js'
 import Modal from '../ui/Modal.jsx'
 import Button from '../ui/Button.jsx'
 
 export default function AddMoneyModal() {
-  const { closeModal, modalData, children, settings, addMoney, addTransaction } = useApp()
+  const { closeModal, modalData, children, settings, addMoney, adjustShekels, addTransaction } = useApp()
   const childId = modalData?.childId
   const child = children.find((c) => c.id === childId)
 
@@ -31,6 +31,11 @@ export default function AddMoneyModal() {
 
     addMoney(childId, shekels)
     addTransaction(childId, { type, amount: shekels, currency: 'shekels', description: desc, note })
+    const fee = depositFee(shekels, settings)
+    if (fee > 0) {
+      adjustShekels(childId, -fee)
+      addTransaction(childId, { type: 'fee', amount: fee, currency: 'shekels', description: `💸 עמלת הפקדה (${depositFeePercent(settings)}%)` })
+    }
     notifyMoneyAdded(child.name, shekels)
 
     if (getGoals(child).length > 0) {

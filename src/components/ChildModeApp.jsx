@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { get, set, remove } from '../lib/storage.js'
 import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity, appendToFamilyArray } from '../lib/childSync.js'
-import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory } from '../lib/utils.js'
+import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory, savingsValue, savingsMonthlyRate, savingsInterestPercent } from '../lib/utils.js'
 import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
@@ -214,9 +214,10 @@ function calcCompletedMonths(startTs) {
   if (n.getDate() < s.getDate()) m--
   return Math.max(0, m)
 }
-function cv(principal, months) { return principal * Math.pow(1.10, months) }
+function cv(principal, months, settings) { return savingsValue(principal, months, settings) }
 
-function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, showHint }) {
+function ChildSavingsModal({ child, settings, familyCode, childId, onClose, onUpdate, showHint }) {
+  const ratePct = savingsInterestPercent(settings)
   const [amount, setAmount] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [withdrawTarget, setWithdrawTarget] = useState(null)
@@ -237,7 +238,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
         c.id !== childId ? c : { ...c, shekelBalance: Math.max(0, c.shekelBalance - parsed), savings: [...(c.savings || []), saving] }
       )
       const freshTxs = await fetchFamilyData(familyCode, 'all_transactions') || {}
-      const newTx = { id: generateId(), type: 'savings_open', amount: parsed, currency: 'shekels', description: '🏦 חסכון נפתח — 10% ריבית לחודש', timestamp: Date.now() }
+      const newTx = { id: generateId(), type: 'savings_open', amount: parsed, currency: 'shekels', description: `🏦 חסכון נפתח — ${ratePct}% ריבית לחודש`, timestamp: Date.now() }
       const newTxs = { ...freshTxs, [childId]: [newTx, ...(freshTxs[childId] || [])] }
       await pushFamilyData(familyCode, 'children', newChildren)
       await pushFamilyData(familyCode, 'all_transactions', newTxs)
@@ -255,7 +256,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
     setBusy(true)
     try {
       const cm = calcCompletedMonths(saving.startDate)
-      const payout = Math.round(cv(saving.amount, cm) * 100) / 100   // 2 decimals, matches the logged tx
+      const payout = Math.round(cv(saving.amount, cm, settings) * 100) / 100   // 2 decimals, matches the logged tx
       const interest = payout - saving.amount
       const mode = cm >= 1 ? 'matured' : 'early'
       const freshChildren = await fetchFamilyData(familyCode, 'children') || []
@@ -296,15 +297,15 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
         {/* Interest intro */}
         <div className="rounded-2xl px-4 py-3 text-center"
           style={{ background: 'rgba(255,255,255,0.8)', border: '1.5px solid rgba(14,165,233,0.25)' }}>
-          <p className="text-xs font-semibold text-blue-600">🏦 10% ריבית לכל חודש</p>
+          <p className="text-xs font-semibold text-blue-600">🏦 {ratePct}% ריבית לכל חודש</p>
           <p className="text-sm font-black text-blue-900 mt-1">חוסכים ← מרוויחים ריבית ← מכסה יותר כסף</p>
         </div>
 
         {/* Active savings */}
         {activeSavings.map((s) => {
           const cm = calcCompletedMonths(s.startDate)
-          const payout = cv(s.amount, cm)
-          const nextPayout = cv(s.amount, cm + 1)
+          const payout = cv(s.amount, cm, settings)
+          const nextPayout = cv(s.amount, cm + 1, settings)
           const now = Date.now()
           const nextExit = new Date(s.startDate); nextExit.setMonth(nextExit.getMonth() + cm + 1)
           const prevExit = new Date(s.startDate); prevExit.setMonth(prevExit.getMonth() + cm)
@@ -372,7 +373,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
                 <div key={m} className="flex-shrink-0 rounded-xl p-2 text-center min-w-[52px]"
                   style={{ background: 'linear-gradient(to bottom,#eff6ff,#e0f2fe)', border: '1px solid #bae6fd' }}>
                   <p className="text-[10px] text-gray-400 font-semibold">חד׳ {m}</p>
-                  <p className="text-sm font-black text-teal-700">{formatNumber(Math.round(cv(parsed, m)))}₪</p>
+                  <p className="text-sm font-black text-teal-700">{formatNumber(Math.round(cv(parsed, m, settings)))}₪</p>
                 </div>
               ))}
             </div>
@@ -380,7 +381,7 @@ function ChildSavingsModal({ child, familyCode, childId, onClose, onUpdate, show
           {confirmOpen ? (
             <div className="space-y-2">
               <p className="text-sm text-blue-700 font-semibold text-center bg-blue-50 rounded-xl py-2 px-3">
-                הכסף ינעל ויצבור 10% ריבית לחודש. ניתן לפדות בכל חודש.
+                הכסף ינעל ויצבור {ratePct}% ריבית לחודש. ניתן לפדות בכל חודש.
               </p>
               <div className="flex gap-2">
                 <button onClick={handleOpen} disabled={busy}
@@ -1525,7 +1526,7 @@ export default function ChildModeApp() {
       <PigPeek corner="left" />
       {pigRun > 0 && <PigRun key={pigRun} onDone={() => setPigRun(0)} />}
 
-      {showSavings  && <ChildSavingsModal  {...commonProps} onClose={() => setShowSavings(false)} />}
+      {showSavings  && <ChildSavingsModal  {...commonProps} settings={settings} onClose={() => setShowSavings(false)} />}
       {showTransfer && <ChildTransferModal {...commonProps} siblings={siblings} onClose={() => setShowTransfer(false)} />}
       {showWheel    && <ChildWheelModal    {...commonProps} settings={settings} onClose={() => setShowWheel(false)} />}
       {showPrizes   && <ChildPrizesModal   {...commonProps} settings={settings} pendingChores={pendingChores} onClose={() => setShowPrizes(false)} />}
@@ -1803,7 +1804,7 @@ export default function ChildModeApp() {
             </div>
             {activeSavings.map((s) => {
               const cm = calcCompletedMonths(s.startDate)
-              const payout = cv(s.amount, cm)
+              const payout = cv(s.amount, cm, settings)
               return (
                 <div key={s.id} className="flex items-center justify-between bg-sky-50 rounded-2xl px-3 py-2.5">
                   <div>
@@ -1811,7 +1812,7 @@ export default function ChildModeApp() {
                     <p className="text-[11px] text-gray-500">{cm > 0 ? `חודש ${cm} — ${formatNumber(Math.round(payout))}₪` : 'פחות מחודש'}</p>
                   </div>
                   <span className="text-xs font-black text-teal-600 bg-teal-50 border border-teal-200 rounded-full px-2 py-0.5">
-                    +{Math.round((Math.pow(1.10, cm) - 1) * 100)}%
+                    +{Math.round((Math.pow(savingsMonthlyRate(settings), cm) - 1) * 100)}%
                   </span>
                 </div>
               )
