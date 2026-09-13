@@ -11,6 +11,11 @@ export const DEFAULT_WHEEL_PRIZES = [
   { id: 'wp_10', shekels: 3,  emoji: '💵' },
 ]
 
+// A free wheel spin is granted for every N chores a child completes in one day.
+// Shared between the grant logic (AppContext.addTransaction) and the child-side
+// progress meter so the two can never drift apart.
+export const CHORES_PER_FREE_SPIN = 5
+
 export const DEFAULT_SETTINGS = {
   globalExchangeRate: 2,
   soundEnabled: true,

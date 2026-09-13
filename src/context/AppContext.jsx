@@ -15,6 +15,7 @@ import { notifyChore, notifyRequest } from '../lib/notifications.js'
 import { calculateStreak, generateId, DEDUCT_TX_TYPES, savingsMonthlyRate, savingsInterestPercent, depositFee } from '../lib/utils.js'
 import { describeRequest, isActionable, applyApproval } from '../lib/requests.js'
 import { makePinSettings } from '../lib/pin.js'
+import { CHORES_PER_FREE_SPIN } from '../lib/defaults.js'
 
 const AppContext = createContext(null)
 
@@ -181,8 +182,8 @@ export function AppProvider({ children: reactChildren }) {
         todayChoreCountRef.current[childId].count++
         const todayCount = todayChoreCountRef.current[childId].count
 
-        // Free spin every 5 chores in a day
-        if (todayCount % 5 === 0) {
+        // Free spin every N chores in a day
+        if (todayCount % CHORES_PER_FREE_SPIN === 0) {
           childrenApi.grantFreeSpin(childId)
           setPendingFreeSpin({ childId })
         }

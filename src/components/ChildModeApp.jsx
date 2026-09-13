@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { get, set, remove } from '../lib/storage.js'
 import { fetchFamilyData, subscribeFamilyData, pushFamilyData, appendChildActivity, appendToFamilyArray } from '../lib/childSync.js'
 import { generateId, formatNumber, getGoals, getGoalProgress, getLevel, buildBalanceHistory, savingsValue, savingsMonthlyRate, savingsInterestPercent } from '../lib/utils.js'
-import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS } from '../lib/defaults.js'
+import { CARD_GRADIENTS, COLOR_OPTIONS, DEFAULT_CHORES, DEFAULT_WHEEL_PRIZES, DEFAULT_PRIZES, GOAL_EMOJIS, CHORES_PER_FREE_SPIN } from '../lib/defaults.js'
 import { sounds } from '../lib/sounds.js'
 import { celebrateGoal } from '../lib/confetti.js'
 import { getPermission, requestPermission, notifyChoreApproved, notifyChoreRejected, notifyChoreSubmitted, notifyRequestApproved, notifyRequestRejected } from '../lib/notifications.js'
@@ -1187,6 +1187,53 @@ function ShekelIconCloud({ balance }) {
   return <IconCloud icons={[...Array(bills).fill('💵'), ...Array(coins).fill('🪙')]} />
 }
 
+// Coin meter toward the next free wheel spin. Shows one coin slot per chore in a
+// cycle; slots fill as chores are approved today, then the wheel "lights up".
+function WheelProgress({ coins, total, freeSpins, onSpin }) {
+  if (freeSpins > 0) {
+    return (
+      <button onClick={onSpin}
+        className="relative w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
+        style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)', boxShadow: '0 6px 22px rgba(245,158,11,0.5), 0 0 0 2px rgba(251,191,36,0.45)' }}>
+        <span className="prize-shimmer" />
+        <div className="relative flex items-center gap-3 px-5 py-3.5">
+          <span className="text-4xl flex-shrink-0" style={{ animation: 'bounce 0.9s ease-in-out infinite alternate' }}>🎰</span>
+          <p className="flex-1 text-right text-white font-black text-base leading-tight">
+            {freeSpins > 1 ? `יש לך ${freeSpins} סיבובים חינם!` : 'יש לך סיבוב חינם!'}
+            <span className="block text-amber-100 text-xs font-semibold">לחץ לסובב עכשיו ←</span>
+          </p>
+          <span className="flex-shrink-0 bg-white rounded-full w-8 h-8 flex items-center justify-center text-amber-600 font-black shadow">{freeSpins}</span>
+        </div>
+      </button>
+    )
+  }
+  const remaining = total - coins
+  return (
+    <div className="rounded-[22px] px-4 py-3"
+      style={{ background: 'rgba(245,243,255,0.95)', border: '1.5px solid rgba(124,58,237,0.2)' }}>
+      <div className="flex items-center justify-between mb-2.5">
+        <span className="text-sm font-black text-violet-700">🪙 מטבעות לגלגל המזל</span>
+        <span className="text-xs font-black text-violet-500">
+          {coins === 0 ? `עשה ${total} מטלות לסיבוב!` : `עוד ${remaining} ${remaining === 1 ? 'מטלה' : 'מטלות'}!`}
+        </span>
+      </div>
+      <div className="flex items-center justify-center gap-1.5">
+        {Array.from({ length: total }).map((_, i) => (
+          <div key={i}
+            className="w-9 h-9 rounded-full flex items-center justify-center text-lg transition-all"
+            style={i < coins
+              ? { background: 'linear-gradient(135deg,#fbbf24,#f59e0b)', boxShadow: '0 2px 8px rgba(245,158,11,0.5)' }
+              : { background: 'rgba(255,255,255,0.7)', border: '2px dashed rgba(148,163,184,0.5)' }}>
+            {i < coins ? '🪙' : ''}
+          </div>
+        ))}
+        <span className="text-xl text-violet-300 mx-0.5">←</span>
+        <span className="text-2xl flex-shrink-0">🎰</span>
+      </div>
+    </div>
+  )
+}
+
 export default function ChildModeApp() {
   const childMode = get('childMode')
   const { familyCode, childId } = childMode || {}
@@ -1509,6 +1556,15 @@ export default function ChildModeApp() {
   const siblings = children.filter((c) => c.id !== childId)
   const activeSavings = (child.savings || []).filter((s) => s.status === 'active')
   const freeSpins = child.freeSpins || 0
+
+  // Progress toward the next free wheel spin (a spin is earned every
+  // CHORES_PER_FREE_SPIN chores DONE today — matches AppContext's grant logic,
+  // which counts approved chore transactions whose timestamp is today).
+  const dayStartMs = (() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.getTime() })()
+  const choresToday = transactions.filter((tx) => tx.type === 'chore' && (tx.timestamp ?? 0) >= dayStartMs).length
+  const coinsToward = choresToday % CHORES_PER_FREE_SPIN
+  const choresToSpin = CHORES_PER_FREE_SPIN - coinsToward   // 1..CHORES_PER_FREE_SPIN
+
   const simpleMode = settings.childSimpleMode !== false   // default ON for young kids
   const speakOn = settings.soundEnabled !== false
   const commonProps = { child, familyCode, childId, onClose: () => {}, onUpdate: handleChildUpdate, showHint }
@@ -1675,6 +1731,10 @@ export default function ChildModeApp() {
               </button>
             ))}
 
+            {/* Coins-to-wheel meter — how many chores until a free spin */}
+            <WheelProgress coins={coinsToward} total={CHORES_PER_FREE_SPIN} freeSpins={freeSpins}
+              onSpin={() => { speak('גלגל המזל', speakOn); guard(() => setShowWheel(true)) }} />
+
             {/* Fun / money row — wheel of fortune + convert stars to money */}
             <div className="grid grid-cols-2 gap-3">
               <button onClick={() => { speak('גלגל המזל', speakOn); guard(() => setShowWheel(true)) }}
@@ -1772,27 +1832,9 @@ export default function ChildModeApp() {
           </div>
         )}
 
-        {/* Free spin persistent banner */}
-        {(child.freeSpins || 0) > 0 && (
-          <button onClick={() => guard(() => setShowWheel(true))}
-            className="relative w-full rounded-[22px] overflow-hidden active:scale-95 transition-transform"
-            style={{ background: 'linear-gradient(135deg,#f59e0b,#d97706,#b45309)', boxShadow: '0 6px 28px rgba(245,158,11,0.55), 0 0 0 2px rgba(251,191,36,0.4)' }}>
-            {/* shimmer sweep */}
-            <span className="prize-shimmer" />
-            <div className="relative flex items-center gap-4 px-5 py-4">
-              <div className="text-5xl flex-shrink-0" style={{ animation: 'bounce 0.9s ease-in-out infinite alternate' }}>🎰</div>
-              <div className="flex-1 text-right">
-                <p className="text-white font-black text-lg leading-tight">
-                  {(child.freeSpins || 0) > 1 ? `${child.freeSpins} סיבובים חינמיים!` : 'יש לך סיבוב חינם!'}
-                </p>
-                <p className="text-amber-100 text-sm font-semibold">לחץ לסובב עכשיו ←</p>
-              </div>
-              <div className="flex-shrink-0 bg-white rounded-full w-9 h-9 flex items-center justify-center shadow-lg">
-                <span className="text-amber-600 font-black text-lg leading-none">{child.freeSpins}</span>
-              </div>
-            </div>
-          </button>
-        )}
+        {/* Coins-to-wheel meter (shows the free-spin CTA when one is available) */}
+        <WheelProgress coins={coinsToward} total={CHORES_PER_FREE_SPIN} freeSpins={freeSpins}
+          onSpin={() => guard(() => setShowWheel(true))} />
 
         {/* Quick actions */}
         {(() => {
